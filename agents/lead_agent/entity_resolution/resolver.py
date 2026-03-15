@@ -17,6 +17,13 @@ ENTITY_REGISTRY: List[Entity] = [
         identifiers={"cik": "0001318605", "ticker": "TSLA", "make": "TESLA"},
         aliases=["Tesla", "Tesla Inc", "Tesla Motors", "TSLA"],
     ),
+    Entity(
+        entity_id="ford_motor_cik_0000037996",
+        name="Ford Motor Company",
+        entity_type="public_company",
+        identifiers={"cik": "0000037996", "ticker": "F", "make": "FORD"},
+        aliases=["Ford", "Ford Motor", "Ford Motor Co", "Ford Motor Company", "F"],
+    ),
 ]
 
 
