@@ -5,26 +5,136 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}OSINT Investigation Swarm{% endblock %}</title>
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: system-ui, -apple-system, sans-serif; max-width: 900px; margin: 0 auto; padding: 1.5rem; background: #f5f5f5; }
-        h1 { color: #1a1a2e; margin-top: 0; }
-        h2 { color: #16213e; font-size: 1.1rem; margin-top: 1.5rem; border-bottom: 1px solid #ddd; padding-bottom: 0.3rem; }
-        .card { background: white; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-        label { display: block; font-weight: 600; margin-bottom: 0.5rem; color: #333; }
-        input[type="text"] { width: 100%; padding: 0.6rem; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; }
-        button { background: #1a1a2e; color: white; border: none; padding: 0.6rem 1.2rem; font-size: 1rem; border-radius: 6px; cursor: pointer; margin-top: 0.75rem; }
-        button:hover { background: #16213e; }
-        .error { color: #c00; background: #fee; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; }
-        .meta { color: #666; font-size: 0.9rem; }
-        pre { background: #f8f8f8; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.85rem; white-space: pre-wrap; }
-        ul { margin: 0.5rem 0; padding-left: 1.25rem; }
-        .report-embed { background: white; padding: 1rem; border-radius: 6px; border: 1px solid #eee; max-height: 60vh; overflow-y: auto; }
-        .report-embed h1 { font-size: 1.25rem; }
-        .report-embed h2 { font-size: 1rem; }
-        a { color: #1a1a2e; }
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface-2: #334155;
+            --border: #475569;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --accent-dim: #0284c7;
+            --green: #4ade80;
+            --yellow: #fbbf24;
+            --red: #f87171;
+            --orange: #fb923c;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+        .header {
+            display: flex; align-items: center; gap: 0.75rem;
+            margin-bottom: 2rem; padding-bottom: 1rem;
+            border-bottom: 1px solid var(--surface-2);
+        }
+        .header-icon { font-size: 1.5rem; }
+        .header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
+        .header .subtitle { color: var(--text-muted); font-size: 0.85rem; margin-left: auto; }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--surface-2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.25rem;
+        }
+        .card h2 {
+            font-size: 0.95rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.05em; color: var(--accent);
+            margin-bottom: 1rem;
+        }
+        label { display: block; font-weight: 500; margin-bottom: 0.5rem; color: var(--text); font-size: 0.9rem; }
+        input[type="text"], select {
+            width: 100%; padding: 0.65rem 0.85rem; font-size: 0.95rem;
+            border: 1px solid var(--border); border-radius: 8px;
+            background: var(--surface-2); color: var(--text);
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus, select:focus {
+            outline: none; border-color: var(--accent);
+        }
+        select { cursor: pointer; }
+        button {
+            background: var(--accent); color: var(--bg);
+            border: none; padding: 0.65rem 1.5rem;
+            font-size: 0.95rem; font-weight: 600;
+            border-radius: 8px; cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background: var(--accent-dim); color: white; }
+        .error {
+            color: var(--red); background: rgba(248,113,113,0.1);
+            border: 1px solid rgba(248,113,113,0.3);
+            padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        .badge {
+            display: inline-block; padding: 0.15rem 0.6rem;
+            border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+        }
+        .badge-blue { background: rgba(56,189,248,0.15); color: var(--accent); }
+        .badge-green { background: rgba(74,222,128,0.15); color: var(--green); }
+        .badge-yellow { background: rgba(251,191,36,0.15); color: var(--yellow); }
+        .badge-red { background: rgba(248,113,113,0.15); color: var(--red); }
+        .badge-orange { background: rgba(251,146,60,0.15); color: var(--orange); }
+        .stat-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.75rem;
+        }
+        .stat-card {
+            background: var(--surface-2); border-radius: 8px; padding: 0.85rem 1rem;
+            text-align: center;
+        }
+        .stat-card .value { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
+        .stat-card .label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+        .bar-chart { display: flex; flex-direction: column; gap: 0.4rem; }
+        .bar-row { display: flex; align-items: center; gap: 0.5rem; }
+        .bar-label { width: 130px; font-size: 0.8rem; color: var(--text-muted); text-align: right; flex-shrink: 0; }
+        .bar-track { flex: 1; height: 22px; background: var(--surface-2); border-radius: 4px; overflow: hidden; position: relative; }
+        .bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; display: flex; align-items: center; padding-left: 8px; font-size: 0.7rem; font-weight: 600; }
+        .bar-count { margin-left: 0.5rem; font-size: 0.8rem; color: var(--text-muted); width: 40px; text-align: right; flex-shrink: 0; }
+        .risk-bar { display: flex; align-items: center; gap: 0.75rem; padding: 0.4rem 0; }
+        .risk-label { width: 100px; font-size: 0.85rem; text-transform: capitalize; }
+        .risk-track { flex: 1; height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+        .risk-fill { height: 100%; border-radius: 4px; }
+        .risk-val { width: 40px; font-size: 0.85rem; font-weight: 600; text-align: right; }
+        .meta { color: var(--text-muted); font-size: 0.85rem; }
+        .task-list { list-style: none; padding: 0; }
+        .task-list li { padding: 0.4rem 0; border-bottom: 1px solid var(--surface-2); font-size: 0.9rem; display: flex; gap: 0.5rem; align-items: center; }
+        .task-list li:last-child { border-bottom: none; }
+        pre {
+            background: var(--surface-2); padding: 1rem; border-radius: 8px;
+            overflow-x: auto; font-size: 0.8rem; color: var(--text-muted);
+            white-space: pre-wrap; line-height: 1.5;
+        }
+        ul.gap-list { list-style: none; padding: 0; }
+        ul.gap-list li { padding: 0.5rem 0; border-bottom: 1px solid var(--surface-2); font-size: 0.9rem; }
+        ul.gap-list li:last-child { border-bottom: none; }
+        .report-embed {
+            background: var(--surface-2); padding: 1.25rem; border-radius: 8px;
+            max-height: 65vh; overflow-y: auto; font-size: 0.9rem; line-height: 1.7;
+        }
+        .report-embed h1 { font-size: 1.15rem; color: var(--accent); }
+        .report-embed h2 { font-size: 1rem; color: var(--text); border: none; }
+        .report-embed a { color: var(--accent); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+        @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } .stat-grid { grid-template-columns: repeat(2, 1fr); } }
     </style>
 </head>
 <body>
-    {% block content %}{% endblock %}
+    <div class="container">
+        <div class="header">
+            <span class="header-icon">&#128373;</span>
+            <h1>OSINT Investigation Swarm</h1>
+            <span class="subtitle">Autonomous multi-agent OSINT analysis</span>
+        </div>
+        {% block content %}{% endblock %}
+    </div>
 </body>
 </html>

@@ -1,9 +1,13 @@
 {% extends "base.html" %}
 {% block title %}Results — OSINT Swarm{% endblock %}
 {% block content %}
-<div class="card">
-    <h1>Investigation results</h1>
-    <p><a href="/">&larr; New query</a></p>
+
+<div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h2 style="margin-bottom: 0.25rem;">Investigation Results</h2>
+        <p class="meta">{{ result.query }}</p>
+    </div>
+    <a href="/" style="font-size: 0.9rem;">&larr; New Query</a>
 </div>
 
 {% if result.error %}
@@ -12,39 +16,183 @@
 </div>
 {% else %}
 
+{# ── Summary stats ─────────────────────────────────────── #}
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="value">{{ result.findings_count }}</div>
+        <div class="label">Total Findings</div>
+    </div>
+    <div class="stat-card">
+        <div class="value">{{ result.tasks | length }}</div>
+        <div class="label">Tasks</div>
+    </div>
+    <div class="stat-card">
+        <div class="value">{{ result.gaps | length }}</div>
+        <div class="label">Gaps</div>
+    </div>
+    <div class="stat-card">
+        <div class="value">{{ result.conflicts | length }}</div>
+        <div class="label">Conflicts</div>
+    </div>
+    <div class="stat-card">
+        <div class="value">{{ "%.1f"|format(result.runtime_seconds or 0) }}s</div>
+        <div class="label">Runtime</div>
+    </div>
+</div>
+
+<div class="two-col">
+    {# ── Entity info ──────────────────────────────────── #}
+    <div class="card">
+        <h2>Entity</h2>
+        {% if result.entity_id %}
+        <p style="font-size: 1.1rem; font-weight: 600;">{{ result.entity_name }}</p>
+        <p class="meta"><code style="background: var(--surface-2); padding: 2px 6px; border-radius: 4px;">{{ result.entity_id }}</code></p>
+        {% if result.entity and result.entity.identifiers %}
+        <p class="meta" style="margin-top: 0.5rem;">
+            {% for k, v in result.entity.identifiers.items() %}
+            <span class="badge badge-blue">{{ k }}: {{ v }}</span>
+            {% endfor %}
+        </p>
+        {% endif %}
+        {% else %}
+        <p class="meta"><em>No entity resolved for this query.</em></p>
+        {% endif %}
+    </div>
+
+    {# ── Task list ─────────────────────────────────────── #}
+    <div class="card">
+        <h2>Tasks Executed</h2>
+        <ul class="task-list">
+        {% for t in result.tasks %}
+            <li>
+                <span class="badge badge-green">{{ t.target_agent }}</span>
+                {{ t.task_type }}
+            </li>
+        {% endfor %}
+        </ul>
+    </div>
+</div>
+
+{# ── Data source breakdown ─────────────────────────────── #}
 <div class="card">
-    <h2>Query &amp; entity</h2>
-    <p><strong>Query:</strong> {{ result.query }}</p>
-    {% if result.entity_id %}
-    <p><strong>Entity:</strong> {{ result.entity_name or result.entity_id }} <code>{{ result.entity_id }}</code></p>
-    {% else %}
-    <p><strong>Entity:</strong> <em>No entity resolved for this query.</em></p>
+    <h2>Findings by Data Source</h2>
+    {% set ds_colors = {"sec_edgar": "#38bdf8", "gdelt": "#fbbf24", "ofac": "#f87171", "courtlistener": "#a78bfa", "opencorporates": "#4ade80"} %}
+    {% set ds_labels = {"sec_edgar": "SEC EDGAR", "gdelt": "GDELT News", "ofac": "OFAC Sanctions", "courtlistener": "CourtListener", "opencorporates": "OpenCorporates"} %}
+    {% set max_ds = result.findings_by_data_source.values()|max if result.findings_by_data_source else 1 %}
+    <div class="bar-chart">
+        {% for ds, count in result.findings_by_data_source.items()|sort(attribute='1', reverse=true) %}
+        <div class="bar-row">
+            <span class="bar-label">{{ ds_labels.get(ds, ds) }}</span>
+            <div class="bar-track">
+                <div class="bar-fill" style="width: {{ (count / max_ds * 100)|int }}%; background: {{ ds_colors.get(ds, '#64748b') }};">
+                    {% if count / max_ds > 0.15 %}{{ count }}{% endif %}
+                </div>
+            </div>
+            <span class="bar-count">{{ count }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% if result.gdelt_total %}
+    <p class="meta" style="margin-top: 0.75rem;">
+        GDELT relevance: <strong>{{ result.gdelt_relevant }}</strong> of {{ result.gdelt_total }} articles are relevant
+        ({{ "%.0f"|format(result.gdelt_relevant / result.gdelt_total * 100 if result.gdelt_total else 0) }}%)
+    </p>
     {% endif %}
 </div>
 
+{# ── Risk dashboard ────────────────────────────────────── #}
 <div class="card">
-    <h2>Tasks &amp; findings</h2>
-    <p><strong>Tasks:</strong> {{ result.tasks | length }}</p>
-    <ul>
-    {% for t in result.tasks %}
-        <li>{{ t.task_type }} &rarr; {{ t.target_agent }}</li>
+    <h2>Risk Scores</h2>
+    {% if result.risk_scores %}
+    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+        <div style="font-size: 2rem; font-weight: 700; color: {% if result.risk_scores.overall > 0.7 %}var(--red){% elif result.risk_scores.overall > 0.4 %}var(--yellow){% else %}var(--green){% endif %};">
+            {{ "%.2f"|format(result.risk_scores.overall) }}
+        </div>
+        <div>
+            <div style="font-weight: 600;">Overall Risk Score</div>
+            <div class="meta">Based on {{ result.risk_scores.finding_count }} findings</div>
+        </div>
+    </div>
+    {% set risk_colors = {"governance": "#38bdf8", "regulatory": "#fbbf24", "legal": "#f87171", "network": "#a78bfa", "other": "#64748b"} %}
+    {% for cat, score in result.risk_scores.by_risk_category.items()|sort(attribute='1', reverse=true) %}
+    <div class="risk-bar">
+        <span class="risk-label">{{ cat }}</span>
+        <div class="risk-track">
+            <div class="risk-fill" style="width: {{ (score * 100)|int }}%; background: {{ risk_colors.get(cat, '#64748b') }};"></div>
+        </div>
+        <span class="risk-val" style="color: {{ risk_colors.get(cat, '#64748b') }};">{{ "%.2f"|format(score) }}</span>
+    </div>
     {% endfor %}
-    </ul>
-    <p><strong>Total findings:</strong> {{ result.findings_count }}</p>
-    <p><strong>By agent:</strong> {{ result.findings_by_agent }}</p>
+    {% endif %}
 </div>
 
+{% if result.confidence_scores %}
+<div class="two-col">
+    <div class="card">
+        <h2>Confidence by Risk Category</h2>
+        {% for cat, score in result.confidence_scores.by_risk_category.items()|sort(attribute='1', reverse=true) %}
+        <div class="risk-bar">
+            <span class="risk-label">{{ cat }}</span>
+            <div class="risk-track">
+                <div class="risk-fill" style="width: {{ (score * 100)|int }}%; background: var(--accent);"></div>
+            </div>
+            <span class="risk-val">{{ "%.2f"|format(score) }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="card">
+        <h2>Confidence by Source Type</h2>
+        {% for src, score in result.confidence_scores.by_source_type.items()|sort(attribute='1', reverse=true) %}
+        <div class="risk-bar">
+            <span class="risk-label" style="width: 130px;">{{ src }}</span>
+            <div class="risk-track">
+                <div class="risk-fill" style="width: {{ (score * 100)|int }}%; background: var(--green);"></div>
+            </div>
+            <span class="risk-val">{{ "%.2f"|format(score) }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{# ── Knowledge graph summary ──────────────────────────── #}
+{% if result.graph_summary %}
 <div class="card">
-    <h2>Risk dashboard</h2>
-    <pre>{{ result.risk_dashboard_cli }}</pre>
+    <h2>Knowledge Graph</h2>
+    <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="stat-card">
+            <div class="value">{{ result.graph_summary.nodes }}</div>
+            <div class="label">Nodes</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">{{ result.graph_summary.edges }}</div>
+            <div class="label">Edges</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">{{ result.graph_summary.entity_nodes }}</div>
+            <div class="label">Entity Nodes</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">{{ result.graph_summary.evidence_nodes }}</div>
+            <div class="label">Evidence Nodes</div>
+        </div>
+    </div>
 </div>
+{% endif %}
 
+{# ── Gaps & conflicts ──────────────────────────────────── #}
 {% if result.gaps %}
 <div class="card">
-    <h2>Gaps (missing data)</h2>
-    <ul>
+    <h2>Coverage Gaps</h2>
+    <ul class="gap-list">
     {% for g in result.gaps %}
-        <li><strong>{{ g.area }}</strong>: {{ g.description }}{% if g.suggested_follow_up %} — {{ g.suggested_follow_up }}{% endif %}</li>
+        <li>
+            <span class="badge badge-yellow">{{ g.area }}</span>
+            {{ g.description }}
+            {% if g.suggested_follow_up %}
+            <br><span class="meta">Suggested: {{ g.suggested_follow_up }}</span>
+            {% endif %}
+        </li>
     {% endfor %}
     </ul>
 </div>
@@ -52,25 +200,79 @@
 
 {% if result.conflicts %}
 <div class="card">
-    <h2>Cross-check conflicts</h2>
-    <ul>
+    <h2>Cross-check Conflicts</h2>
+    <ul class="gap-list">
     {% for c in result.conflicts %}
-        <li>{{ c.description }}</li>
+        <li>
+            <span class="badge badge-red">{{ c.dimension }}</span>
+            {{ c.description }}
+        </li>
     {% endfor %}
     </ul>
 </div>
 {% endif %}
 
+{# ── Evidence report (embedded) ────────────────────────── #}
 <div class="card">
-    <h2>Evidence report</h2>
+    <h2>Full Evidence Report</h2>
     <div class="report-embed">
         {{ result.report_body | safe }}
     </div>
 </div>
 
+{# ── Evaluation metrics ─────────────────────────────────── #}
+{% if result.eval_metrics %}
 <div class="card">
-    <h2>Audit trail</h2>
-    <pre>{% for e in result.audit_events %}{{ e.get('timestamp', '') }}  {{ e.get('step', '') }}{% if e.get('query') %}  query={{ e.get('query')[:50] }}{% endif %}{% if e.get('entity_resolved') is not none %}  entity_resolved={{ e.get('entity_resolved') }}{% endif %}{% if e.get('task_count') is not none %}  task_count={{ e.get('task_count') }}{% endif %}
+    <h2>Evaluation Metrics</h2>
+    <div class="stat-grid" style="margin-bottom: 1rem;">
+        <div class="stat-card">
+            <div class="value">{{ "%.0f"|format(result.eval_metrics.citation_rate * 100) }}%</div>
+            <div class="label">Citation Rate</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">{{ result.eval_metrics.cited_count }}</div>
+            <div class="label">Cited</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">{{ result.eval_metrics.uncited_count }}</div>
+            <div class="label">Uncited</div>
+        </div>
+        {% if result.eval_metrics.gdelt_total %}
+        <div class="stat-card">
+            <div class="value">{{ "%.0f"|format(result.eval_metrics.gdelt_signal_rate * 100) }}%</div>
+            <div class="label">GDELT Signal</div>
+        </div>
+        {% endif %}
+    </div>
+    <h2 style="margin-top: 0.5rem;">Confidence Distribution</h2>
+    <div class="bar-chart">
+        {% set max_bucket = result.eval_metrics.confidence_buckets.values()|max if result.eval_metrics.confidence_buckets.values()|max else 1 %}
+        {% for bucket, count in result.eval_metrics.confidence_buckets.items() %}
+        {% if count > 0 %}
+        <div class="bar-row">
+            <span class="bar-label">{{ bucket }}</span>
+            <div class="bar-track">
+                <div class="bar-fill" style="width: {{ (count / max_bucket * 100)|int }}%; background: var(--accent);">
+                    {% if count / max_bucket > 0.15 %}{{ count }}{% endif %}
+                </div>
+            </div>
+            <span class="bar-count">{{ count }}</span>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    <p class="meta" style="margin-top: 0.75rem;">
+        Confidence: mean={{ "%.2f"|format(result.eval_metrics.confidence_mean) }},
+        min={{ "%.2f"|format(result.eval_metrics.confidence_min) }},
+        max={{ "%.2f"|format(result.eval_metrics.confidence_max) }}
+    </p>
+</div>
+{% endif %}
+
+{# ── Audit trail ──────────────────────────────────────── #}
+<div class="card">
+    <h2>Audit Trail</h2>
+    <pre>{% for e in result.audit_events %}{{ e.get('timestamp', '') }}  {{ e.get('step', '') }}{% if e.get('query') %}  query={{ e.get('query')[:80] }}{% endif %}{% if e.get('entity_resolved') is not none %}  entity_resolved={{ e.get('entity_resolved') }}{% endif %}{% if e.get('task_count') is not none %}  task_count={{ e.get('task_count') }}{% endif %}
 {% endfor %}</pre>
 </div>
 

@@ -86,13 +86,36 @@ def test_detect_gaps_court_fetch_error_returns_gap():
     assert any("Sanctions" in g.area or "legal" in g.description.lower() for g in gaps)
 
 
-def test_detect_gaps_structure_mapper_stub_returns_beneficial_ownership_gap():
+def test_detect_gaps_opencorporates_cache_missing_returns_beneficial_ownership_gap():
+    """OpenCorporates cache missing (cache_missing=True, no OC evidence) → gap flagged."""
     ctx = InvestigationContext()
     ctx.set_entity(Entity(entity_id="e1", name="E", identifiers={}))
-    stub_ev = Evidence(
-        "e1_structure_mapper_stub", "e1", "", "other", "governance",
-        "Structure Mapper not integrated", "", None, 0.0, {"stub": True},
+    fallback_ev = Evidence(
+        "e1_oc_unavailable", "e1", "", "other", "governance",
+        "Structure Mapper: OpenCorporates data unavailable",
+        "", None, 0.0,
+        {"stub": False, "cache_missing": True, "data_source": "opencorporates"},
     )
-    ctx.add_agent_results("corporate_agent", [stub_ev])
+    ctx.add_agent_results("corporate_agent", [fallback_ev])
     gaps = detect_gaps(ctx)
     assert any(g.area == "beneficial_ownership" for g in gaps)
+
+
+def test_detect_gaps_opencorporates_real_data_no_gap():
+    """Real OpenCorporates evidence → no beneficial_ownership gap."""
+    ctx = InvestigationContext()
+    ctx.set_entity(Entity(entity_id="e1", name="E", identifiers={}))
+    oc_ev = Evidence(
+        "e1_oc_summary", "e1", "", "regulator_api", "governance",
+        "OpenCorporates profile: E | Officers: 3 total",
+        "https://opencorporates.com/companies/us_ca/C1234", None, 0.80,
+        {"stub": False, "data_source": "opencorporates", "officer_count": 3},
+    )
+    # Add legal + social to avoid other gaps
+    legal_ev = Evidence("e1_ofac_clean", "e1", "", "regulator_api", "legal", "Clean", "", None, 0.90, {"screened": True})
+    news_ev = Evidence("e1_gdelt_1", "e1", "", "news_article", "network", "News", "https://x.com", None, 0.6, {})
+    ctx.add_agent_results("corporate_agent", [oc_ev])
+    ctx.add_agent_results("legal_agent", [legal_ev])
+    ctx.add_agent_results("social_graph_agent", [news_ev])
+    gaps = detect_gaps(ctx)
+    assert not any(g.area == "beneficial_ownership" for g in gaps)

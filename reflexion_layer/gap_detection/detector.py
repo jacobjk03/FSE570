@@ -79,14 +79,27 @@ def detect_gaps(context: "InvestigationContext") -> List[Gap]:
             suggested_follow_up="Run: python scripts/pull_gdelt_news.py --entity-id <entity_id>",
         ))
 
-    # --- Corporate: beneficial ownership stub ---
+    # --- Corporate: beneficial ownership / OpenCorporates ---
     corp_results = context.get_agent_results("corporate_agent")
-    if any("structure_mapper" in e.evidence_id and e.attributes.get("stub") for e in corp_results):
+    oc_real = [e for e in corp_results if e.attributes.get("data_source") == "opencorporates" and e.confidence > 0]
+    oc_cache_missing = any(e.attributes.get("cache_missing") for e in corp_results)
+    if oc_cache_missing and not oc_real:
         gaps.append(
             Gap(
                 area="beneficial_ownership",
-                description="Beneficial ownership / structure mapping not yet integrated (OpenCorporates planned).",
-                suggested_follow_up="Integrate OpenCorporates API for corporate network data.",
+                description="OpenCorporates data unavailable. Beneficial ownership was not mapped.",
+                suggested_follow_up=(
+                    "Set OPENCORPORATES_API_TOKEN in .env and run: "
+                    "python scripts/pull_opencorporates.py --all"
+                ),
+            )
+        )
+    elif not oc_real and any("structure_mapper" in e.evidence_id for e in corp_results):
+        gaps.append(
+            Gap(
+                area="beneficial_ownership",
+                description="No OpenCorporates evidence produced for beneficial ownership.",
+                suggested_follow_up="Run: python scripts/pull_opencorporates.py --all",
             )
         )
 

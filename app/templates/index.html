@@ -2,15 +2,70 @@
 {% block title %}Investigate — OSINT Swarm{% endblock %}
 {% block content %}
 <div class="card">
-    <h1>Autonomous OSINT Investigation Swarm</h1>
-    <p class="meta">Enter an investigation query. Example: <em>Investigate Tesla for money laundering</em></p>
+    <h2>New Investigation</h2>
     {% if error %}
     <div class="error">{{ error }}</div>
     {% endif %}
-    <form method="post" action="/">
-        <label for="query">Investigation query</label>
-        <input type="text" id="query" name="query" placeholder="e.g. Investigate Company X for money laundering" value="{{ request.form.query or '' }}" autofocus>
-        <button type="submit">Run investigation</button>
+    <form method="post" action="/" id="queryForm">
+        <div style="margin-bottom: 1rem;">
+            <label for="entity-select">Quick select entity</label>
+            <select id="entity-select" onchange="fillQuery()">
+                <option value="">— Custom query —</option>
+                {% for e in entities %}
+                <option value="{{ e.name }}">{{ e.name }} ({{ e.entity_id }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="margin-bottom: 0.5rem;">
+            <label for="template-select">Query template</label>
+            <select id="template-select" onchange="fillQuery()">
+                {% for t in templates %}
+                <option value="{{ t }}">{{ t }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="margin-bottom: 1rem;">
+            <label for="query">Investigation query</label>
+            <input type="text" id="query" name="query"
+                   placeholder="e.g. Investigate Tesla for money laundering"
+                   value="{{ request.form.query or '' }}" autofocus>
+        </div>
+        <button type="submit">Run Investigation</button>
     </form>
 </div>
+
+<div class="card">
+    <h2>How it works</h2>
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="value">5</div>
+            <div class="label">Data Sources</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">3</div>
+            <div class="label">Specialist Agents</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">3</div>
+            <div class="label">Reflexion Checks</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">1</div>
+            <div class="label">Lead Orchestrator</div>
+        </div>
+    </div>
+    <p class="meta" style="margin-top: 1rem;">
+        SEC EDGAR &middot; GDELT News &middot; OFAC Sanctions &middot; CourtListener &middot; OpenCorporates
+    </p>
+</div>
+
+<script>
+function fillQuery() {
+    const entity = document.getElementById('entity-select').value;
+    const template = document.getElementById('template-select').value;
+    if (entity) {
+        document.getElementById('query').value = template.replace('{entity}', entity);
+    }
+}
+</script>
 {% endblock %}

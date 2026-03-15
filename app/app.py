@@ -13,18 +13,20 @@ for p in (ROOT, SRC):
 
 from flask import Flask, render_template, request
 
-from app.pipeline import run_investigation
+from app.pipeline import run_investigation, get_registered_entities, QUERY_TEMPLATES
 
 app = Flask(__name__, template_folder=Path(__file__).resolve().parent / "templates")
 
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    entities = get_registered_entities()
+    templates = QUERY_TEMPLATES
     if request.method == "GET":
-        return render_template("index.html")
+        return render_template("index.html", entities=entities, templates=templates)
     query = (request.form.get("query") or "").strip()
     if not query:
-        return render_template("index.html", error="Please enter an investigation query.")
+        return render_template("index.html", error="Please enter an investigation query.", entities=entities, templates=templates)
     data_root = ROOT / "data"
     result = run_investigation(query, data_root=data_root)
     # Extract body fragment for embedding (report_html is full document)
@@ -42,7 +44,7 @@ def index():
 
 
 def main():
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=True)
 
 
 if __name__ == "__main__":

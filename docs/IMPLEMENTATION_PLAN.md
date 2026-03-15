@@ -143,7 +143,7 @@ flowchart LR
 ## Order of Implementation
 
 1. **Phase 1** — Data infrastructure (schemas, connectors, scripts, layout).
-2. **Phase 2** — MCP-style interface, wire SEC/NHTSA, evidence as canonical input.
+2. **Phase 2** — MCP-style interface, wire SEC/GDELT, evidence as canonical input.
 3. **Phase 3** — Entity resolution, task planner, context manager, Lead Agent orchestration.
 4. **Phase 4** — Corporate Agent (SEC + Structure Mapper), Legal and Social Graph agents (stubs), agent contract.
 5. **Phase 5** — Cross-check, gap detection, confidence module, audit trail.

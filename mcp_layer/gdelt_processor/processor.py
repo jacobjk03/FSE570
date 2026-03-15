@@ -1,10 +1,19 @@
-"""GDELT processor: fetches/caches adverse media news and returns Evidence."""
+"""GDELT processor: fetches/caches adverse media news and returns Evidence.
+
+Relevance filtering:
+  - Articles where the entity name appears in the title → conf=0.70 (relevant=True)
+  - Articles where a risk keyword appears in the title → conf=0.55 (relevant=True)
+  - All other articles → conf=0.30 (relevant=False, kept but down-weighted)
+
+This addresses the ~76% noise rate in raw GDELT results.
+"""
 
 from __future__ import annotations
 
 import hashlib
+import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from osint_swarm.data_sources import gdelt
 from osint_swarm.entities import Evidence
@@ -15,6 +24,44 @@ from mcp_layer.base import DataSourceProcessor
 if TYPE_CHECKING:
     from osint_swarm.entities import Entity
 
+RISK_TITLE_KEYWORDS = re.compile(
+    r"\b(fraud|investigat|penalt|fine[ds]?\b|violation|lawsuit|scandal|"
+    r"misconduct|briber|corrupt|sanction|launder|settlement|"
+    r"indictment|sec\b|enforc|guilty|charge[ds]?\b|convict|probe[ds]?\b|"
+    r"subpoena|whistleblow|recall|class.action|regulat|sued\b|suing\b)",
+    re.IGNORECASE,
+)
+
+
+def _score_relevance(title: str, entity_name: str) -> Tuple[float, bool]:
+    """
+    Score an article's relevance based on its title.
+
+    Returns (confidence, is_relevant):
+      - Entity name in title → (0.70, True)
+      - Risk keyword in title → (0.55, True)
+      - Neither → (0.30, False)
+    """
+    title_lower = title.lower()
+    # Check entity name (use first word of name for matching, e.g. "Tesla" from "Tesla, Inc.")
+    name_parts = [p.strip().lower() for p in re.split(r"[,.]", entity_name) if p.strip()]
+    name_tokens = []
+    for part in name_parts:
+        for word in part.split():
+            if len(word) >= 3:
+                name_tokens.append(word)
+
+    entity_in_title = any(tok in title_lower for tok in name_tokens)
+    risk_in_title = bool(RISK_TITLE_KEYWORDS.search(title))
+
+    if entity_in_title and risk_in_title:
+        return 0.75, True
+    if entity_in_title:
+        return 0.70, True
+    if risk_in_title:
+        return 0.55, True
+    return 0.30, False
+
 
 def _articles_to_evidence(
     articles: List[Dict[str, Any]],
@@ -22,7 +69,7 @@ def _articles_to_evidence(
     entity_name: str,
     raw_location: Optional[str] = None,
 ) -> List[Evidence]:
-    """Convert GDELT article records to Evidence list."""
+    """Convert GDELT article records to Evidence list with relevance scoring."""
     out: List[Evidence] = []
     for i, article in enumerate(articles):
         if not isinstance(article, dict):
@@ -38,16 +85,16 @@ def _articles_to_evidence(
         if not url or not title:
             continue
 
-        # Parse date: GDELT format is "20240615T120000Z" or "20240615000000"
         date_str = ""
         if seen_date:
             raw = seen_date.replace("T", "").replace("Z", "").replace("-", "")
             if len(raw) >= 8:
                 date_str = f"{raw[:4]}-{raw[4:6]}-{raw[6:8]}"
 
-        # Deterministic ID from URL hash (first 12 hex chars)
         url_hash = hashlib.md5(url.encode()).hexdigest()[:12]
         ev_id = f"{entity_id.split('_')[0]}_gdelt_{url_hash}"
+
+        confidence, is_relevant = _score_relevance(title, entity_name)
 
         summary = title if title else f"News article about {entity_name}"
 
@@ -61,12 +108,13 @@ def _articles_to_evidence(
                 summary=summary[:5000],
                 source_uri=url,
                 raw_location=raw_location,
-                confidence=0.6,
+                confidence=confidence,
                 attributes={
                     "domain": domain,
                     "language": language,
                     "source_country": source_country,
                     "gdelt_rank": i + 1,
+                    "relevant": is_relevant,
                 },
             )
         )

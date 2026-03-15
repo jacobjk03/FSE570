@@ -69,4 +69,6 @@ def test_social_graph_agent_returns_gdelt_evidence_with_cache(tmp_path: Path):
         assert len(findings) == 1
         assert findings[0].source_type == "news_article"
         assert findings[0].risk_category == "network"
-        assert findings[0].confidence == pytest.approx(0.6)
+        # "Tesla faces fraud investigation" → entity + risk keyword → 0.75
+        assert findings[0].confidence == pytest.approx(0.75)
+        assert findings[0].attributes["relevant"] is True

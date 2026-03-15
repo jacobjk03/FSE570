@@ -1,8 +1,15 @@
-"""Structure Mapper: map corporate networks, beneficial ownership (stub for Phase 4)."""
+"""
+Structure Mapper: map corporate networks, beneficial ownership via OpenCorporates.
+
+Uses cached OpenCorporates data (from scripts/pull_opencorporates.py) to produce
+Evidence rows for officers, controlling entities, UBOs, and corporate groupings.
+Falls back gracefully when the cache is missing or the API token is not set.
+"""
 
 from __future__ import annotations
 
-from typing import List
+from pathlib import Path
+from typing import List, Optional
 
 from osint_swarm.entities import Entity, Evidence
 
@@ -10,25 +17,96 @@ from agents.lead_agent.context_manager import InvestigationContext
 from agents.lead_agent.task_planner.types import SubTask
 
 
-def run_stub(
+def map_structure(
     entity: Entity,
     task: SubTask,
     context: InvestigationContext,
+    data_root: Optional[Path] = None,
 ) -> List[Evidence]:
     """
-    Stub: no OpenCorporates or structure data yet.
-    Returns a single Evidence row indicating no data.
+    Produce beneficial-ownership / corporate-structure Evidence from OpenCorporates.
+
+    Strategy (cache-first):
+    1. Check for cached OpenCorporates data under data/raw/opencorporates/oc_<slug>.json
+    2. If cache exists → convert to Evidence (officers, UBOs, controlling entity, groupings)
+    3. If cache missing → attempt a live API call (requires OPENCORPORATES_API_TOKEN)
+    4. If live call fails (no token or rate-limited) → return a single "no data" Evidence
     """
-    ev = Evidence(
-        evidence_id=f"{entity.entity_id}_structure_mapper_stub",
+    from osint_swarm.data_sources.opencorporates import (
+        OpenCorporatesError,
+        cache_company_json,
+        company_detail_to_evidence,
+        fetch_company_detail,
+        load_cached_company,
+        search_companies,
+        slug_for_entity_name,
+    )
+
+    root = Path(data_root) if data_root else Path("data")
+    cache_dir = root / "raw" / "opencorporates"
+    slug = slug_for_entity_name(entity.name)
+    raw_location = str(cache_dir / f"oc_{slug}.json")
+
+    # 1. Try cache
+    cached = load_cached_company(slug, cache_dir)
+    if cached and cached.get("detail"):
+        return company_detail_to_evidence(
+            cached["detail"],
+            entity.entity_id,
+            entity.name,
+            raw_location=raw_location,
+        )
+
+    # 2. Try live API
+    try:
+        search_result = search_companies(entity.name, max_results=5)
+        companies = search_result.get("companies", [])
+        if not companies:
+            return [_no_data_evidence(entity, "No matching company found on OpenCorporates.")]
+
+        best = companies[0]
+        for c in companies:
+            if not c.get("inactive") and c.get("current_status", "").lower() in ("active", "active/compliance"):
+                best = c
+                break
+
+        jc = best.get("jurisdiction_code", "")
+        cn = best.get("company_number", "")
+        if not jc or not cn:
+            return [_no_data_evidence(entity, "OpenCorporates match has no jurisdiction/company_number.")]
+
+        detail = fetch_company_detail(jc, cn)
+
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        cache_company_json(slug, {"search": search_result, "detail": detail}, cache_dir)
+
+        return company_detail_to_evidence(
+            detail, entity.entity_id, entity.name, raw_location=raw_location,
+        )
+
+    except OpenCorporatesError:
+        return [_no_data_evidence(
+            entity,
+            "OpenCorporates data unavailable (API token missing or rate-limited). "
+            "Set OPENCORPORATES_API_TOKEN in .env and run: python scripts/pull_opencorporates.py --all",
+        )]
+
+
+def _no_data_evidence(entity: Entity, reason: str) -> Evidence:
+    """Return a single Evidence row indicating OpenCorporates data is not available."""
+    return Evidence(
+        evidence_id=f"{entity.entity_id}_oc_unavailable",
         entity_id=entity.entity_id,
         date="",
         source_type="other",
         risk_category="governance",
-        summary="Structure Mapper: beneficial ownership and corporate network data not yet integrated (OpenCorporates planned).",
+        summary=f"Structure Mapper: {reason}",
         source_uri="",
         raw_location=None,
         confidence=0.0,
-        attributes={"stub": True},
+        attributes={"stub": False, "cache_missing": True, "data_source": "opencorporates"},
     )
-    return [ev]
+
+
+# Preserve backward-compatible alias
+run_stub = map_structure

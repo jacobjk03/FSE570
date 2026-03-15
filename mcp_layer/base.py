@@ -28,7 +28,7 @@ class DataSourceProcessor(ABC):
     @property
     @abstractmethod
     def source_id(self) -> str:
-        """Short identifier for this source (e.g. 'sec_edgar', 'nhtsa')."""
+        """Short identifier for this source (e.g. 'sec_edgar', 'gdelt')."""
         ...
 
     @abstractmethod

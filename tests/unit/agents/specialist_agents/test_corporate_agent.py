@@ -16,15 +16,19 @@ def test_corporate_agent_agent_id():
     assert agent.agent_id == "corporate_agent"
 
 
-def test_corporate_agent_beneficial_ownership_returns_stub_evidence():
+def test_corporate_agent_beneficial_ownership_returns_opencorporates_or_fallback():
+    """Without cache or API token, the mapper returns a graceful fallback (not a stub)."""
     agent = CorporateAgent()
     entity = Entity(entity_id="e1", name="E", identifiers={})
     task = SubTask("beneficial_ownership", "corporate_agent", "Map ownership")
     ctx = InvestigationContext()
     findings = agent.run(entity, task, ctx)
-    assert len(findings) == 1
-    assert "structure" in findings[0].summary.lower() or "stub" in findings[0].summary.lower()
-    assert findings[0].attributes.get("stub") is True
+    assert len(findings) >= 1
+    # When no cache or API token: fallback evidence with cache_missing=True
+    # When cache exists: real OpenCorporates evidence with stub=False
+    ev = findings[0]
+    assert ev.attributes.get("stub") is not True
+    assert ev.attributes.get("data_source") == "opencorporates"
 
 
 def test_corporate_agent_sec_task_uses_mcp_when_cache_exists():
