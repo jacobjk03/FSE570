@@ -35,7 +35,7 @@ def test_corporate_agent_sec_task_uses_mcp_when_cache_exists():
     entity = Entity(
         entity_id="tesla_inc_cik_0001318605",
         name="Tesla, Inc.",
-        identifiers={"cik": "0001318605", "make": "TESLA"},
+        identifiers={"cik": "0001318605"},
     )
     task = SubTask("corporate_structure", "corporate_agent", "Analyze structure")
     ctx = InvestigationContext()
@@ -53,12 +53,11 @@ def test_summarize_governance_red_flags_empty_returns_empty():
 
 def test_summarize_governance_red_flags_adds_summary():
     evidence = [
-        Evidence("ev1", "e1", "2024-01-01", "sec_filing", "governance", "8-K", "https://sec.gov", confidence=0.9, attributes={"form": "8-K"}),
-        Evidence("ev2", "e1", "2024-01-02", "regulator_api", "regulatory", "Recall", "https://nhtsa.gov", confidence=0.8, attributes={}),
+        Evidence("ev1", "e1", "2024-01-01", "sec_filing", "governance", "8-K filed", "https://sec.gov", confidence=0.9, attributes={"form": "8-K"}),
+        Evidence("ev2", "e1", "2024-01-02", "sec_filing", "governance", "10-K filed", "https://sec.gov", confidence=0.95, attributes={"form": "10-K"}),
     ]
     out = summarize_governance_red_flags(evidence, "e1")
     assert len(out) == 1
     assert out[0].evidence_id == "e1_corporate_summary"
-    assert out[0].attributes.get("sec_count") == 1
-    assert out[0].attributes.get("reg_count") == 1
+    assert out[0].attributes.get("sec_count") == 2
     assert out[0].attributes.get("eight_k_count") == 1

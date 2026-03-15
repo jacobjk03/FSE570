@@ -41,7 +41,7 @@ def test_load_evidence_for_entity_from_processed_dir(tmp_path: Path):
     csv_path = subdir / "evidence_tesla.csv"
     csv_path.write_text(
         "evidence_id,entity_id,date,source_type,risk_category,summary,source_uri,raw_location,confidence,attributes\n"
-        'e1,tesla_inc_cik_0001318605,2024-01-01,regulator_api,regulatory,Recall,https://nhtsa.gov,,0.8,{}\n',
+        'e1,tesla_inc_cik_0001318605,2024-01-01,news_article,network,Fraud investigation reported,https://reuters.com/article/tesla-fraud,,0.6,{}\n',
         encoding="utf-8",
     )
     out = load_evidence_for_entity(tmp_path, "tesla_inc_cik_0001318605")

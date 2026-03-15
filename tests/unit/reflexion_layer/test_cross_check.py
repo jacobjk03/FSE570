@@ -20,7 +20,7 @@ def test_cross_check_single_finding_no_conflict():
 def test_cross_check_same_entity_date_different_summary_flags_conflict():
     findings = [
         Evidence("e1", "ent1", "2024-01-01", "sec_filing", "governance", "CFO appointed: Alice", "https://sec.gov", confidence=0.9),
-        Evidence("e2", "ent1", "2024-01-01", "regulator_api", "regulatory", "CFO appointed: Bob", "https://nhtsa.gov", confidence=0.8),
+        Evidence("e2", "ent1", "2024-01-01", "news_article", "network", "CFO appointed: Bob", "https://reuters.com/article/a", confidence=0.6),
     ]
     conflicts = cross_check_findings(findings)
     assert len(conflicts) == 1
@@ -32,7 +32,7 @@ def test_cross_check_same_entity_date_different_summary_flags_conflict():
 def test_cross_check_same_entity_date_same_summary_no_conflict():
     findings = [
         Evidence("e1", "ent1", "2024-01-01", "sec_filing", "governance", "CFO appointed", "https://sec.gov", confidence=0.9),
-        Evidence("e2", "ent1", "2024-01-01", "regulator_api", "regulatory", "CFO appointed", "https://nhtsa.gov", confidence=0.8),
+        Evidence("e2", "ent1", "2024-01-01", "news_article", "network", "CFO appointed", "https://reuters.com/article/b", confidence=0.6),
     ]
     assert len(cross_check_findings(findings)) == 0
 

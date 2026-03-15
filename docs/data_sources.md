@@ -1,33 +1,39 @@
-# Data Sources Blueprint (v1)
+# Data Sources
 
-This capstone needs sources that are **trusted, citable, and reproducible**.
+## Integrated (Active)
 
-## Core sources (should always work)
+### SEC EDGAR (US public company governance filings)
+- **Endpoint**: `https://data.sec.gov/submissions/CIK{cik}.json`
+- **Authentication**: None (free). Requires `SEC_USER_AGENT` header: `"First Last email@asu.edu"`
+- **Cache**: `data/raw/sec/CIK{cik}.json`
+- **Evidence type**: `sec_filing` | risk categories: `governance`, `network`
+- **Confidence**: 0.95 (authoritative government data)
+- **Pull script**: `python scripts/pull_sec_submissions.py --cik <CIK>`
 
-### SEC EDGAR (US public companies)
-- **What we use**: company submissions JSON (filing metadata)
-- **Endpoint**: `https://data.sec.gov/submissions/CIK{CIK10}.json`
-- **Notes**:
-  - Use a valid `User-Agent` (set `SEC_USER_AGENT`)
-  - Cache raw JSON to `data/raw/sec/`
+### GDELT DOC 2.0 (Global adverse media / news events)
+- **Endpoint**: `https://api.gdeltproject.org/api/v2/doc/doc`
+- **Authentication**: None (completely free, no API key required)
+- **Cache**: `data/raw/gdelt/news_<slug>.json`
+- **Evidence type**: `news_article` | risk category: `network`
+- **Confidence**: 0.60 (news articles — lower confidence reflects media noise)
+- **Pull script**: `python scripts/pull_gdelt_news.py --entity-id <entity_id>`
+- **Notes**: Returns news articles mentioning entity name + risk keywords (fraud, investigation, penalty, fine, violation, lawsuit, scandal, misconduct, bribery, corruption, sanction, money laundering, settlement, indictment). Covers global news continuously from 2015-present.
 
-### NHTSA Recalls API (US vehicle safety recalls)
-- **What we use**: recall campaigns by manufacturer (starting with Tesla)
-- **Endpoint (v1)** (public DOT DataHub tabular view):
-  - `https://datahub.transportation.gov/resource/6axg-epim.json?...`
-- **Why**:
-  - In some environments (including many school networks), the legacy endpoints under `api.nhtsa.gov/recalls/...` can return 403.
-- **Notes**:
-  - Cache raw JSON to `data/raw/nhtsa/`
-  - Later enrichment: link campaigns to Part 573 PDFs on `static.nhtsa.gov`
+---
 
-### CourtListener / RECAP (free court documents)
-- **What we use**: PDFs of filings (complaints, orders) when available
-- **Notes**:
-  - Store PDFs under `data/raw/courtlistener/` and emit `Evidence` rows with citations
+## Planned (Stubs — Not Yet Integrated)
 
-## Extension sources (optional / may be rate-limited or paywalled)
-- GDELT (news/event coverage at scale)
-- State registries / OpenCorporates (private companies, international)
-- Social platforms (LinkedIn/Twitter) — likely not reliable for automated ingestion in capstone constraints
+### OFAC SDN (US Treasury sanctions list)
+- **Source**: `https://www.treasury.gov/ofac/downloads/sdn.xml` (free XML)
+- **Status**: Stub in `agents/specialist_agents/legal_agent/sanctions_screener/screener.py`
+- **Next step**: Download + cache XML; parse `<sdnEntry>` elements; match aliases
 
+### CourtListener / RECAP (US federal court records)
+- **Source**: `https://www.courtlistener.com/api/rest/v3/` (free, 5 req/s)
+- **Status**: Stub in `agents/specialist_agents/legal_agent/pacer_fetcher/fetcher.py`
+- **Next step**: Query by company name; return docket entries as Evidence
+
+### OpenCorporates (Global corporate registry / beneficial ownership)
+- **Source**: `https://api.opencorporates.com/` (free tier available)
+- **Status**: Stub in `agents/specialist_agents/corporate_agent/structure_mapper/mapper.py`
+- **Next step**: Lookup entity by name; extract officers, parent/subsidiary relationships

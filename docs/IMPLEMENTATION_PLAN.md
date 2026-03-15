@@ -11,8 +11,8 @@ This document describes the **phase-wise implementation plan** for the Autonomou
 | # | Task | Description |
 |---|------|-------------|
 | 1.1 | **Schemas** | Define `Entity` and `Evidence` in `src/osint_swarm/entities.py`: entity_id, name, entity_type, identifiers; evidence_id, entity_id, date, source_type, risk_category, summary, source_uri, raw_location, confidence, attributes. |
-| 1.2 | **Data connectors** | Implement SEC EDGAR connector (fetch submissions by CIK, cache JSON) and NHTSA connector (fetch recalls by make via DOT DataHub, cache JSON) in `src/osint_swarm/data_sources/`. |
-| 1.3 | **Scripts** | Provide runnable scripts: pull SEC submissions and NHTSA recalls into `data/raw/`; build Evidence from raw data and write CSV to `data/processed/`. |
+| 1.2 | **Data connectors** | Implement SEC EDGAR connector (fetch submissions by CIK, cache JSON) and GDELT connector (fetch adverse media news by entity name, cache JSON) in `src/osint_swarm/data_sources/`. |
+| 1.3 | **Scripts** | Provide runnable scripts: `pull_sec_submissions.py`, `pull_gdelt_news.py` (into `data/raw/`); generic `build_evidence.py` (builds SEC + GDELT evidence CSV to `data/processed/`). |
 | 1.4 | **Utilities and layout** | I/O helpers (read_json, write_json, write_csv_dicts) and a directory layout that matches the architecture (agents, mcp_layer, reflexion_layer, knowledge_graph, output_layer, data/raw, data/processed). |
 
 ---
@@ -24,7 +24,7 @@ This document describes the **phase-wise implementation plan** for the Autonomou
 | # | Task | Description |
 |---|------|-------------|
 | 2.1 | **MCP-style interface** | Define a shared contract in `mcp_layer/` (e.g. abstract processor with `get_evidence_for_entity(entity)` returning `List[Evidence]`). Document that agents must use the MCP layer, not `osint_swarm.data_sources` directly. |
-| 2.2 | **Wire SEC and NHTSA into MCP layer** | Implement `mcp_layer/sec_edgar_processor/` and an NHTSA processor that use existing connectors, read from or write to `data/raw/`, and return `List[Evidence]`. |
+| 2.2 | **Wire SEC and GDELT into MCP layer** | Implement `mcp_layer/sec_edgar_processor/` and `mcp_layer/gdelt_processor/` that use existing connectors, read from/write to `data/raw/`, and return `List[Evidence]`. |
 | 2.3 | **Evidence as canonical input** | Document that agents consume structured Evidence (from MCP or from an evidence store). Optionally add an evidence loader that loads `data/processed/<entity>/evidence_*.csv` and returns `List[Evidence]`. |
 
 ---

@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import json
 import pytest
 
 from mcp_layer import (
@@ -18,10 +19,10 @@ def test_get_processor_sec_edgar():
     assert proc.source_id == "sec_edgar"
 
 
-def test_get_processor_nhtsa():
-    proc = get_processor("nhtsa")
+def test_get_processor_gdelt():
+    proc = get_processor("gdelt")
     assert proc is not None
-    assert proc.source_id == "nhtsa"
+    assert proc.source_id == "gdelt"
 
 
 def test_get_processor_unknown_returns_none():
@@ -29,9 +30,7 @@ def test_get_processor_unknown_returns_none():
 
 
 def test_get_evidence_for_entity_aggregates_sources(tmp_path: Path):
-    """get_evidence_for_entity returns evidence from requested sources (using cache)."""
-    import json
-
+    """get_evidence_for_entity returns evidence from both SEC and GDELT caches."""
     # SEC cache
     sec_dir = tmp_path / "raw" / "sec"
     sec_dir.mkdir(parents=True)
@@ -43,33 +42,48 @@ def test_get_evidence_for_entity_aggregates_sources(tmp_path: Path):
                     "filingDate": ["2024-01-10"],
                     "accessionNumber": ["0000950170-24-000099"],
                     "primaryDocument": ["doc.htm"],
+                    "primaryDocDescription": [""],
                 }
             }
         }),
         encoding="utf-8",
     )
-    # NHTSA cache
-    nhtsa_dir = tmp_path / "raw" / "nhtsa"
-    nhtsa_dir.mkdir(parents=True)
-    nhtsa_dir.joinpath("recalls_make_TESLA.json").write_text(
-        '{"results": [{"report_received_date": "2024-06-01", "nhtsa_id": "24V1", "defect_summary": "Recall", "subject": "S"}]}',
+    # GDELT cache
+    gdelt_dir = tmp_path / "raw" / "gdelt"
+    gdelt_dir.mkdir(parents=True)
+    gdelt_dir.joinpath("news_tesla.json").write_text(
+        json.dumps({
+            "articles": [
+                {
+                    "url": "https://reuters.com/article/tesla-fraud",
+                    "title": "Tesla faces fraud investigation",
+                    "seendate": "20240601T120000Z",
+                    "domain": "reuters.com",
+                    "language": "English",
+                    "sourcecountry": "United States",
+                }
+            ],
+            "query": "\"Tesla, Inc.\" (fraud OR investigation)",
+            "entity_name": "Tesla, Inc.",
+            "total_returned": 1,
+        }),
         encoding="utf-8",
     )
 
     entity = Entity(
         entity_id="tesla_inc_cik_0001318605",
         name="Tesla, Inc.",
-        identifiers={"cik": "0001318605", "make": "TESLA"},
+        identifiers={"cik": "0001318605"},
     )
     evidence = get_evidence_for_entity(
         entity,
-        sources=["sec_edgar", "nhtsa"],
+        sources=["sec_edgar", "gdelt"],
         data_root=tmp_path,
     )
     assert len(evidence) >= 2
     source_types = {e.source_type for e in evidence}
     assert "sec_filing" in source_types
-    assert "regulator_api" in source_types
+    assert "news_article" in source_types
 
 
 def test_load_evidence_for_entity_facade(tmp_path: Path):

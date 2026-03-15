@@ -19,14 +19,14 @@ def test_generate_markdown_report_empty():
 def test_generate_markdown_report_with_findings():
     findings = [
         Evidence("ev1", "ent1", "2024-01-01", "sec_filing", "governance", "CFO appointed", "https://sec.gov", confidence=0.9),
-        Evidence("ev2", "ent1", "2024-01-02", "regulator_api", "regulatory", "Recall issued", "https://nhtsa.gov", confidence=0.8),
+        Evidence("ev2", "ent1", "2024-01-02", "news_article", "network", "Fraud investigation reported", "https://reuters.com/article/fraud", confidence=0.6),
     ]
     out = generate_markdown_report(findings, entity_id="ent1")
     assert "Total findings" in out and "2" in out
     assert "Governance" in out
-    assert "Regulatory" in out
+    assert "Network" in out
     assert "CFO appointed" in out
-    assert "Recall issued" in out
+    assert "Fraud investigation reported" in out
     assert "https://sec.gov" in out
     assert "0.90" in out or "0.9" in out
 

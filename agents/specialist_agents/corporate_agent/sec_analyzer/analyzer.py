@@ -9,18 +9,17 @@ from osint_swarm.entities import Evidence
 
 def summarize_governance_red_flags(evidence: List[Evidence], entity_id: str) -> List[Evidence]:
     """
-    Add a summary Evidence row for governance/regulatory red flags from SEC/NHTSA evidence.
+    Add a summary Evidence row for governance red flags from SEC evidence.
 
-    Counts 8-K filings (executive changes), regulatory filings, and NHTSA recalls.
+    Counts SEC filings and 8-K executive events.
     """
     if not evidence:
         return []
     sec_count = sum(1 for e in evidence if e.source_type == "sec_filing")
-    reg_count = sum(1 for e in evidence if e.source_type == "regulator_api")
     eight_k = [e for e in evidence if e.source_type == "sec_filing" and e.attributes.get("form") == "8-K"]
     summary = (
-        f"Governance/regulatory summary: {sec_count} SEC filing(s), {reg_count} regulator record(s). "
-        f"Executive turnover events (8-K): {len(eight_k)}."
+        f"Governance summary: {sec_count} SEC filing(s). "
+        f"Executive turnover / material events (8-K): {len(eight_k)}."
     )
     summary_ev = Evidence(
         evidence_id=f"{entity_id}_corporate_summary",
@@ -32,6 +31,6 @@ def summarize_governance_red_flags(evidence: List[Evidence], entity_id: str) -> 
         source_uri="",
         raw_location=None,
         confidence=0.85,
-        attributes={"sec_count": sec_count, "reg_count": reg_count, "eight_k_count": len(eight_k)},
+        attributes={"sec_count": sec_count, "eight_k_count": len(eight_k)},
     )
     return [summary_ev]

@@ -27,7 +27,7 @@ FLASK_APP=app/app.py flask run --host=0.0.0.0 --port=5000
 ## What runs
 
 1. **Lead Agent** — Resolves entity (e.g. "Tesla" → Tesla, Inc.), decomposes the query into tasks, and dispatches to specialist agents.
-2. **Specialist agents** — Corporate (SEC + NHTSA via MCP), Legal (stubs), Social Graph (stubs).
+2. **Specialist agents** — Corporate (SEC EDGAR via MCP), Legal (stubs), Social Graph (GDELT adverse media via MCP).
 3. **Reflexion** — Cross-check (conflicts), gap detection, confidence scores.
 4. **Knowledge graph** — Built from evidence (nodes/edges summary).
 5. **Output** — Evidence report (by risk category), risk dashboard, audit trail.

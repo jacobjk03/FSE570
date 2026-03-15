@@ -27,20 +27,17 @@ def test_lead_agent_run_tesla_resolves_entity_and_has_tasks():
 
 
 def test_lead_agent_run_tesla_gets_corporate_evidence_with_mcp(tmp_path: Path):
-    """With cached SEC/NHTSA data, corporate_agent stub returns evidence."""
-    # Use project data dir if it has cache; else use tmp_path (empty -> no evidence)
+    """With cached SEC data, corporate agent returns evidence."""
     data_root = Path("data")
-    if (data_root / "raw" / "sec").exists() and (data_root / "raw" / "nhtsa").exists():
+    if (data_root / "raw" / "sec").exists():
         agent = LeadAgent(data_root=data_root)
         ctx = agent.run("Investigate Tesla")
         findings = ctx.get_all_findings()
-        # Corporate stub should have returned evidence from MCP
         assert len(findings) >= 1
-        assert any(f.source_type == "sec_filing" or f.source_type == "regulator_api" for f in findings)
+        assert any(f.source_type == "sec_filing" for f in findings)
     else:
         agent = LeadAgent(data_root=tmp_path)
         ctx = agent.run("Investigate Tesla")
-        # No cache -> corporate stub may return [] or minimal
         assert ctx.get_entity() is not None
 
 

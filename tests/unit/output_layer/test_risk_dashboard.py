@@ -26,20 +26,20 @@ def test_compute_risk_scores_single():
 def test_compute_risk_scores_multiple_categories():
     findings = [
         Evidence("ev1", "ent1", "2024-01-01", "sec_filing", "governance", "X", "https://sec.gov", confidence=0.9),
-        Evidence("ev2", "ent1", "2024-01-02", "regulator_api", "regulatory", "Y", "https://nhtsa.gov", confidence=0.7),
+        Evidence("ev2", "ent1", "2024-01-02", "news_article", "network", "Y", "https://reuters.com/article/fraud", confidence=0.7),
     ]
     out = compute_risk_scores(findings)
     assert out.finding_count == 2
     assert out.overall == 0.8
     assert out.by_risk_category["governance"] == 0.9
-    assert out.by_risk_category["regulatory"] == 0.7
+    assert out.by_risk_category["network"] == 0.7
 
 
 def test_format_dashboard_cli():
-    scores = RiskDashboardScores(by_risk_category={"governance": 0.85, "regulatory": 0.7}, overall=0.775, finding_count=10)
+    scores = RiskDashboardScores(by_risk_category={"governance": 0.85, "network": 0.7}, overall=0.775, finding_count=10)
     out = format_dashboard_cli(scores)
     assert "Risk Dashboard" in out
     assert "0.78" in out or "0.775" in out
     assert "governance" in out
-    assert "regulatory" in out
+    assert "network" in out
     assert "10" in out

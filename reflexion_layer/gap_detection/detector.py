@@ -12,8 +12,13 @@ if TYPE_CHECKING:
 
 def detect_gaps(context: "InvestigationContext") -> List[Gap]:
     """
-    Given investigation objectives and current findings, list missing pieces.
-    E.g. agents that returned only stub evidence -> gap in that area.
+    Inspect investigation results and flag coverage gaps.
+
+    Gaps are flagged when:
+    - No entity was resolved
+    - An agent returned no findings at all
+    - An agent returned only stub placeholders (confidence == 0.0 and stub=True)
+    - Beneficial ownership (structure mapper) returned a stub
     """
     gaps: List[Gap] = []
     if not context.get_entity():
@@ -26,19 +31,31 @@ def detect_gaps(context: "InvestigationContext") -> List[Gap]:
         )
         return gaps
 
-    # Check each agent's results for stub-only output
-    stub_agents = {
-        "legal_agent": ("Sanctions / legal", "Sanctions screening and PACER not yet integrated.", "Add OFAC/sanctions list or CourtListener integration."),
-        "social_graph_agent": ("Adverse media / network", "Social graph and adverse media not yet integrated.", "Add Twitter/LinkedIn or GDELT integration."),
-    }
-    for agent_id, (area, desc, follow_up) in stub_agents.items():
-        results = context.get_agent_results(agent_id)
-        if not results:
-            gaps.append(Gap(area=area, description=f"{desc} No findings returned.", suggested_follow_up=follow_up))
-        elif all(getattr(e, "attributes", {}).get("stub") for e in results):
-            gaps.append(Gap(area=area, description=f"{desc} Only stub placeholders returned.", suggested_follow_up=follow_up))
+    # Legal agent: sanctions + court records (still stubs — OFAC/CourtListener not yet integrated)
+    legal_results = context.get_agent_results("legal_agent")
+    if not legal_results:
+        gaps.append(Gap(
+            area="Sanctions / legal",
+            description="Legal agent returned no findings.",
+            suggested_follow_up="Integrate OFAC sanctions list and CourtListener API.",
+        ))
+    elif all(getattr(e, "attributes", {}).get("stub") for e in legal_results):
+        gaps.append(Gap(
+            area="Sanctions / legal",
+            description="Sanctions screening and court records not yet integrated. Only stub placeholders returned.",
+            suggested_follow_up="Integrate OFAC SDN list and CourtListener REST API.",
+        ))
 
-    # Corporate beneficial_ownership: if structure_mapper stub was returned, that area is missing
+    # Social graph agent: GDELT is now integrated — only flag a gap if truly empty
+    social_results = context.get_agent_results("social_graph_agent")
+    if not social_results:
+        gaps.append(Gap(
+            area="Adverse media / network",
+            description="Social graph agent returned no adverse media findings. GDELT cache may be missing.",
+            suggested_follow_up="Run: python scripts/pull_gdelt_news.py --entity-id <entity_id>",
+        ))
+
+    # Corporate beneficial_ownership: structure_mapper stub still present
     corp_results = context.get_agent_results("corporate_agent")
     if any("structure_mapper" in e.evidence_id and e.attributes.get("stub") for e in corp_results):
         gaps.append(

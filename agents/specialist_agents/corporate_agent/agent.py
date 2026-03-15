@@ -38,12 +38,12 @@ class CorporateAgent:
         if task.task_type == "beneficial_ownership":
             return structure_mapper_run(entity, task, context)
 
-        # Fetch evidence from MCP (SEC + NHTSA)
+        # Fetch evidence from MCP (SEC EDGAR only for corporate agent)
         try:
             from mcp_layer import get_evidence_for_entity
             evidence = get_evidence_for_entity(
                 entity,
-                sources=("sec_edgar", "nhtsa"),
+                sources=("sec_edgar",),
                 data_root=self.data_root,
             )
         except Exception:

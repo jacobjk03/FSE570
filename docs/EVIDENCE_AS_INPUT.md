@@ -4,7 +4,7 @@ All agents (Lead Agent and Specialist Agents) must consume **structured Evidence
 
 ## Where evidence comes from
 
-1. **MCP layer** — When an agent requests fresh data, it calls the MCP layer (e.g. `get_evidence_for_entity(entity, sources=["sec_edgar", "nhtsa"])`). The MCP layer uses the existing connectors and returns `List[Evidence]`.
+1. **MCP layer** — When an agent requests fresh data, it calls the MCP layer (e.g. `get_evidence_for_entity(entity, sources=["sec_edgar", "gdelt"])`). The MCP layer uses the existing connectors and returns `List[Evidence]`.
 2. **Evidence loader** — To use already-processed evidence (e.g. from a prior pipeline run), use `load_evidence_for_entity(processed_dir, entity_id)` from `mcp_layer`. This reads CSV files under `data/processed/<slug>/evidence_*.csv` and returns only rows whose `entity_id` matches.
 
 ## Contract

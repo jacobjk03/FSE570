@@ -1,21 +1,23 @@
-"""Social Graph Agent: GNN Analyzer + Influence Mapper (stubs); implements SpecialistAgent contract."""
+"""Social Graph Agent: GDELT adverse media + influence analysis."""
 
 from __future__ import annotations
 
-from typing import List
+from pathlib import Path
+from typing import List, Optional
 
 from osint_swarm.entities import Entity, Evidence
 
 from agents.lead_agent.context_manager import InvestigationContext
 from agents.lead_agent.task_planner.types import SubTask
-from agents.specialist_agents.social_graph_agent.gnn_analyzer.analyzer import run_stub as gnn_run
-from agents.specialist_agents.social_graph_agent.influence_mapper.mapper import run_stub as influence_run
 
 
 class SocialGraphAgent:
-    """Social network analysis agent: GNN and influence mapping (stubs)."""
+    """Social network analysis agent: GDELT adverse media and influence mapping."""
 
     AGENT_ID = "social_graph_agent"
+
+    def __init__(self, data_root: Optional[Path] = None):
+        self.data_root = Path(data_root) if data_root else Path("data")
 
     @property
     def agent_id(self) -> str:
@@ -27,10 +29,17 @@ class SocialGraphAgent:
         task: SubTask,
         context: InvestigationContext,
     ) -> List[Evidence]:
-        """Dispatch to GNN analyzer or influence mapper by task_type."""
-        if task.task_type == "network_analysis":
-            return gnn_run(entity, task, context)
-        if task.task_type == "adverse_media":
-            # Adverse media also uses stub for now (no news/social data)
-            return gnn_run(entity, task, context)
-        return influence_run(entity, task, context)
+        """
+        Fetch adverse media and network evidence via GDELT.
+        Both adverse_media and network_analysis tasks use the GDELT processor.
+        """
+        try:
+            from mcp_layer import get_evidence_for_entity
+            evidence = get_evidence_for_entity(
+                entity,
+                sources=("gdelt",),
+                data_root=self.data_root,
+            )
+        except Exception:
+            evidence = []
+        return evidence

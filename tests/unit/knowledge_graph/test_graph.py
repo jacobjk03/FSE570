@@ -30,7 +30,7 @@ def test_build_graph_single_evidence():
 def test_build_graph_multiple_evidence_same_entity():
     findings = [
         Evidence("ev1", "ent1", "2024-01-01", "sec_filing", "governance", "A", "https://sec.gov", confidence=0.9),
-        Evidence("ev2", "ent1", "2024-01-02", "regulator_api", "regulatory", "B", "https://nhtsa.gov", confidence=0.8),
+        Evidence("ev2", "ent1", "2024-01-02", "news_article", "network", "B", "https://reuters.com/article/b", confidence=0.6),
     ]
     nodes, edges = build_graph_from_evidence(findings)
     assert len([n for n in nodes if n.node_type == "entity"]) == 1

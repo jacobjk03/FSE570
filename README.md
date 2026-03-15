@@ -25,20 +25,43 @@ pip install -r requirements.txt
 cp .env.example .env
 # Open .env and replace the placeholder with your name/email
 
-# 5. Run the pipeline (Tesla vertical slice)
+# 5. Pull raw data for an entity (Tesla example)
 python scripts/pull_sec_submissions.py --cik 0001318605
-python scripts/pull_nhtsa_recalls.py --make TESLA
-python scripts/build_evidence_tesla.py
+python scripts/pull_gdelt_news.py --entity-id tesla_inc_cik_0001318605
+
+# 6. Build the evidence CSV
+python scripts/build_evidence.py --entity-id tesla_inc_cik_0001318605
 ```
 
-**Output**: `data/processed/tesla/evidence_tesla.csv` (91 structured evidence rows from SEC + NHTSA).
+**Output**: `data/processed/tesla_inc/evidence_tesla_inc.csv`
+(SEC governance filings + GDELT adverse media — structured `Evidence` rows)
+
+## Data Sources
+
+The pipeline uses two fully public, no-auth data sources:
+
+| Source | What it provides | Confidence |
+|--------|-----------------|------------|
+| **SEC EDGAR** | Governance filings (10-K, 8-K, DEF 14A) | 0.95 |
+| **GDELT DOC 2.0** | Adverse media / news (fraud, investigation, penalty) | 0.60 |
+
+See [`docs/data_sources.md`](docs/data_sources.md) for full details.
+
+## Registered Entities
+
+| Entity | Entity ID | CIK |
+|--------|-----------|-----|
+| Tesla, Inc. | `tesla_inc_cik_0001318605` | 0001318605 |
+| Ford Motor Company | `ford_motor_cik_0000037996` | 0000037996 |
+| The Boeing Company | `boeing_cik_0000012927` | 0000012927 |
+
+To add a new entity, see `agents/lead_agent/entity_resolution/resolver.py`.
 
 ## Demo (Flask)
 
 Run the web demo to investigate an entity from the browser:
 
 ```bash
-pip install -r requirements.txt   # includes Flask
 python app/app.py
 ```
 
@@ -46,9 +69,9 @@ Open **http://127.0.0.1:5000**, enter a query (e.g. *Investigate Tesla for money
 
 ## Repo layout
 
-- `src/osint_swarm/`: core library (schemas + connectors)
+- `src/osint_swarm/`: core library (schemas + connectors for SEC and GDELT)
 - `agents/`: Lead Agent + specialist agents (Corporate, Legal, Social Graph)
-- `mcp_layer/`: data layer (SEC, NHTSA, evidence loader)
+- `mcp_layer/`: data layer (SEC EDGAR processor, GDELT processor, evidence loader)
 - `reflexion_layer/`: cross-check, gap detection, confidence
 - `knowledge_graph/`: graph built from evidence
 - `output_layer/`: evidence report, risk dashboard, audit trail
@@ -74,12 +97,11 @@ See `pyproject.toml` for pytest configuration (pythonpath includes `src` and pro
 - [`docs/schema.md`](docs/schema.md) — Entity and Evidence schema.
 - [`docs/data_sources.md`](docs/data_sources.md) — Data sources blueprint.
 - [`docs/EVIDENCE_AS_INPUT.md`](docs/EVIDENCE_AS_INPUT.md) — Evidence as canonical agent input.
+- [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) — Detailed project status, workflow, and next steps.
 
 ## Notes
 
 - **Python**: 3.8+ recommended (tested with 3.13).
-- The v1 pipeline uses **authoritative, open sources**: SEC EDGAR + NHTSA (plus optional CourtListener artifacts).
 - **SEC EDGAR** requires a valid `User-Agent`; set `SEC_USER_AGENT` in `.env` (see `.env.example`).
-- NHTSA recall ingestion uses the DOT **DataHub** tabular dataset (public), since the legacy `api.nhtsa.gov/recalls/...` endpoints may return 403.
+- **GDELT** requires no authentication — free and fully public.
 - Paywalled sources (PACER/Reuters/etc.) are treated as future extensions.
-

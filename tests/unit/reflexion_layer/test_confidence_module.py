@@ -30,14 +30,14 @@ def test_aggregate_confidence_single():
 def test_aggregate_confidence_multiple_categories():
     findings = [
         Evidence("e1", "ent1", "2024-01-01", "sec_filing", "governance", "X", "https://sec.gov", confidence=0.9),
-        Evidence("e2", "ent1", "2024-01-02", "regulator_api", "regulatory", "Y", "https://nhtsa.gov", confidence=0.8),
+        Evidence("e2", "ent1", "2024-01-02", "news_article", "network", "Y", "https://reuters.com/article/fraud", confidence=0.8),
     ]
     out = aggregate_confidence(findings)
     assert out.overall == 0.85
     assert out.by_risk_category["governance"] == 0.9
-    assert out.by_risk_category["regulatory"] == 0.8
+    assert out.by_risk_category["network"] == 0.8
     assert out.by_source_type["sec_filing"] == 0.9
-    assert out.by_source_type["regulator_api"] == 0.8
+    assert out.by_source_type["news_article"] == 0.8
 
 
 def test_adjusted_confidence_applies_source_weight():

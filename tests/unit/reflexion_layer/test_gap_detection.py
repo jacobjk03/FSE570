@@ -28,14 +28,11 @@ def test_detect_gaps_legal_stub_returns_sanctions_gap():
     assert any("Sanctions" in g.area or "legal" in g.description.lower() for g in gaps)
 
 
-def test_detect_gaps_social_stub_returns_gap():
+def test_detect_gaps_social_empty_returns_gap():
+    """Social graph agent returns no evidence → gap flagged (GDELT cache missing)."""
     ctx = InvestigationContext()
     ctx.set_entity(Entity(entity_id="e1", name="E", identifiers={}))
-    stub_ev = Evidence(
-        "e1_gnn_stub", "e1", "", "other", "network",
-        "GNN not integrated", "", None, 0.0, {"stub": True},
-    )
-    ctx.add_agent_results("social_graph_agent", [stub_ev])
+    # No results added for social_graph_agent → gap should be flagged
     gaps = detect_gaps(ctx)
     assert any("Adverse" in g.area or "network" in g.description.lower() or "Social" in g.area for g in gaps)
 
