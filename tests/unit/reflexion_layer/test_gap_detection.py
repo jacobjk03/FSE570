@@ -70,6 +70,22 @@ def test_detect_gaps_social_empty_returns_gap():
     assert any("Adverse" in g.area or "network" in g.description.lower() or "Social" in g.area for g in gaps)
 
 
+def test_detect_gaps_court_fetch_error_returns_gap():
+    """CourtListener fetch_error (confidence=0) → gap flagged."""
+    ctx = InvestigationContext()
+    ctx.set_entity(Entity(entity_id="e1", name="E", identifiers={}))
+    error_ev = Evidence(
+        "e1_courtlistener_error", "e1", "2026-03-15",
+        "court_record", "legal",
+        "CourtListener fetch failed. Pre-fetch with: python scripts/pull_courtlistener.py --entity-id e1",
+        "https://www.courtlistener.com/", None, 0.0,
+        {"stub": False, "fetch_error": True},
+    )
+    ctx.add_agent_results("legal_agent", [error_ev])
+    gaps = detect_gaps(ctx)
+    assert any("Sanctions" in g.area or "legal" in g.description.lower() for g in gaps)
+
+
 def test_detect_gaps_structure_mapper_stub_returns_beneficial_ownership_gap():
     ctx = InvestigationContext()
     ctx.set_entity(Entity(entity_id="e1", name="E", identifiers={}))

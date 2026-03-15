@@ -73,13 +73,15 @@ def decompose(
     if _suggests_money_laundering(query):
         tasks.append(SubTask("corporate_structure", "corporate_agent", "Analyze corporate structure and subsidiaries for red flags"))
         tasks.append(SubTask("beneficial_ownership", "corporate_agent", "Map beneficial ownership and undisclosed interests"))
-        tasks.append(SubTask("sanctions_screening", "legal_agent", "Screen against OFAC and sanctions lists"))
+        tasks.append(SubTask("sanctions_screening", "legal_agent", "Screen against OFAC SDN and sanctions lists"))
+        tasks.append(SubTask("litigation", "legal_agent", "Search court records for enforcement actions and lawsuits"))
         tasks.append(SubTask("transaction_patterns", "corporate_agent", "Identify unusual transaction or revenue patterns"))
         tasks.append(SubTask("adverse_media", "social_graph_agent", "Review adverse media and public records"))
         return tasks
 
     # Default: generic investigation
     tasks.append(SubTask("sec_filings", "corporate_agent", "Review SEC filings and governance"))
-    tasks.append(SubTask("sanctions_screening", "legal_agent", "Screen against sanctions lists"))
+    tasks.append(SubTask("sanctions_screening", "legal_agent", "Screen against OFAC SDN sanctions list"))
+    tasks.append(SubTask("litigation", "legal_agent", "Search court records for lawsuits and regulatory actions"))
     tasks.append(SubTask("adverse_media", "social_graph_agent", "Check adverse media"))
     return tasks

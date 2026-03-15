@@ -1,4 +1,4 @@
-"""Legal Agent: OFAC sanctions screening + PACER (stub); implements SpecialistAgent contract."""
+"""Legal Agent: OFAC sanctions screening (live) + CourtListener court records (live)."""
 
 from __future__ import annotations
 
@@ -10,11 +10,17 @@ from osint_swarm.entities import Entity, Evidence
 from agents.lead_agent.context_manager import InvestigationContext
 from agents.lead_agent.task_planner.types import SubTask
 from agents.specialist_agents.legal_agent.sanctions_screener.screener import screen as ofac_screen
-from agents.specialist_agents.legal_agent.pacer_analyzer.analyzer import run_stub as pacer_run
+from agents.specialist_agents.legal_agent.pacer_analyzer.analyzer import fetch as court_fetch
 
 
 class LegalAgent:
-    """Legal and compliance agent: OFAC sanctions screening (live) + PACER (stub)."""
+    """
+    Legal and compliance agent.
+
+    - sanctions_screening → OFAC SDN live screening (data/raw/ofac/sdn.xml)
+    - litigation / regulatory_actions → CourtListener court dockets (live API + cache)
+    - default (any other task_type) → OFAC screening
+    """
 
     AGENT_ID = "legal_agent"
 
@@ -31,10 +37,8 @@ class LegalAgent:
         task: SubTask,
         context: InvestigationContext,
     ) -> List[Evidence]:
-        """Dispatch to OFAC screener or PACER stub by task_type."""
         if task.task_type == "sanctions_screening":
             return ofac_screen(entity, task, context, data_root=self.data_root)
         if task.task_type in ("litigation", "regulatory_actions"):
-            return pacer_run(entity, task, context)
-        # Default: OFAC screening
+            return court_fetch(entity, task, context, data_root=self.data_root)
         return ofac_screen(entity, task, context, data_root=self.data_root)

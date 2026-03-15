@@ -12,8 +12,8 @@ if TYPE_CHECKING:
 
 def _legal_has_real_screening(results: list) -> bool:
     """
-    Return True if the legal agent performed a real OFAC screening
-    (i.e. at least one result with screened=True and confidence > 0).
+    Return True if the legal agent performed a real screening
+    (OFAC or CourtListener) — at least one result with screened=True and confidence > 0.
     """
     return any(
         getattr(e, "attributes", {}).get("screened") and e.confidence > 0

@@ -5,13 +5,14 @@ import pytest
 from agents.lead_agent.task_planner import SubTask, decompose
 
 
-def test_decompose_money_laundering_returns_five_tasks():
+def test_decompose_money_laundering_returns_six_tasks():
     tasks = decompose("Investigate Company X for money laundering red flags")
-    assert len(tasks) == 5
+    assert len(tasks) == 6
     task_types = {t.task_type for t in tasks}
     assert "corporate_structure" in task_types
     assert "beneficial_ownership" in task_types
     assert "sanctions_screening" in task_types
+    assert "litigation" in task_types
     assert "transaction_patterns" in task_types
     assert "adverse_media" in task_types
 
@@ -41,5 +42,6 @@ def test_subtask_has_description():
 
 def test_decompose_aml_keyword_triggers_money_laundering():
     tasks = decompose("AML check for entity X")
-    assert len(tasks) == 5
+    assert len(tasks) == 6
     assert any(t.task_type == "sanctions_screening" for t in tasks)
+    assert any(t.task_type == "litigation" for t in tasks)

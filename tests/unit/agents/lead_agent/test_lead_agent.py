@@ -22,7 +22,7 @@ def test_lead_agent_run_tesla_resolves_entity_and_has_tasks():
     ctx = agent.run("Investigate Tesla for money laundering")
     assert ctx.get_entity() is not None
     assert ctx.get_entity().entity_id == "tesla_inc_cik_0001318605"
-    assert len(ctx.get_tasks()) == 5
+    assert len(ctx.get_tasks()) == 6
     assert ctx.get_query() == "Investigate Tesla for money laundering"
 
 
@@ -55,6 +55,7 @@ def test_lead_agent_accepts_custom_stubs():
         "social_graph_agent": stub,
     })
     ctx = agent.run("Investigate Tesla for money laundering")
-    assert len(collected) == 5
+    assert len(collected) == 6
     assert "corporate_structure" in collected
     assert "sanctions_screening" in collected
+    assert "litigation" in collected

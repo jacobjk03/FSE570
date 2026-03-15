@@ -1,527 +1,950 @@
 # Project Status — Autonomous OSINT Investigation Swarm
-**Last updated: 2026-03-15 | OFAC sanctions screening live**
-**119/119 unit tests passing | NHTSA removed | GDELT + OFAC integrated**
+
+**Last updated: 2026-03-15**
+**159/159 unit tests passing | 4 live data sources | 3 entities verified | Legal Agent fully live**
 
 ---
 
 ## Table of Contents
-1. [What This Project Does — Clear Picture](#1-what-this-project-does--clear-picture)
-2. [Data Sources (what we pull and why)](#2-data-sources)
-3. [Architecture Overview](#3-architecture-overview)
-4. [Every Agent — What It Does, What Its Status Is](#4-every-agent--status)
-5. [End-to-End Workflow](#5-end-to-end-workflow)
-6. [Entities in the Registry](#6-entities-in-the-registry)
-7. [Data Inventory (verified live counts)](#7-data-inventory)
-8. [Commands Reference](#8-commands-reference)
-9. [SEC_USER_AGENT Setup for Teammates](#9-sec_user_agent-setup-for-teammates)
-10. [Test Results & Honest Audit](#10-test-results--honest-audit)
-11. [Hard-Coding Audit](#11-hard-coding-audit)
-12. [Known Limitations (honest)](#12-known-limitations)
-13. [Next Steps — Priority Order](#13-next-steps)
+
+1. [What This Project Does](#1-what-this-project-does)
+2. [Pipeline Architecture (Visual)](#2-pipeline-architecture-visual)
+3. [Core Data Schema](#3-core-data-schema)
+4. [Data Sources — Full Technical Detail](#4-data-sources)
+5. [Repository Structure](#5-repository-structure)
+6. [Every Component — Implementation Detail](#6-every-component)
+7. [End-to-End Workflow & Commands](#7-end-to-end-workflow--commands)
+8. [Entity Registry](#8-entity-registry)
+9. [Live Data Inventory](#9-live-data-inventory)
+10. [Environment Setup for Teammates](#10-environment-setup-for-teammates)
+11. [Test Suite & Audit](#11-test-suite--audit)
+12. [Hard-Coding Audit](#12-hard-coding-audit)
+13. [Known Limitations (Honest)](#13-known-limitations)
+14. [Design Decisions & Rationale](#14-design-decisions--rationale)
+15. [Sprint History & Bug Fix Log](#15-sprint-history--bug-fix-log)
+16. [Next Steps](#16-next-steps)
+17. [Team Roles](#17-team-roles)
 
 ---
 
-## 1. What This Project Does — Clear Picture
+## 1. What This Project Does
 
 This is a **multi-agent OSINT (Open Source Intelligence) investigation system** for **corporate risk assessment and AML (Anti-Money Laundering) screening**.
 
-**What happens when you submit a query like _"Investigate Tesla for money laundering"_:**
+**In plain English:** You type a question like *"Investigate Tesla for money laundering"*, and the system automatically:
+1. Figures out you're asking about Tesla, Inc. (CIK 0001318605)
+2. Creates 6 investigation sub-tasks
+3. Dispatches them to 3 specialist agents in parallel
+4. Each agent queries real public data (SEC filings, OFAC sanctions list, court dockets, news)
+5. Returns structured, citable evidence with confidence scores
+6. A reflexion layer cross-checks for conflicts and flags gaps
+7. Outputs a risk dashboard, evidence report, and audit trail
 
-```
-You type a query
-        │
-        ▼
-Lead Agent reads it → resolves "Tesla" → finds Tesla, Inc. in registry
-        │
-        ▼
-Task Planner creates 5 investigation tasks:
-  • corporate_structure   → Corporate Agent (SEC filings)
-  • beneficial_ownership  → Corporate Agent (stub for now)
-  • sanctions_screening   → Legal Agent (OFAC SDN — LIVE)
-  • transaction_patterns  → Corporate Agent (SEC filings)
-  • adverse_media         → Social Graph Agent (GDELT news)
-        │
-        ▼
-Each agent runs and returns structured Evidence rows
-        │
-        ▼
-Reflexion Layer: cross-checks for conflicts, detects gaps, scores confidence
-        │
-        ▼
-Knowledge Graph: builds entity → evidence nodes/edges
-        │
-        ▼
-Output: Evidence Report (Markdown/HTML) + Risk Dashboard + Audit Trail
-```
-
-**What is "evidence"?** Every finding is a structured row with: entity, date, source, summary, URL, confidence score, and risk category. Nothing is made up — all evidence traces back to SEC EDGAR or GDELT news articles with citations.
+**What is "evidence"?** Every finding is a frozen Python dataclass (`Evidence`) with: entity ID, date, source type, risk category, summary, source URL, raw file location, confidence score (0.0–1.0), and extra attributes. Nothing is made up — every row traces back to a real government filing, court record, sanctions entry, or news article.
 
 ---
 
-## 2. Data Sources
+## 2. Pipeline Architecture (Visual)
 
-### Currently integrated and working
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                  AUTONOMOUS OSINT INVESTIGATION SWARM                      ║
+╚══════════════════════════════════════════════════════════════════════════════╝
 
-| Source | What it provides | Auth | Confidence |
-|--------|-----------------|------|------------|
-| **SEC EDGAR** | Governance filings: 10-K (annual reports), 8-K (material events, CEO changes), DEF 14A (proxy votes), ownership forms (SC 13G/D, Form 4) | `SEC_USER_AGENT` in `.env` (just your name + email — not an API key) | **0.85** |
-| **GDELT DOC 2.0** | Global news articles about adverse events: fraud, investigation, penalty, fine, violation, lawsuit, scandal, misconduct, bribery, corruption, sanctions, money laundering, settlement, indictment | **None** — completely free, no registration | **0.60** |
-| **OFAC SDN list** | US Treasury Specially Designated Nationals — 18,712 entries (9,521 entities, 7,394 individuals, 1,455 vessels, 342 aircraft). The gold standard AML sanctions screen. Download once: `python scripts/pull_ofac_sdn.py` | **None** — free public XML, no API key | **0.90** |
+    ┌──────────────────────────────────────────────────────────────┐
+    │                    USER QUERY (natural language)             │
+    │              "Investigate Tesla for money laundering"        │
+    └───────────────────────────┬──────────────────────────────────┘
+                                │
+                                ▼
+    ╔══════════════════════════════════════════════════════════════╗
+    ║                       LEAD AGENT                            ║
+    ║  ┌─────────────────┐  ┌──────────────┐  ┌───────────────┐  ║
+    ║  │Entity Resolution│  │ Task Planner │  │Context Manager│  ║
+    ║  │                 │  │              │  │               │  ║
+    ║  │ "Tesla" → match │  │ Query has    │  │ Holds:        │  ║
+    ║  │ in ENTITY_      │  │ "money       │  │  • entity     │  ║
+    ║  │ REGISTRY via    │  │  laundering" │  │  • tasks[]    │  ║
+    ║  │ alias lookup +  │  │ → emit 6     │  │  • findings{} │  ║
+    ║  │ whole-word      │  │   sub-tasks  │  │    per agent  │  ║
+    ║  │ matching        │  │              │  │               │  ║
+    ║  └────────┬────────┘  └──────┬───────┘  └───────────────┘  ║
+    ╚═══════════╪══════════════════╪══════════════════════════════╝
+                │                  │
+                │    ┌─────────────┴──────────────────────────────────────┐
+                │    │  6 SubTasks dispatched to specialist agents:       │
+                │    │                                                    │
+                │    │  1. corporate_structure   → corporate_agent        │
+                │    │  2. beneficial_ownership  → corporate_agent (stub) │
+                │    │  3. sanctions_screening   → legal_agent (OFAC)     │
+                │    │  4. litigation            → legal_agent (Courts)   │
+                │    │  5. transaction_patterns  → corporate_agent        │
+                │    │  6. adverse_media         → social_graph_agent     │
+                │    └───────────────────────────────────────────────────-┘
+                │
+    ┌───────────┼──────────────────────────────────┐
+    │           │                                  │
+    ▼           ▼                                  ▼
+╔═══════════════════╗ ╔════════════════════════╗ ╔═══════════════════════╗
+║  CORPORATE AGENT  ║ ║     LEGAL AGENT        ║ ║  SOCIAL GRAPH AGENT   ║
+║                   ║ ║                        ║ ║                       ║
+║ Tasks 1,2,5       ║ ║ Tasks 3,4              ║ ║ Task 6                ║
+║                   ║ ║                        ║ ║                       ║
+║ ┌───────────────┐ ║ ║ ┌────────────────────┐ ║ ║ ┌───────────────────┐ ║
+║ │SEC MCP Layer  │ ║ ║ │ OFAC SDN Screener  │ ║ ║ │ GDELT MCP Layer   │ ║
+║ │ → 500 filings │ ║ ║ │ → 18,712 entries   │ ║ ║ │ → 100 articles    │ ║
+║ │ conf=0.85     │ ║ ║ │ conf=0.90          │ ║ ║ │ conf=0.60         │ ║
+║ └───────────────┘ ║ ║ └────────────────────┘ ║ ║ └───────────────────┘ ║
+║ ┌───────────────┐ ║ ║ ┌────────────────────┐ ║ ╚═══════════════════════╝
+║ │Structure      │ ║ ║ │ CourtListener      │ ║
+║ │Mapper (stub)  │ ║ ║ │ → 20 dockets       │ ║
+║ │ conf=0.0      │ ║ ║ │ conf=0.85          │ ║
+║ └───────────────┘ ║ ║ └────────────────────┘ ║
+╚═══════════════════╝ ╚════════════════════════╝
+         │                       │                          │
+         └───────────────────────┼──────────────────────────┘
+                                 │
+                    All Evidence rows collected
+                    into InvestigationContext
+                                 │
+                                 ▼
+    ╔══════════════════════════════════════════════════════════════╗
+    ║                    REFLEXION LAYER                          ║
+    ║                                                            ║
+    ║  ┌──────────────┐ ┌──────────────┐ ┌────────────────────┐  ║
+    ║  │ Cross-Check  │ │Gap Detection │ │ Confidence Scoring │  ║
+    ║  │              │ │              │ │                    │  ║
+    ║  │ Groups by    │ │ Flags:       │ │ SOURCE_RELIABILITY │  ║
+    ║  │ (entity,date)│ │ • no entity  │ │  sec_filing: 0.95  │  ║
+    ║  │ → flags      │ │ • empty      │ │  regulator:  0.85  │  ║
+    ║  │ different    │ │   agent      │ │  court_rec:  0.80  │  ║
+    ║  │ summaries    │ │ • cache miss │ │  news:       0.60  │  ║
+    ║  │ as conflicts │ │ • stubs only │ │  other:      0.50  │  ║
+    ║  └──────────────┘ └──────────────┘ └────────────────────┘  ║
+    ╚══════════════════════════╤═══════════════════════════════════╝
+                               │
+                               ▼
+    ╔══════════════════════════════════════════════════════════════╗
+    ║                    KNOWLEDGE GRAPH                          ║
+    ║                                                            ║
+    ║  NetworkX in-memory graph:                                 ║
+    ║    • Node per entity_id (type="entity")                    ║
+    ║    • Node per evidence_id (type="evidence")                ║
+    ║    • Edge: entity --[has_evidence]--> evidence              ║
+    ║    • Edge: evidence --[same_source_type]--> evidence        ║
+    ╚══════════════════════════╤═══════════════════════════════════╝
+                               │
+                               ▼
+    ╔══════════════════════════════════════════════════════════════╗
+    ║                      OUTPUT LAYER                          ║
+    ║                                                            ║
+    ║  ┌─────────────────┐ ┌──────────────┐ ┌─────────────────┐  ║
+    ║  │Evidence Report  │ │Risk Dashboard│ │  Audit Trail    │  ║
+    ║  │                 │ │              │ │                 │  ║
+    ║  │ • Markdown      │ │ Scores by:   │ │ Timestamped    │  ║
+    ║  │ • HTML          │ │  governance  │ │ JSON-lines     │  ║
+    ║  │ • Per-entity    │ │  regulatory  │ │ event log      │  ║
+    ║  │   sections      │ │  legal       │ │                 │  ║
+    ║  │ • Cited URIs    │ │  network     │ │ Who did what,  │  ║
+    ║  │                 │ │  overall     │ │ when, result   │  ║
+    ║  └─────────────────┘ └──────────────┘ └─────────────────┘  ║
+    ╚══════════════════════════════════════════════════════════════╝
+```
 
-> **Why 0.85 / 0.60 / 0.90?** SEC filings are authoritative gov records → 0.85. GDELT news is noisy → 0.60. OFAC SDN is the definitive US government sanctions list → 0.90.
+**Verified live output for "Investigate Tesla for money laundering" (2026-03-15):**
 
-### Not yet integrated (stubs — placeholder code exists)
-| Source | What it would provide | Priority |
-|--------|----------------------|----------|
-| CourtListener/RECAP | US federal court dockets | Priority 1 |
-| OpenCorporates | Beneficial ownership / corporate structure | Priority 2 |
-
-### Removed (intentionally)
-- **NHTSA (vehicle safety recalls)** — removed because it is irrelevant to AML/corporate risk assessment and only applied to vehicle manufacturers. Zero traces remain in the codebase (verified).
+```
+Entity      : Tesla, Inc. (tesla_inc_cik_0001318605)
+Tasks       : 6
+Results     :
+  corporate_agent     : 1,003 findings (500 SEC filings × 2 tasks + summary rows + 1 stub)
+  legal_agent         :    22 findings (1 OFAC clean + 1 court summary + 20 dockets)
+  social_graph_agent  :   100 findings (GDELT news articles)
+  ─────────────────────────────────────────
+  TOTAL               : 1,125 findings
+Confidence  : overall=0.827 | governance=0.85 | regulatory=0.85 | legal=0.85 | network=0.60
+Conflicts   : 87 (same entity/date, different summaries — normal for multi-filing days)
+Gaps        : 1 (beneficial_ownership — structure_mapper stub)
+```
 
 ---
 
-## 3. Architecture Overview
+## 3. Core Data Schema
+
+All components exchange two frozen dataclasses defined in `src/osint_swarm/entities.py`:
+
+### Entity — the investigation target
+
+```python
+@dataclass(frozen=True)
+class Entity:
+    entity_id: str                              # "tesla_inc_cik_0001318605"
+    name: str                                   # "Tesla, Inc."
+    entity_type: EntityType = "unknown"         # "public_company" | "private_company" | "individual" | ...
+    country: Optional[str] = None               # reserved for future use
+    jurisdiction: Optional[str] = None          # reserved for future use
+    identifiers: Dict[str, str] = {}            # {"cik": "0001318605", "ticker": "TSLA"}
+    aliases: List[str] = []                     # ["Tesla", "Tesla Inc", "Tesla Motors", "TSLA"]
+```
+
+**Why frozen?** Entities are passed between agents; immutability prevents accidental corruption.
+
+### Evidence — a single, citable finding
+
+```python
+@dataclass(frozen=True)
+class Evidence:
+    evidence_id: str                # unique ID (e.g. "tesla_gdelt_a1b2c3d4e5f6")
+    entity_id: str                  # links back to Entity
+    date: str                       # ISO date "YYYY-MM-DD" (empty if unknown)
+    source_type: SourceType         # "sec_filing" | "regulator_api" | "court_record" | "news_article" | ...
+    risk_category: RiskCategory     # "governance" | "regulatory" | "legal" | "network" | "other"
+    summary: str                    # human-readable finding (≤5000 chars)
+    source_uri: str                 # URL to original source (SEC, CourtListener, GDELT)
+    raw_location: Optional[str]     # path in data/raw/ for traceability
+    confidence: float = 0.5         # 0.0 (no data) to 1.0 (certain)
+    attributes: Dict[str, Any] = {} # extra fields: stub, screened, sdn_uid, docket_number, etc.
+```
+
+**SourceType values used by each data source:**
+
+| Data Source | `source_type` | `risk_category` | `confidence` |
+|-------------|---------------|-----------------|--------------|
+| SEC EDGAR | `sec_filing` | `governance` or `regulatory` | `0.85` |
+| OFAC SDN | `regulator_api` | `legal` | `0.90` (or `0.0` if cache missing) |
+| CourtListener | `court_record` | `legal` | `0.85` (or `0.0` on fetch error) |
+| GDELT | `news_article` | `network` | `0.60` |
+| Stubs | `other` | varies | `0.0` |
+
+---
+
+## 4. Data Sources
+
+### 4a. SEC EDGAR — US Government Corporate Filings
+
+| Property | Value |
+|----------|-------|
+| **Source URL** | `https://data.sec.gov/submissions/CIK{cik}.json` |
+| **Auth** | `SEC_USER_AGENT` env var (just `"Name email"`, NOT an API key) |
+| **Connector file** | `src/osint_swarm/data_sources/sec_edgar.py` |
+| **MCP Processor** | `mcp_layer/sec_edgar_processor/processor.py` |
+| **Cache path** | `data/raw/sec/CIK{cik}.json` |
+| **Pull script** | `python scripts/pull_sec_submissions.py --cik <CIK>` |
+| **Confidence** | `0.85` |
+| **Filing types parsed** | 10-K, 10-Q, 8-K, DEF 14A, SC 13G, SC 13D, Form 4 |
+
+**How it works:**
+1. `pull_sec_submissions.py` calls SEC EDGAR HTTP API with the entity's CIK → caches full JSON
+2. `SecEdgarProcessor.get_evidence_for_entity()` reads the cached JSON, parses `recentFilings`, extracts form type, date, and builds an `accessionNumber`-based URL
+3. Each filing becomes one `Evidence` row with `source_type="sec_filing"`, `risk_category` determined by form type (10-K/DEF 14A → `governance`, 8-K → `regulatory`)
+4. Processor caps at 500 filings per call; `build_evidence.py` has no cap
+
+**Why 0.85?** SEC filings are authoritative government-mandated disclosures, but they report *what the company says*, not independent verification.
+
+### 4b. OFAC SDN — US Treasury Sanctions List
+
+| Property | Value |
+|----------|-------|
+| **Source URL** | `https://www.treasury.gov/ofac/downloads/sdn.xml` |
+| **Auth** | **None** — free public XML |
+| **Connector file** | `src/osint_swarm/data_sources/ofac.py` |
+| **Screener file** | `agents/specialist_agents/legal_agent/sanctions_screener/screener.py` |
+| **Cache path** | `data/raw/ofac/sdn.xml` (27 MB) |
+| **Pull script** | `python scripts/pull_ofac_sdn.py --stats` |
+| **Confidence** | `0.90` (match or clean), `0.0` (cache missing) |
+| **Entries** | 18,712 total: 9,521 entities, 7,394 individuals, 1,455 vessels, 342 aircraft |
+
+**How it works:**
+1. `pull_ofac_sdn.py` downloads the full SDN XML to `data/raw/ofac/sdn.xml` (one-time, ~30s)
+2. `ofac.parse_sdn_entries()` strips XML namespaces, extracts `uid`, `firstName`, `lastName`, `sdnType`, `programList`, `akaList`, `remarks` per entry
+3. `ofac.search_entries()` normalizes both query and SDN names: lowercase, strip punctuation, remove legal suffixes (Inc, LLC, Corp, Ltd, Co, Company)
+4. Matching uses `_terms_match()`: exact after normalization, or whole-word substring match (≥5 chars). Query aliases shorter than 3 chars are excluded to prevent ticker false positives
+5. `screener.screen()` returns: match rows (conf=0.90, `⚠ OFAC SDN MATCH`), clean row (conf=0.90, `sdn_matches=0`), or cache-missing fallback (conf=0.0)
+
+**Why 0.90?** OFAC SDN is the definitive US government sanctions list. Not 1.0 because name-matching can have edge cases (e.g. common names).
+
+**False-positive prevention (verified):**
+- `_normalize("Ford Motor Company")` → `"ford motor"` (strips "Company" suffix)
+- `_normalize("OXFORD FINANCIAL HOLDINGS")` → `"oxford financial holdings"` (strips nothing)
+- `_terms_match("ford motor", "oxford financial holdings")` → **False** (5+ chars but "ford motor" is NOT a whole word inside "oxford financial holdings")
+- Unit test: `test_terms_match_false_positive_oxford_vs_ford` confirms this
+
+### 4c. CourtListener — US Federal Court Dockets
+
+| Property | Value |
+|----------|-------|
+| **Source URL** | `https://www.courtlistener.com/api/rest/v4/search/` |
+| **Auth** | **None** required (optional `COURTLISTENER_API_TOKEN` in `.env` for higher rate limits) |
+| **Connector file** | `src/osint_swarm/data_sources/courtlistener.py` |
+| **Analyzer file** | `agents/specialist_agents/legal_agent/pacer_analyzer/analyzer.py` |
+| **Cache path** | `data/raw/courtlistener/dockets_<slug>.json` |
+| **Pull script** | `python scripts/pull_courtlistener.py --all` |
+| **Confidence** | `0.85` (found or clean), `0.0` (fetch error) |
+| **Max results** | 20 per entity (configurable via `--max-results`) |
+
+**How it works:**
+1. `courtlistener.fetch_dockets()` queries the CourtListener v4 search API: `type=d`, `q="Entity Name"`, `order_by=score desc`
+2. `_normalize_docket()` handles both camelCase (search results) and snake_case (dockets endpoint) field names. Relative URLs are prepended with `https://www.courtlistener.com/`
+3. `pacer_analyzer.fetch()` follows a cache-first pattern: checks `data/raw/courtlistener/dockets_<slug>.json` → if missing, fetches live → caches → converts to Evidence
+4. Returns 1 summary row (`court_records=N, total_found_api=M`) + 1 row per docket (case name, docket number, suit nature, cause, court, filing date, termination status)
+5. Each docket's `evidence_id` is deterministic: `{entity_id}_courtlistener_{md5(docket_id)[:10]}`
+
+**Why 0.85?** Court records are public, authoritative legal documents — same tier as SEC filings.
+
+**Live data (2026-03-15):**
+
+| Entity | API Total | Cached | Notable Cases |
+|--------|-----------|--------|---------------|
+| Tesla | 2,054 | 20 | Tremblett v. Tesla (product liability), civil rights employment suits |
+| Ford | 21,885 | 20 | Product liability, employment discrimination, contract disputes |
+| Boeing | 3,582 | 20 | *In re: The Boeing Company* (securities, CA9 appeal), airplane product liability |
+
+### 4d. GDELT DOC 2.0 — Global Adverse Media
+
+| Property | Value |
+|----------|-------|
+| **Source URL** | `https://api.gdeltproject.org/api/v2/doc/doc` |
+| **Auth** | **None** — completely free, no registration |
+| **Connector file** | `src/osint_swarm/data_sources/gdelt.py` |
+| **MCP Processor** | `mcp_layer/gdelt_processor/processor.py` |
+| **Cache path** | `data/raw/gdelt/news_<slug>.json` |
+| **Pull script** | `python scripts/pull_gdelt_news.py --entity-id <ID>` |
+| **Confidence** | `0.60` |
+| **Max records** | 100 (configurable, GDELT caps at 250) |
+| **Lookback** | 730 days (~2 years) |
+
+**How it works:**
+1. Builds query: `"Entity Name" (fraud OR investigation OR penalty OR fine OR violation OR lawsuit OR scandal OR misconduct OR bribery OR corruption OR sanction OR money laundering OR settlement OR indictment)`
+2. Fetches JSON artlist from GDELT DOC 2.0 API (sorted by date descending)
+3. Each article becomes an Evidence row with `source_type="news_article"`, `risk_category="network"`
+4. `evidence_id` is deterministic from URL hash: `{entity_prefix}_gdelt_{md5(url)[:12]}`
+5. Date parsed from GDELT format `"20240615T120000Z"` → `"2024-06-15"`
+
+**Why 0.60?** News articles are noisy — see Section 13 (Known Limitations) for honest analysis.
+
+### 4e. Not Yet Integrated
+
+| Source | What it would provide | Status | File |
+|--------|----------------------|--------|------|
+| OpenCorporates | Beneficial ownership, officers, subsidiaries | **Stub** — `structure_mapper/mapper.py` | Priority 1 |
+
+### 4f. Removed (intentionally)
+
+- **NHTSA (vehicle safety recalls)** — removed because it is irrelevant to AML/corporate risk assessment. Zero traces in codebase (verified by `rg -il "nhtsa" --no-ignore` → 0 matches).
+
+---
+
+## 5. Repository Structure
 
 ```
-src/osint_swarm/           Core library
+src/osint_swarm/                     Core library (importable from anywhere via sys.path)
   data_sources/
-    sec_edgar.py           SEC EDGAR HTTP connector
-    gdelt.py               GDELT DOC 2.0 HTTP connector
-    ofac.py                OFAC SDN XML parser + entity matcher (no network — works on cached XML)
-  entities.py              Entity + Evidence dataclasses (the shared schema)
-  utils/io.py              read_json, write_json, write_csv_dicts helpers
+    sec_edgar.py                     SEC EDGAR HTTP connector
+    gdelt.py                         GDELT DOC 2.0 HTTP connector
+    ofac.py                          OFAC SDN XML parser + name matcher
+    courtlistener.py                 CourtListener REST API v4 connector
+  entities.py                        Entity + Evidence dataclasses
+  utils/io.py                        read_json, write_json, write_csv_dicts, ensure_parent
 
-mcp_layer/                 Data Access Layer (agents never call connectors directly)
-  sec_edgar_processor/     Reads data/raw/sec/*.json → List[Evidence]
-  gdelt_processor/         Reads data/raw/gdelt/*.json → List[Evidence]
-  evidence_loader/         Reads data/processed/**/*.csv → List[Evidence]
-  __init__.py              get_evidence_for_entity(), get_processor()
+mcp_layer/                           Data Access Layer — agents call this, not connectors
+  base.py                            DataSourceProcessor abstract base
+  sec_edgar_processor/processor.py   Cached SEC JSON → List[Evidence]
+  gdelt_processor/processor.py       Cached GDELT JSON → List[Evidence]
+  evidence_loader/loader.py          Processed CSV → List[Evidence]
+  __init__.py                        get_evidence_for_entity(), get_processor()
 
 agents/
-  lead_agent/              Orchestrator
-    entity_resolution/     Maps text → Entity (registry lookup)
-    task_planner/          Decomposes query → list of SubTasks
-    context_manager/       Holds entity + tasks + all findings
-    orchestrator/          Runs the full agent loop
+  lead_agent/
+    entity_resolution/resolver.py    ENTITY_REGISTRY + resolve() + whole-word matching
+    task_planner/planner.py          Keyword-based query decomposition → SubTasks
+    task_planner/types.py            SubTask(task_type, target_agent, description)
+    context_manager/manager.py       InvestigationContext: entity + tasks + findings
+    orchestrator/orchestrator.py     LeadAgent.run(query) → full pipeline
   specialist_agents/
-    corporate_agent/       SEC filings analysis (LIVE)
-    legal_agent/           Sanctions + courts (STUBS — not yet integrated)
-    social_graph_agent/    GDELT adverse media (LIVE)
+    corporate_agent/
+      agent.py                       CorporateAgent: SEC MCP + structure_mapper stub
+      sec_analyzer/analyzer.py       summarize_governance_red_flags()
+      structure_mapper/mapper.py     **STUB** — returns confidence=0.0
+    legal_agent/
+      agent.py                       LegalAgent: OFAC screener + CourtListener fetcher
+      sanctions_screener/screener.py **LIVE** — OFAC SDN screening
+      pacer_analyzer/analyzer.py     **LIVE** — CourtListener dockets
+    social_graph_agent/
+      agent.py                       SocialGraphAgent: GDELT via MCP
+      gnn_analyzer/analyzer.py       DEAD CODE — no longer called
+      influence_mapper/mapper.py     DEAD CODE — no longer called
 
-reflexion_layer/           Self-assessment and QA
-  cross_check/             Finds conflicting claims (same entity, same date)
-  gap_detection/           Flags missing data (empty agents, no cache)
-  confidence_module/       Source-weighted confidence scoring
+reflexion_layer/
+  cross_check/checker.py             Finds conflicting claims (same entity+date)
+  gap_detection/detector.py          Flags missing data (empty agents, stubs, cache)
+  confidence_module/scorer.py        Source-weighted confidence aggregation
 
-knowledge_graph/           NetworkX-based graph of evidence nodes/edges
+knowledge_graph/
+  graph.py                           NetworkX-style graph builder (nodes + edges)
+  types.py                           Node, Edge dataclasses
 
 output_layer/
-  evidence_report_generator/  Markdown + HTML evidence reports
-  risk_dashboard/             CLI risk score summary
-  audit_trail/                Timestamped event log
+  evidence_report_generator/         Markdown + HTML evidence reports
+  risk_dashboard/dashboard.py        CLI risk score summary per category
+  audit_trail/trail.py               Timestamped JSON-lines event log
 
-app/                       Flask web demo
-  app.py                   Routes
-  pipeline.py              Calls LeadAgent end-to-end (no hard-coding)
+app/
+  app.py                             Flask web demo — routes
+  pipeline.py                        Calls LeadAgent end-to-end (generic, no hard-coding)
 
-scripts/                   Runnable scripts (all generic, all use --entity-id or --cik)
-  pull_sec_submissions.py
-  pull_gdelt_news.py
-  pull_ofac_sdn.py           Downloads OFAC SDN XML → data/raw/ofac/sdn.xml (run once)
-  build_evidence.py          (generic — any registered entity)
-  build_evidence_tesla.py    (thin wrapper → build_evidence.py)
-  build_evidence_ford.py     (thin wrapper → build_evidence.py)
-  run_lead_agent.py
+scripts/                             All generic — take --entity-id or --cik params
+  pull_sec_submissions.py            SEC data → data/raw/sec/
+  pull_gdelt_news.py                 GDELT data → data/raw/gdelt/
+  pull_ofac_sdn.py                   OFAC SDN XML → data/raw/ofac/sdn.xml
+  pull_courtlistener.py              Court dockets → data/raw/courtlistener/
+  build_evidence.py                  Generic: SEC+GDELT raw → processed CSV
+  build_evidence_tesla.py            Thin wrapper → build_evidence.py
+  build_evidence_ford.py             Thin wrapper → build_evidence.py
+  run_lead_agent.py                  Run full pipeline from CLI
 
-data/
-  raw/sec/                 Cached SEC JSON (not committed to git)
-  raw/gdelt/               Cached GDELT JSON (not committed to git)
-  raw/ofac/sdn.xml         Cached OFAC SDN XML — 27 MB, not committed to git (too large)
-  data/processed/          Evidence CSVs (not committed to git)
+data/                                NOT committed to git (see .gitignore)
+  raw/sec/                           Cached SEC JSON
+  raw/gdelt/                         Cached GDELT JSON
+  raw/ofac/sdn.xml                   OFAC SDN XML (27 MB)
+  raw/courtlistener/                 Cached docket JSON per entity
+  processed/                         Evidence CSVs per entity
+
+tests/unit/                          159 unit tests (pytest)
+  agents/lead_agent/                 16 tests
+  agents/specialist_agents/          27 tests (OFAC screener, CourtListener, legal agent, corporate, social)
+  data_sources/                      57 tests (OFAC connector, CourtListener connector)
+  mcp_layer/                         16 tests
+  reflexion_layer/                   16 tests
+  knowledge_graph/                   4 tests
+  output_layer/                      16 tests
+  schemas/                           8 tests
 ```
 
 ---
 
-## 4. Every Agent — Status
+## 6. Every Component — Implementation Detail
 
-### Lead Agent (`agents/lead_agent/`) — **LIVE**
-- **Entity resolution**: maps query text to entity using `ENTITY_REGISTRY` in `resolver.py`
-  - Uses whole-word matching for short aliases to prevent false positives (e.g. "F" for Ford ticker doesn't match "fraud")
-- **Task planner**: decomposes queries into 5 sub-tasks. Keywords like "money laundering", "AML", "fraud" trigger the full task set
-- **Context manager**: holds all state (entity, tasks, findings per agent) — the reflexion layer reads from this
-- **Orchestrator**: dispatches each task to the right agent, collects all evidence
+### 6a. Lead Agent
 
-### Corporate Agent (`agents/specialist_agents/corporate_agent/`) — **LIVE (SEC only)**
-- Handles tasks: `corporate_structure`, `beneficial_ownership`, `transaction_patterns`
-- For `corporate_structure` and `transaction_patterns`: calls `SecEdgarProcessor` via MCP layer → returns SEC filing Evidence rows + 1 governance summary row
-- For `beneficial_ownership`: calls `structure_mapper` which is a **stub** (returns 1 placeholder Evidence row with `stub=True`, `confidence=0.0`)
-- The stub is clearly labeled and gap detection flags it as missing data
+**File:** `agents/lead_agent/orchestrator.py`
+**Class:** `LeadAgent(data_root, agent_stubs)`
 
-### Legal Agent (`agents/specialist_agents/legal_agent/`) — **OFAC LIVE, PACER stub**
-- Handles tasks: `sanctions_screening`, `litigation`, `regulatory_actions`
-- **`sanctions_screener/screener.py` → now LIVE**: screens entity against all 18,712 OFAC SDN entries
-  - Returns 1 clean-result Evidence row (confidence=0.90, `sdn_matches=0`) if no match
-  - Returns 1 Evidence row per SDN match found (confidence=0.90, `⚠ OFAC SDN MATCH` in summary)
-  - Returns 1 fallback Evidence row (confidence=0.0) if `data/raw/ofac/sdn.xml` cache is missing
-  - `attributes={"stub": False}` — this is real data
-  - Gap detection no longer flags this as "not integrated" once the cache is downloaded
-- `pacer_fetcher/fetcher.py` → still a stub ("CourtListener not integrated"), `confidence=0.0`, `stub=True`
-- **Must download SDN cache before first run**: `python scripts/pull_ofac_sdn.py` (once, ~30-40 seconds)
+The orchestrator runs the full pipeline:
 
-### Social Graph Agent (`agents/specialist_agents/social_graph_agent/`) — **LIVE (GDELT)**
-- Handles tasks: `adverse_media`, `network_analysis`, `influence_mapping`
-- Calls `GdeltProcessor` via MCP layer → reads `data/raw/gdelt/news_<slug>.json` → returns news article Evidence rows
-- If no GDELT cache exists, gracefully returns empty list (gap detection flags this with a message to run `pull_gdelt_news.py`)
-- **Previously a stub — now returns real GDELT news data**
-- ⚠️ Note: `gnn_analyzer/analyzer.py` and `influence_mapper/mapper.py` still exist in the codebase but are **no longer called** — they are leftover stubs from before GDELT was integrated. They are dead code and can be cleaned up later (not urgent)
+```python
+def run(self, query: str) -> InvestigationContext:
+    context.set_query(query)
+    entity = resolve_one(query)       # Step 1: entity resolution
+    context.set_entity(entity)
+    tasks = decompose(query, entity)  # Step 2: task decomposition
+    context.set_tasks(tasks)
+    for task in tasks:                # Step 3: dispatch to agents
+        stub = self._stubs.get(task.target_agent)
+        findings = stub(entity, task, context)
+        context.add_agent_results(task.target_agent, findings)
+    return context
+```
+
+**Entity Resolution** (`resolver.py`):
+- Uses `ENTITY_REGISTRY` — a list of `Entity` objects with names and aliases
+- `resolve(query)` normalizes query to lowercase, then checks each entity's name and aliases
+- Short aliases (<3 chars like ticker "F") require whole-word matching via `\b` regex to prevent false positives (e.g. "F" in "fraud")
+- Bug found & fixed: Ford's ticker "F" was matching the letter 'f' in "Investigate unknown company XYZ for fraud", incorrectly resolving to Ford. Fix: `_word_in_text()` function + `_MIN_SUBSTR_LEN = 3`
+
+**Task Planner** (`planner.py`):
+- Keywords checked (case-insensitive): `money laundering`, `aml`, `sanctions`, `ofac`, `beneficial owner`, `pep`, etc.
+- AML query → 6 tasks: `corporate_structure`, `beneficial_ownership`, `sanctions_screening`, `litigation`, `transaction_patterns`, `adverse_media`
+- Generic query → 4 tasks: `sec_filings`, `sanctions_screening`, `litigation`, `adverse_media`
+
+### 6b. Corporate Agent
+
+**File:** `agents/specialist_agents/corporate_agent/agent.py`
+**Class:** `CorporateAgent(data_root)`
+
+| Task Type | What Happens | Source |
+|-----------|-------------|--------|
+| `corporate_structure` | Calls `SecEdgarProcessor` via MCP → returns SEC filings + 1 governance summary | SEC EDGAR |
+| `transaction_patterns` | Same as above (SEC filings analyzed for patterns) | SEC EDGAR |
+| `beneficial_ownership` | Calls `structure_mapper.run_stub()` → 1 placeholder (conf=0.0, stub=True) | **STUB** |
+
+**SEC Analyzer** (`sec_analyzer/analyzer.py`):
+- `summarize_governance_red_flags(evidence, entity_id)` counts SEC filings by type:
+  - 8-K filings with "restatement" in summary → governance red flags
+  - Returns 1 summary Evidence row with `source_type="sec_filing"`, `risk_category="governance"`
+
+### 6c. Legal Agent
+
+**File:** `agents/specialist_agents/legal_agent/agent.py`
+**Class:** `LegalAgent(data_root)`
+
+| Task Type | What Happens | Source |
+|-----------|-------------|--------|
+| `sanctions_screening` | Calls `ofac_screen(entity, task, ctx, data_root)` | OFAC SDN XML |
+| `litigation` | Calls `court_fetch(entity, task, ctx, data_root)` | CourtListener API |
+| `regulatory_actions` | Same as litigation (routed to CourtListener) | CourtListener API |
+
+**OFAC Screener** (`screener.py`):
+- Returns match rows, clean rows, or cache-missing fallback (see Section 4b)
+- All results have `attributes={"stub": False}`
+- `run_stub()` alias maintained for backward compatibility
+
+**CourtListener Analyzer** (`pacer_analyzer/analyzer.py`):
+- Cache-first: tries `data/raw/courtlistener/dockets_<slug>.json`
+- If no cache: fetches live from API → caches result → converts
+- If network error: returns fallback Evidence (conf=0.0, `fetch_error=True`, helpful message)
+- Returns: 1 summary row + N docket rows (default 20)
+
+### 6d. Social Graph Agent
+
+**File:** `agents/specialist_agents/social_graph_agent/agent.py`
+**Class:** `SocialGraphAgent(data_root)`
+
+| Task Type | What Happens | Source |
+|-----------|-------------|--------|
+| `adverse_media` | Calls `GdeltProcessor.get_evidence_for_entity()` | GDELT DOC 2.0 |
+| `network_analysis` | Same as adverse_media | GDELT DOC 2.0 |
+
+- Dead code: `gnn_analyzer/` and `influence_mapper/` still exist but are never called. Safe to delete later.
+
+### 6e. MCP Layer
+
+**File:** `mcp_layer/__init__.py`
+
+The MCP (Message/Content Provider) layer is a facade between agents and raw data connectors:
+
+```python
+def get_evidence_for_entity(entity, sources=("sec_edgar", "gdelt"), data_root=None):
+    for source_id in sources:
+        processor = get_processor(source_id, data_root)  # SecEdgarProcessor or GdeltProcessor
+        evidence.extend(processor.get_evidence_for_entity(entity))
+    return evidence
+```
+
+**Why this layer exists:** Agents never import from `src/osint_swarm/data_sources/` directly. This allows swapping data sources without changing agent code.
+
+### 6f. Reflexion Layer
+
+**Cross-Check** (`checker.py`):
+- Groups all findings by `(entity_id, date)`
+- If 2+ findings share the same entity+date but have different summaries → `Conflict(dimension="summary_consistency", ...)`
+- Tesla shows 87 conflicts (normal — multiple SEC filings on the same date)
+
+**Gap Detection** (`detector.py`):
+- Checks 4 things: (1) no entity resolved, (2) legal agent empty or no real screening, (3) social_graph empty, (4) corporate structure_mapper stub present
+- `_legal_has_real_screening()` → True if any result has `screened=True` AND `confidence > 0`
+- Cache-missing fallback (OFAC or CourtListener) triggers a gap with instructions to run the pull script
+
+**Confidence Scoring** (`scorer.py`):
+- `aggregate_confidence(findings)` → overall mean + breakdown by `risk_category` and `source_type`
+- `adjusted_confidence(findings)` → multiplies each `evidence.confidence` by `SOURCE_RELIABILITY[source_type]`
+- Source reliability weights: `sec_filing=0.95`, `regulator_api=0.85`, `court_record=0.80`, `news_article=0.60`, `other=0.50`
+
+### 6g. Knowledge Graph
+
+**File:** `knowledge_graph/graph.py`
+- `build_graph_from_evidence(findings)` → `(List[Node], List[Edge])`
+- One Node per unique `entity_id` (type="entity") and one per unique `evidence_id` (type="evidence")
+- Edges: `entity --[has_evidence]--> evidence` and optional `evidence --[same_source_type]--> evidence`
+
+### 6h. Output Layer
+
+| Component | File | What it does |
+|-----------|------|-------------|
+| Evidence Report | `evidence_report_generator/generator.py` | Markdown and HTML reports with cited evidence |
+| Risk Dashboard | `risk_dashboard/dashboard.py` | CLI summary: mean confidence per risk_category |
+| Audit Trail | `audit_trail/trail.py` | Timestamped JSON-lines event log |
 
 ---
 
-## 5. End-to-End Workflow
+## 7. End-to-End Workflow & Commands
 
 ### Initial setup (run once per machine)
+
 ```bash
-# Clone + activate venv
 python -m venv .venv
 source .venv/bin/activate        # macOS/Linux
 pip install -r requirements.txt
 
-# Set up .env (see Section 9 for teammates)
+# Set up .env (see Section 10 for teammates)
 cp .env.example .env
 # Edit .env → set SEC_USER_AGENT="Your Name your_email@asu.edu"
 ```
 
-### Pull raw data (run once per entity, or to refresh)
-```bash
-# OFAC SDN list — run ONCE, covers all entities (~30-40 seconds download)
-python scripts/pull_ofac_sdn.py --stats   # shows entry counts after download
-# Output: data/raw/ofac/sdn.xml (27 MB, ~18,712 SDN entries)
+### Pull raw data
 
-# SEC EDGAR (requires SEC_USER_AGENT in .env)
+```bash
+# OFAC SDN list — run ONCE, covers ALL entities (~30 seconds)
+python scripts/pull_ofac_sdn.py --stats
+
+# CourtListener — optional pre-fetch (auto-fetches if not cached)
+python scripts/pull_courtlistener.py --all
+
+# SEC EDGAR — one call per entity
 python scripts/pull_sec_submissions.py --cik 0001318605    # Tesla
 python scripts/pull_sec_submissions.py --cik 0000037996    # Ford
 python scripts/pull_sec_submissions.py --cik 0000012927    # Boeing
 
-# GDELT (NO auth needed — just run it)
+# GDELT — one call per entity (NO auth needed)
 python scripts/pull_gdelt_news.py --entity-id tesla_inc_cik_0001318605
 python scripts/pull_gdelt_news.py --entity-id ford_motor_cik_0000037996
 python scripts/pull_gdelt_news.py --entity-id boeing_cik_0000012927
 ```
-Output: `data/raw/ofac/sdn.xml`, `data/raw/sec/CIK*.json`, `data/raw/gdelt/news_*.json`
 
-### Build evidence CSVs (run after pulling raw data)
+### Build evidence CSVs (optional — for offline analysis)
+
 ```bash
 python scripts/build_evidence.py --entity-id tesla_inc_cik_0001318605
 python scripts/build_evidence.py --entity-id ford_motor_cik_0000037996
 python scripts/build_evidence.py --entity-id boeing_cik_0000012927
 ```
-Output: `data/processed/<slug>/evidence_<slug>.csv`
 
-### Run an investigation (CLI)
+### Run investigations
+
 ```bash
+# CLI
 python scripts/run_lead_agent.py "Investigate Tesla for money laundering"
 python scripts/run_lead_agent.py "Investigate Ford for fraud"
 python scripts/run_lead_agent.py "Investigate Boeing for violations"
-python scripts/run_lead_agent.py "Investigate unknown company XYZ"   # gracefully returns no entity
+python scripts/run_lead_agent.py "Investigate unknown company XYZ"  # gracefully returns empty
+
+# Flask web demo
+python app/app.py    # open http://127.0.0.1:5000
 ```
 
-### Run the web demo (Flask)
-```bash
-python app/app.py
-# Open: http://127.0.0.1:5000
-# Enter a query e.g. "Investigate Tesla for money laundering" → click Run investigation
-```
-> **If port 5000 is blocked on macOS** (AirPlay Receiver uses it):
-> System Preferences → General → AirDrop & Handoff → turn off AirPlay Receiver
-> Or: there is no `--port` flag on the current Flask app — disable AirPlay or edit `app/app.py` line with `app.run(...)` to add `port=5001`
+> **macOS port 5000 conflict:** System Preferences → General → AirDrop & Handoff → turn off AirPlay Receiver. Or edit `app/app.py` to use `port=5001`.
 
 ### Run tests
+
 ```bash
-pytest tests/unit -v         # 119 tests, all should pass
-pytest tests/unit -q         # quick summary only
+pytest tests/unit -v         # 159 tests, all passing
+pytest tests/unit -q         # quick summary
 ```
 
 ---
 
-## 6. Entities in the Registry
+## 8. Entity Registry
 
 Defined in `agents/lead_agent/entity_resolution/resolver.py`:
 
-| Entity | entity_id | CIK | Data available |
-|--------|-----------|-----|----------------|
-| Tesla, Inc. | `tesla_inc_cik_0001318605` | 0001318605 | SEC ✅ GDELT ✅ |
-| Ford Motor Company | `ford_motor_cik_0000037996` | 0000037996 | SEC ✅ GDELT ✅ |
-| The Boeing Company | `boeing_cik_0000012927` | 0000012927 | SEC ✅ GDELT ✅ |
+| Entity | entity_id | CIK | Ticker | Aliases | Data |
+|--------|-----------|-----|--------|---------|------|
+| Tesla, Inc. | `tesla_inc_cik_0001318605` | 0001318605 | TSLA | Tesla, Tesla Inc, Tesla Motors, TSLA | SEC ✅ GDELT ✅ OFAC ✅ Courts ✅ |
+| Ford Motor Company | `ford_motor_cik_0000037996` | 0000037996 | F | Ford, Ford Motor, Ford Motor Co, Ford Motor Company | SEC ✅ GDELT ✅ OFAC ✅ Courts ✅ |
+| The Boeing Company | `boeing_cik_0000012927` | 0000012927 | BA | Boeing, Boeing Company, The Boeing Company, BA | SEC ✅ GDELT ✅ OFAC ✅ Courts ✅ |
 
 **To add a new entity:**
-1. Find the CIK at [EDGAR company search](https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany)
-2. Add an entry to `ENTITY_REGISTRY` in `agents/lead_agent/entity_resolution/resolver.py`
-3. Run: `python scripts/pull_sec_submissions.py --cik <CIK>`
-4. Run: `python scripts/pull_gdelt_news.py --entity-id <entity_id>`
-5. Run: `python scripts/build_evidence.py --entity-id <entity_id>`
+1. Find CIK at [EDGAR company search](https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany)
+2. Add `Entity(...)` to `ENTITY_REGISTRY` in `resolver.py`
+3. Pull data: `pull_sec_submissions.py --cik`, `pull_gdelt_news.py --entity-id`, `pull_courtlistener.py --entity-id` (OFAC is entity-agnostic — one file covers all)
+4. Build CSV: `python scripts/build_evidence.py --entity-id <id>`
 
 ---
 
-## 7. Data Inventory
+## 9. Live Data Inventory
 
-*All counts verified live on 2026-03-15:*
+*All counts verified live on 2026-03-15.*
 
-### Raw data (in `data/raw/` — not committed to git)
-| File | Rows/Items |
-|------|-----------|
-| `sec/CIK0001318605.json` | ~675 relevant filings for Tesla |
-| `sec/CIK0000037996.json` | ~894 relevant filings for Ford |
-| `sec/CIK0000012927.json` | ~838 relevant filings for Boeing |
-| `gdelt/news_tesla.json` | 100 articles |
-| `gdelt/news_ford_motor_company.json` | 100 articles |
-| `gdelt/news_the_boeing_company.json` | 62 articles |
+### Raw data (in `data/raw/` — excluded from git)
 
-### Processed evidence CSVs (in `data/processed/` — not committed to git)
-| File | Total rows | SEC rows | GDELT rows | Date range |
-|------|-----------|----------|------------|------------|
-| `tesla/evidence_tesla.csv` | **775** | 675 | 100 | 2018-02-14 → 2026-03-15 |
-| `ford_motor_company/evidence_ford_motor_company.csv` | **994** | 894 | 100 | 2019-03-04 → 2026-03-15 |
-| `the_boeing_company/evidence_the_boeing_company.csv` | **900** | 838 | 62 | 2019-02-14 → 2026-03-08 |
+| File | Type | Size/Count |
+|------|------|-----------|
+| `sec/CIK0001318605.json` | SEC filings (Tesla) | ~675 filings |
+| `sec/CIK0000037996.json` | SEC filings (Ford) | ~894 filings |
+| `sec/CIK0000012927.json` | SEC filings (Boeing) | ~838 filings |
+| `gdelt/news_tesla.json` | GDELT articles | 100 articles |
+| `gdelt/news_ford_motor_company.json` | GDELT articles | 100 articles |
+| `gdelt/news_the_boeing_company.json` | GDELT articles | 62 articles |
+| `ofac/sdn.xml` | OFAC SDN list | 27 MB, 18,712 entries |
+| `courtlistener/dockets_tesla.json` | Court dockets | 20 cached (2,054 total) |
+| `courtlistener/dockets_ford_motor_company.json` | Court dockets | 20 cached (21,885 total) |
+| `courtlistener/dockets_the_boeing_company.json` | Court dockets | 20 cached (3,582 total) |
 
-### Live pipeline output (verified)
-```
-Query: "Investigate Tesla for money laundering"
-  corporate_agent:    1003 findings (SEC filings × 2 tasks + summary rows)
-  legal_agent:           1 finding  (sanctions stub placeholder)
-  social_graph_agent:  100 findings (GDELT news articles)
-  TOTAL:              1104 findings
+### Processed evidence CSVs (in `data/processed/`)
 
-Query: "Investigate Boeing for fraud"
-  corporate_agent:     501 findings
-  legal_agent:           1 finding
-  social_graph_agent:   62 findings
-  TOTAL:               564 findings
+| File | SEC rows | GDELT rows | Total | Date range |
+|------|----------|------------|-------|------------|
+| `tesla/evidence_tesla.csv` | 675 | 100 | **775** | 2018-02-14 → 2026-03-15 |
+| `ford_motor_company/evidence_ford_motor_company.csv` | 894 | 100 | **994** | 2019-03-04 → 2026-03-15 |
+| `the_boeing_company/evidence_the_boeing_company.csv` | 838 | 62 | **900** | 2019-02-14 → 2026-03-08 |
 
-Query: "Investigate unknown company XYZ"
-  Entity: (unresolved) | Tasks: 0 | Findings: 0   ← correctly handled
-```
+### Live pipeline output (verified 2026-03-15)
+
+| Query | Tasks | Corporate | Legal | Social | **Total** | Gaps |
+|-------|-------|-----------|-------|--------|-----------|------|
+| Tesla (AML) | 6 | 1,003 | 22 | 100 | **1,125** | 1 (beneficial_ownership) |
+| Ford (fraud) | 4 | 501 | 22 | 100 | **623** | 0 |
+| Boeing (violations) | 4 | 501 | 22 | 62 | **585** | 0 |
+| Unknown XYZ | 0 | — | — | — | **0** | (entity_resolution) |
 
 ---
 
-## 8. Commands Reference
+## 10. Environment Setup for Teammates
 
-```bash
-# SETUP
-cp .env.example .env && nano .env     # set SEC_USER_AGENT
+**`SEC_USER_AGENT` is NOT an API key.** The SEC EDGAR API is free and public. They just require you to identify yourself in the HTTP headers per their [fair access policy](https://www.sec.gov/os/accessing-edgar-data).
 
-# PULL DATA
-python scripts/pull_sec_submissions.py --cik 0001318605      # Tesla
-python scripts/pull_sec_submissions.py --cik 0000037996      # Ford
-python scripts/pull_sec_submissions.py --cik 0000012927      # Boeing
-python scripts/pull_gdelt_news.py --entity-id tesla_inc_cik_0001318605
-python scripts/pull_gdelt_news.py --entity-id ford_motor_cik_0000037996
-python scripts/pull_gdelt_news.py --entity-id boeing_cik_0000012927
+**Copy-paste instructions for teammates:**
 
-# BUILD EVIDENCE CSVs
-python scripts/build_evidence.py --entity-id tesla_inc_cik_0001318605
-python scripts/build_evidence.py --entity-id ford_motor_cik_0000037996
-python scripts/build_evidence.py --entity-id boeing_cik_0000012927
-
-# RUN INVESTIGATION (CLI)
-python scripts/run_lead_agent.py "Investigate Tesla for money laundering"
-
-# WEB DEMO
-python app/app.py              # then open http://127.0.0.1:5000
-
-# TESTS
-pytest tests/unit -v           # 119 tests
-```
-
----
-
-## 9. SEC_USER_AGENT Setup for Teammates
-
-**This is not an API key. There is no registration. No account needed.** The SEC EDGAR API is free and public. They just require you to identify yourself in the HTTP request headers, per their [fair access policy](https://www.sec.gov/os/accessing-edgar-data).
-
-**What to tell teammates (copy-paste this):**
-
-> **One-time setup before pulling SEC data:**
+> 1. `cp .env.example .env`
+> 2. Open `.env`, find `SEC_USER_AGENT="Your Name your_email@asu.edu"`
+> 3. Replace: `SEC_USER_AGENT="Raj Mahto raj.mahto@asu.edu"`
+> 4. Save. Do NOT commit to git (`.env` is in `.gitignore`)
 >
-> 1. Create a `.env` file in the project root by copying the example:
->    ```bash
->    cp .env.example .env
->    ```
-> 2. Open `.env` in any text editor. Find this line:
->    ```
->    SEC_USER_AGENT="Your Name your_email@asu.edu"
->    ```
-> 3. Replace with your actual name and ASU email:
->    ```
->    SEC_USER_AGENT="Raj Mahto raj.mahto@asu.edu"
->    ```
->    Use `"FirstName LastName email@asu.edu"` — exactly this format with quotes.
->
-> 4. Save the file. Do NOT commit it to git (`.env` is already in `.gitignore`).
->
-> That's it. No API key, no registration, no account. GDELT data needs nothing at all.
+> That's it. GDELT, OFAC, and CourtListener need nothing at all.
+
+**Optional:** For higher CourtListener rate limits, add `COURTLISTENER_API_TOKEN=<token>` (free account at courtlistener.com). Not required for the demo.
 
 ---
 
-## 10. Test Results & Honest Audit
+## 11. Test Suite & Audit
 
-### Test suite
-**Date: 2026-03-15 | Result: 119/119 passing | 0 skipped | 0 failures**
+### Test suite summary
 
-```
-tests/unit/agents/lead_agent/          → 16 tests   ✅ PASS
-tests/unit/agents/specialist_agents/  → 14 tests   ✅ PASS  (+5 OFAC screener tests)
-tests/unit/data_sources/              → 25 tests   ✅ PASS  (new — OFAC connector tests)
-tests/unit/mcp_layer/                 → 16 tests   ✅ PASS
-tests/unit/reflexion_layer/           → 15 tests   ✅ PASS  (+1 OFAC gap detection test)
-tests/unit/knowledge_graph/           → 4 tests    ✅ PASS
-tests/unit/output_layer/              → 16 tests   ✅ PASS
-tests/unit/schemas (entities/utils)   → 8 tests    ✅ PASS (includes schemas)
-tests/unit/mcp_layer/test_gdelt*      → 5 tests    ✅ PASS
-```
+**Date: 2026-03-15 | Result: 159/159 passing | 0 skipped | 0 failures**
 
-### Honesty about test quality
-- Tests are **genuine** — they use `tmp_path` fixtures to write realistic mock XML/JSON, then verify real parsing and matching behavior. No test uses `assert True` or returns pre-fabricated results.
-- OFAC connector tests use a hand-crafted minimal SDN XML with 5 entries including realistic structure (akaList, programList, remarks). Tests cover: exact match, case-insensitive match, alias match, false-positive prevention (Oxford≠Ford, Stanford≠Ford), duplicate deduplication, and empty XML.
-- `test_corporate_agent_sec_task_uses_mcp_when_cache_exists` uses `pytest.skip("no SEC cache")` as a guard — **it does NOT skip on this machine** because `data/raw/sec/` exists. It ran and passed with real SEC data.
-- Tests for stubs (pacer_fetcher, structure_mapper) test the stub interface correctly (confidence=0.0, `stub=True`) until real integrations replace them.
+| Test Group | Count | What it tests |
+|------------|-------|---------------|
+| `agents/lead_agent/` | 16 | Entity resolution, task planner (6 tasks for AML), orchestrator, context manager |
+| `agents/specialist_agents/` | 27 | Corporate agent, legal agent (OFAC + CourtListener), social graph agent, sanctions screener, pacer analyzer |
+| `data_sources/` | 57 | OFAC XML parsing, name matching, false-positive prevention, CourtListener field normalization, cache, API mocking |
+| `mcp_layer/` | 16 | SEC processor, GDELT processor, evidence loader, facade |
+| `reflexion_layer/` | 16 | Cross-check, gap detection (OFAC cache miss, CourtListener error, social empty, stubs), confidence scoring |
+| `knowledge_graph/` | 4 | Graph builder, node/edge correctness |
+| `output_layer/` | 16 | Evidence report (Markdown/HTML), risk dashboard, audit trail |
+| `schemas/` | 8 | Entity/Evidence creation, serialization |
 
-### Verification checks performed
-| Claim | Verified? | How |
-|-------|-----------|-----|
-| NHTSA completely removed | ✅ | `rg -il "nhtsa" --no-ignore` → 0 matches across ALL files including hidden |
-| Tesla CSV: 775 rows | ✅ | `wc -l evidence_tesla.csv` → 776 lines (1 header) |
-| Ford CSV: 994 rows | ✅ | `wc -l evidence_ford_motor_company.csv` → 995 lines |
-| Boeing CSV: 900 rows | ✅ | `wc -l evidence_the_boeing_company.csv` → 901 lines |
-| Pipeline: 1104 findings for Tesla | ✅ | Live run of `run_lead_agent.py` |
-| Social Graph Agent returns 100 GDELT items | ✅ | Live run confirmed |
-| Unknown entity gracefully returns 0 findings | ✅ | Live run confirmed |
-| Tesla date range 2018-02-14 → 2026-03-15 | ✅ | Parsed from actual CSV |
-| SEC confidence = 0.85 in pipeline | ✅ | `get_evidence_for_entity()` live check |
-| GDELT confidence = 0.60 in pipeline | ✅ | `get_evidence_for_entity()` live check |
-| OFAC SDN XML downloaded | ✅ | `pull_ofac_sdn.py --stats` → 18,712 entries (9,521 entities, 7,394 individuals) |
-| Tesla OFAC clean | ✅ | Live: `sdn_matches=0, screened=True, confidence=0.90` |
-| Ford OFAC clean | ✅ | Live: `sdn_matches=0, screened=True, confidence=0.90` |
-| Boeing OFAC clean | ✅ | Live: `sdn_matches=0, screened=True, confidence=0.90` |
-| OFAC false-positive prevention | ✅ | `search_entries("Ford Motor Company")` does NOT hit "OXFORD" or "STANFORD" entries |
-| OFAC match detection works | ✅ | Unit tests: "BLACKROCK TRADING CORP" → match found; alias "BRT CORP" → match found |
+### Test quality (honest assessment)
+
+- **No fake tests.** No `assert True`. No `@pytest.mark.skip`. No `xfail`.
+- OFAC tests use a hand-crafted 5-entry SDN XML with realistic structure (akaList, programList, remarks). Tests cover: exact match, case-insensitive, alias match, false-positive prevention (Oxford≠Ford, Stanford≠Ford), duplicate deduplication, empty XML, malformed XML.
+- CourtListener tests use `unittest.mock.patch` to mock `requests.get` — zero real network calls in tests. Covers: field normalization (camelCase/snake_case), cache write+read round-trip, max_results truncation, network timeout, HTTP 429 error.
+- `test_corporate_agent_sec_task_uses_mcp_when_cache_exists` uses `pytest.skip("no SEC cache")` as a guard — it does NOT skip on this machine because `data/raw/sec/` exists.
+
+### Verification checks
+
+| Claim | Status | Method |
+|-------|--------|--------|
+| NHTSA completely removed | ✅ | `rg -il "nhtsa" --no-ignore` → 0 matches |
+| Tesla CSV: 775 rows | ✅ | `wc -l evidence_tesla.csv` → 776 (1 header) |
+| Ford CSV: 994 rows | ✅ | `wc -l` → 995 |
+| Boeing CSV: 900 rows | ✅ | `wc -l` → 901 |
+| Tesla pipeline: 1,125 findings | ✅ | Live run of `run_lead_agent.py` |
+| Ford pipeline: 623 findings | ✅ | Live run |
+| Boeing pipeline: 585 findings | ✅ | Live run |
+| Unknown entity → 0 findings | ✅ | Live run |
+| OFAC SDN: 18,712 entries | ✅ | `pull_ofac_sdn.py --stats` |
+| Tesla/Ford/Boeing OFAC clean | ✅ | `sdn_matches=0, screened=True, confidence=0.90` |
+| OFAC false-positive prevention | ✅ | `search_entries("Ford Motor Company")` ≠ "OXFORD" |
+| CourtListener: Tesla 2,054 | ✅ | Live API response |
+| CourtListener: Ford 21,885 | ✅ | Live API response |
+| CourtListener: Boeing 3,582 | ✅ | Live API response |
+| CourtListener cache-first | ✅ | Second run uses cache, no network call (test verified) |
+| Task planner: 6 tasks for AML | ✅ | Includes `litigation` alongside `sanctions_screening` |
+| No hard-coded entity names in agent/connector code | ✅ | Grep for Tesla/Ford/Boeing in agents/mcp/src → only in docstrings |
 
 ---
 
-## 11. Hard-Coding Audit
+## 12. Hard-Coding Audit
 
-### What is fully generic (✅)
+### Fully generic (✅)
+
 | Component | Why it's generic |
 |-----------|-----------------|
 | `build_evidence.py` | Takes `--entity-id` — works for any registered entity |
-| `pull_gdelt_news.py` | Takes `--entity-id` — works for any registered entity |
-| `pull_sec_submissions.py` | Takes `--cik` — works for any company |
-| `GdeltProcessor` | Uses `entity.name` dynamically to build GDELT query |
+| `pull_gdelt_news.py` | Takes `--entity-id` |
+| `pull_sec_submissions.py` | Takes `--cik` |
+| `pull_ofac_sdn.py` | Downloads full SDN list — covers ALL entities |
+| `pull_courtlistener.py` | Takes `--entity-id` or `--all` |
 | `SecEdgarProcessor` | Uses `entity.identifiers["cik"]` dynamically |
-| `mcp_layer/__init__.py` | `get_evidence_for_entity(entity, sources=[...])` — any entity, any source list |
-| Flask `app/pipeline.py` | Calls `LeadAgent` with the query string — no entity hard-coded |
+| `GdeltProcessor` | Uses `entity.name` dynamically |
+| `ofac.search_entries()` | Accepts any `entity_name` + `aliases` |
+| `courtlistener.fetch_dockets()` | Accepts any `entity_name` |
+| Flask `app/pipeline.py` | Calls `LeadAgent(query)` — no entity hard-coded |
 | `ENTITY_REGISTRY` | Declarative config — add any entity by editing one file |
 
-### What has fixed constant values (✅ intentional, by design)
-| Constant | Value | Reason |
-|----------|-------|--------|
-| SEC confidence | `0.85` | Authoritative government source — consistent across processor and build script |
-| GDELT confidence | `0.60` | News articles — lower confidence reflects noise (intentional) |
-| OFAC confidence | `0.90` | Definitive US gov sanctions list — 0.90 not 1.0 because name matching may have edge cases |
-| GDELT max records | `100` default | Balance between coverage and file size |
-| GDELT risk keywords | Fixed list | AML domain constants — standard adverse media screening terms |
-| SEC max_filings cap | `500` in processor | Prevents memory issues for large companies |
+### Fixed constants (✅ intentional, by design)
 
-### Dead code (⚠️ not bugs, but cleanup opportunity)
-`agents/specialist_agents/social_graph_agent/gnn_analyzer/analyzer.py` and `influence_mapper/mapper.py` contain `run_stub()` functions that the `SocialGraphAgent` **no longer calls** (it now calls GDELT directly). They exist but are never reached. They can be deleted in a later cleanup sprint.
+| Constant | Value | Location | Reason |
+|----------|-------|----------|--------|
+| SEC confidence | `0.85` | `sec_edgar_processor`, `build_evidence.py` | Authoritative gov filings |
+| GDELT confidence | `0.60` | `gdelt_processor` | News articles are noisy |
+| OFAC confidence | `0.90` | `screener.py` | Definitive sanctions list |
+| CourtListener confidence | `0.85` | `courtlistener.py`, `analyzer.py` | Authoritative court records |
+| CourtListener max_results | `20` | `courtlistener.py` | Demo-appropriate; configurable |
+| GDELT max records | `100` | `gdelt.py` | Balance coverage vs. size |
+| GDELT risk keywords | Fixed list | `gdelt.py` | AML domain constants |
+| SEC max_filings cap | `500` | `sec_edgar_processor` | Prevents memory issues |
+| Source reliability weights | 0.50–0.95 | `confidence_module/scorer.py` | Domain calibration |
+| `_MIN_SUBSTR_LEN` | `3` | `resolver.py` | Prevents ticker false positives |
 
-### Stubs (✅ intentional, documented)
-Legal Agent `pacer_fetcher` and Corporate Agent `structure_mapper` remain intentional placeholders. They return clearly-labeled Evidence rows with `confidence=0.0` and `attributes={"stub": True}`. Gap detection flags these. The `sanctions_screener` is **no longer a stub** — it runs live OFAC screening.
+### Dead code (cleanup opportunity)
+
+| File | Status | Risk |
+|------|--------|------|
+| `social_graph_agent/gnn_analyzer/analyzer.py` | Dead — never called | None (harmless) |
+| `social_graph_agent/influence_mapper/mapper.py` | Dead — never called | None (harmless) |
+
+### Remaining stubs
+
+| File | Returns | When will it be replaced |
+|------|---------|-------------------------|
+| `corporate_agent/structure_mapper/mapper.py` | 1 Evidence (conf=0.0, stub=True) | When OpenCorporates is integrated |
 
 ---
 
-## 12. Known Limitations (Honest)
+## 13. Known Limitations (Honest)
 
 ### GDELT data quality (noise)
-When tested for Tesla: **76/100 fetched articles do not have explicit risk keywords in the title**. Examples of noise: "The Kia EV6 Is The Most American Car On Sale", unrelated investor alerts for other companies (these appear because GDELT matched on the query body, not just titles).
 
-**Why this is acceptable:**
-1. The confidence score of **0.60** already reflects this — it's lower than SEC (0.85) precisely because news articles are noisy
-2. GDELT matches on article body content, not just titles — so "Tesla Legal Woes" in a round-up article is legitimate adverse media even if the exact keyword isn't in the title
-3. The Reflexion layer's cross-check and gap detection work with these confidence values
-4. For the capstone demo, this is the realistic, honest behavior of a real OSINT tool
+Tested for Tesla: **76/100 articles lack explicit risk keywords in the title**. Examples: "The Kia EV6 Is The Most American Car On Sale", investor alerts for unrelated companies.
 
-**Future mitigation:** Filter GDELT results by entity name appearing in the title, or use GDELT's `sourcecountry=US` + `language=English` filters to reduce noise.
+**Why it's acceptable:**
+1. Confidence `0.60` already reflects this — lower than SEC (0.85) and OFAC (0.90)
+2. GDELT matches on article body, not just titles — round-up articles with "Tesla Legal Woes" are legitimate adverse media
+3. Reflexion layer accounts for these weights
+4. This is the realistic behavior of a real OSINT tool
+
+**Future fix:** Filter by entity name appearing in the title, or use `sourcecountry=US` + `language=English` GDELT params.
 
 ### SEC filing cap
-The `SecEdgarProcessor` caps at 500 filings per call. The pre-built CSVs (`build_evidence.py`) have no cap and contain 675/894/838 rows. When the pipeline runs live via the MCP layer, it uses the capped processor (500 rows). This is intentional — the cap prevents memory issues when agents call the processor multiple times for the same entity.
 
-### Legal Agent: OFAC live, CourtListener still a stub
-OFAC sanctions screening is live. CourtListener court dockets are not yet integrated — `pacer_fetcher` returns a placeholder. The risk dashboard still shows low legal coverage until CourtListener is added. Gap detection reports this correctly.
+`SecEdgarProcessor` caps at 500 filings. Pre-built CSVs (`build_evidence.py`) have no cap and contain 675/894/838 rows. Cap prevents memory issues when agents call the processor multiple times.
+
+### CourtListener returns 20 dockets out of thousands
+
+Tesla has 2,054 dockets; we cache 20 by relevance score. Sufficient for demo. Increase via `--max-results` if needed (max 50 per API page without pagination).
+
+### Cross-check "conflicts" are expected
+
+Tesla shows 87 "conflicts" — these are same-date SEC filings with different summaries (e.g. two 8-K filings on the same day for different material events). This is correct behavior, not a bug.
+
+### Beneficial ownership is still a stub
+
+`structure_mapper/mapper.py` returns a single placeholder Evidence row. Gap detection correctly flags this. Will be replaced by OpenCorporates integration.
+
+---
+
+## 14. Design Decisions & Rationale
+
+### Why GDELT instead of Twitter/LinkedIn?
+
+The project proposal mentioned Twitter and LinkedIn for social graph analysis. We replaced them with GDELT because:
+- Twitter API requires paid access ($100+/month for research tier)
+- LinkedIn has no public API for scraping and actively blocks automation
+- GDELT is free, public, indexes 100+ languages, and covers the same use case (adverse media monitoring)
+- GDELT's risk keyword query maps directly to AML screening requirements
+
+### Why CourtListener instead of PACER?
+
+PACER charges $0.10/page — prohibitive for a capstone project. CourtListener (Free Law Project) mirrors PACER content for free via a REST API. Same underlying data.
+
+### Why OFAC SDN as a local XML file?
+
+The OFAC SDN list is 27 MB of XML (~18,712 entries). Downloading once and searching locally is faster and more reliable than hitting a web API on every run. The screener operates purely on the cached file — zero network calls after initial download.
+
+### Why frozen dataclasses for Entity and Evidence?
+
+Entities and Evidence are passed between agents, stored in context, and used by the reflexion layer. Immutability (`frozen=True`) prevents any agent from accidentally mutating shared state — a critical property in a multi-agent system.
+
+### Why confidence=0.0 for stubs instead of omitting them?
+
+Stubs return `confidence=0.0` and `attributes={"stub": True}` so that:
+1. The gap detector can distinguish "this source was checked and had no data" from "this source was never checked"
+2. The output layer can show "data not available" rather than silently omitting a category
+3. Analysts see the gap and know what's missing
+
+### Why slug-based cache filenames?
+
+Cache files use slugified entity names (e.g. `news_tesla.json`, `dockets_ford_motor_company.json`) rather than entity IDs. This makes the `data/raw/` directory human-readable for debugging.
 
 ---
 
-## 13. Next Steps — Priority Order
+## 15. Sprint History & Bug Fix Log
 
-### Completed since last sprint ✅
-- **OFAC Sanctions Screening** — **DONE** (2026-03-15)
-  - `src/osint_swarm/data_sources/ofac.py` — OFAC SDN XML parser + entity matcher
-  - `agents/specialist_agents/legal_agent/sanctions_screener/screener.py` — replaced stub with live screener
-  - `scripts/pull_ofac_sdn.py` — one-time download script
-  - 36 new unit tests; 119/119 passing
-  - Verified live: Tesla / Ford / Boeing all clean against 18,712 real SDN entries
-  - SDN XML (27 MB) excluded from git via existing `data/raw/` ignore rule
+### Sprint 1 — Foundation (pre-2026-03-15)
+- Built core architecture: `Entity` + `Evidence` dataclasses, MCP layer, lead agent orchestrator
+- Implemented SEC EDGAR connector + processor
+- Implemented NHTSA recall connector (later removed)
+- Created entity registry with Tesla
+- Built reflexion layer (cross-check, gap detection, confidence module)
+- Built output layer (evidence report, risk dashboard, audit trail)
+- Built knowledge graph
+- Built Flask web demo
+- 83 unit tests
+
+### Sprint 2 — NHTSA→GDELT Migration + Ford/Boeing (2026-03-15)
+- **Removed NHTSA entirely** — irrelevant to AML/corporate risk
+- **Added GDELT DOC 2.0** — adverse media connector + processor
+- Added Ford Motor Company and Boeing to entity registry
+- Created generic `build_evidence.py` (replaced entity-specific hard-coding)
+- Fixed entity resolution false positive: Ford ticker "F" matching "fraud"
+- Fixed SEC confidence inconsistency (0.95 in build_evidence.py vs 0.85 in processor → standardized to 0.85)
+- Tests: 83 → 83 (replaced NHTSA tests with GDELT tests)
+
+### Sprint 3 — OFAC Sanctions Screening (2026-03-15)
+- **New:** `src/osint_swarm/data_sources/ofac.py` — XML parser + name matcher
+- **New:** `agents/specialist_agents/legal_agent/sanctions_screener/screener.py` — replaced stub
+- **New:** `scripts/pull_ofac_sdn.py`
+- Updated gap detection to handle OFAC cache-missing vs. real screening
+- Tests: 83 → 119
+
+### Sprint 4 — CourtListener Court Records (2026-03-15)
+- **New:** `src/osint_swarm/data_sources/courtlistener.py` — REST API connector
+- **New:** `agents/specialist_agents/legal_agent/pacer_analyzer/analyzer.py` — replaced stub
+- **New:** `scripts/pull_courtlistener.py`
+- Updated task planner to emit `litigation` task (5 → 6 tasks for AML queries)
+- Updated gap detection for CourtListener fetch errors
+- Tests: 119 → 159
+
+### Bug Fix Log
+
+| Bug | Root Cause | Fix | Sprint |
+|-----|-----------|-----|--------|
+| `SEC_USER_AGENT` not set → HTTP 403 | Missing `.env` file | Created `.env`, updated `.env.example` with clear instructions | 1 |
+| Flask port 5000 blocked on macOS | AirPlay Receiver uses port 5000 | Documented workaround (disable AirPlay or use port 5001) | 1 |
+| Ford ticker "F" matches "fraud" | Substring matching too aggressive | Added `_word_in_text()` + `_MIN_SUBSTR_LEN = 3` | 2 |
+| SEC confidence 0.95 vs 0.85 | `build_evidence.py` used 0.95, processor used 0.85 | Standardized both to 0.85 | 2 |
+| `build_evidence_tesla.py` only had 1 hard-coded row | Script was not parsing full SEC JSON | Refactored into generic `build_evidence.py` | 2 |
+| GDELT cache filename mismatch in tests | `_slug_for_entity("Tesla, Inc.")` → `"tesla"` not `"tesla_inc"` | Fixed test fixtures to use correct slug | 2 |
+| `reg_count` undefined in SEC analyzer | Variable removed when NHTSA was deleted | Removed reference from `summarize_governance_red_flags` | 2 |
+| OFAC alias "BRT" excluded by length check | Post-normalization length <4, but original alias was "BRT CORP" | Changed to check original alias length, not post-normalized | 3 |
+| CourtListener camelCase vs snake_case | v4 search uses camelCase, dockets use snake_case | `_get_field()` tries both variants | 4 |
+| Task planner missing `litigation` task | Task was defined in `LEGAL_TASK_TYPES` but never emitted | Added to both AML and default task paths | 4 |
 
 ---
+
+## 16. Next Steps
 
 ### Priority 1 — Must have before final demo
 
-#### 1a. CourtListener Court Records — **Jacob + Raj (1–2 days)**
-**File to edit**: `agents/specialist_agents/legal_agent/pacer_fetcher/fetcher.py`
+#### 1a. OpenCorporates Beneficial Ownership
 
-Replace the `run_stub()` function with:
-```python
-# Source: https://www.courtlistener.com/api/rest/v3/ (free, 5 req/s, no auth)
-# Query: GET /api/rest/v3/dockets/?q="Tesla, Inc."&court=ca9
-# Return docket entries as Evidence with source_type="court_record", risk_category="legal", confidence=0.85
-```
+**File:** `agents/specialist_agents/corporate_agent/structure_mapper/mapper.py`
 
-### Priority 2 — Important for completeness
-
-#### 2a. OpenCorporates Beneficial Ownership — **Arnab (2 days)**
-**File to edit**: `agents/specialist_agents/corporate_agent/structure_mapper/mapper.py`
-
-Replace the `run_stub()` function with:
+Replace `run_stub()` with real OpenCorporates integration:
 ```python
 # Source: https://api.opencorporates.com/v0.4/companies/search?q=<name> (free tier)
 # Extract officers, directors, parent/subsidiary relationships
 # Return Evidence with source_type="other", risk_category="network", confidence=0.75
 ```
 
-### Priority 3 — Polish and evaluation
+### Priority 2 — Polish and evaluation
 
-#### 3a. GDELT noise filtering
-Add entity name check: only keep articles where entity name (or close variant) appears in title or first 200 chars of URL domain pattern. This will reduce Tesla noise from 76% to ~20%.
+| Task | Description | Owner |
+|------|------------|-------|
+| GDELT noise filtering | Filter articles where entity name appears in title | Taljinder |
+| Flask UI improvements | SEC/GDELT/Court counts separately, clickable links, entity dropdown | Aditya |
+| Evaluation metrics | Citation rate, coverage by risk_category, runtime per query | Taljinder |
+| Dead code cleanup | Delete `gnn_analyzer/` and `influence_mapper/` (no longer called) | Anyone |
 
-#### 3b. Flask UI improvements — **Aditya**
-- Show SEC vs GDELT counts separately in the dashboard
-- Show GDELT article titles as clickable links
-- Add entity selector dropdown
+### Priority 3 — Demo prep
 
-#### 3c. Evaluation metrics — **Taljinder**
-- Citation rate (% of Evidence rows with valid source_uri)
-- Coverage by risk_category
-- Runtime per query
-
-#### 3d. Cleanup dead code
-Delete or repurpose:
-- `agents/specialist_agents/social_graph_agent/gnn_analyzer/analyzer.py`
-- `agents/specialist_agents/social_graph_agent/influence_mapper/mapper.py`
-(These stubs are no longer called by anything)
+| Task | Description | Owner |
+|------|------------|-------|
+| Demo rehearsal | End-to-end walkthrough with all data sources | All |
 
 ---
 
-## 14. Team Role Assignments
+## 17. Team Roles
 
 | Role | Owner |
 |------|-------|
@@ -530,14 +953,14 @@ Delete or repurpose:
 | Frontend & visualization | Aditya |
 | Deployment & documentation | Jacob |
 
-**Recommended sprint allocation:**
+**Sprint allocation:**
 
-| Task | Owner | Days |
-|------|-------|------|
+| Task | Owner | Status |
+|------|-------|--------|
 | ~~OFAC SDN integration~~ | ~~Raj + Arnab~~ | ✅ Done |
-| CourtListener integration | Jacob + Raj | 1–2 |
-| OpenCorporates | Arnab | 2 |
-| Flask UI polish | Aditya | 1–2 |
-| GDELT noise filter | Taljinder | 1 |
-| Evaluation metrics | Taljinder | 1 |
-| Demo rehearsal | All | 1 |
+| ~~CourtListener integration~~ | ~~Jacob + Raj~~ | ✅ Done |
+| OpenCorporates | Arnab | Next |
+| Flask UI polish | Aditya | Pending |
+| GDELT noise filter | Taljinder | Pending |
+| Evaluation metrics | Taljinder | Pending |
+| Demo rehearsal | All | Pending |
