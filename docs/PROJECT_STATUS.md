@@ -1248,22 +1248,29 @@ Cache files use slugified entity names (e.g. `news_tesla.json`, `dockets_ford_mo
 
 ## 18. Next Steps
 
-### Priority 1 — Polish and hardening ✅ COMPLETE
-
-| Task | Description | Status |
-|------|------------|--------|
-| ~~GDELT noise filtering~~ | Relevance scoring by title content (0.30–0.75) | ✅ Done (Sprint 6) |
-| ~~Flask UI improvements~~ | Dark theme, entity dropdown, data source breakdown, eval metrics panel | ✅ Done (Sprint 6) |
-| ~~Evaluation metrics~~ | Citation rate, coverage, GDELT signal rate, confidence distribution, runtime | ✅ Done (Sprint 6) |
-| ~~Dead code cleanup~~ | Deleted `gnn_analyzer/` and `influence_mapper/` | ✅ Done (Sprint 6) |
-
-### Priority 2 — Demo prep
+### Priority 1 — Demo prep
 
 | Task | Description | Owner |
 |------|------------|-------|
-| Demo rehearsal | End-to-end walkthrough with all 5 data sources | All |
-| Additional entities | Add 1–2 more entities to registry for demo variety | Anyone |
-| GDELT language filtering | Optionally add `sourcecountry=US` + `language=English` to further reduce noise | Taljinder |
+| Demo rehearsal | End-to-end walkthrough: clone → setup → pull data → run Flask → show results | All |
+| Add 1–2 more entities | E.g. Alphabet (Google), JPMorgan — proves system is generic, not just a Tesla demo (~5 min each, see Section 9) | Anyone |
+| GDELT language filtering | Add `sourcecountry=US` + `language=English` to further reduce noise (currently 38–53% signal) | Taljinder |
+
+### Priority 2 — Improvements
+
+| Task | Description | Effort |
+|------|------------|--------|
+| Automatic entity resolution | Query SEC EDGAR full-text search to resolve unknown company names to CIK on the fly — removes registry requirement | 2–3 hours |
+| Filing-type confidence modifiers | Score 8-K restatements at 0.95, routine Form 4 at 0.75 instead of flat 0.85 for all SEC filings | 1 hour |
+| CourtListener pagination | Currently capped at 20 dockets — add pagination to fetch more | 1 hour |
+
+### Priority 3 — Nice-to-haves for presentation
+
+| Task | Description | Effort |
+|------|------------|--------|
+| Knowledge graph visualization | Render NetworkX graph as interactive D3.js/vis.js diagram in Flask UI | 3–4 hours |
+| PDF report export | "Download PDF" button on results page | 2 hours |
+| Loading spinner | Flask form blocks for 2–3s — add progress indicator | 30 min |
 
 ---
 
