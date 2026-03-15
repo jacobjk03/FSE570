@@ -1,4 +1,4 @@
-"""Tests for Legal Agent."""
+"""Tests for Legal Agent (OFAC sanctions screener + PACER stub)."""
 
 import pytest
 
@@ -13,16 +13,30 @@ def test_legal_agent_agent_id():
     assert agent.agent_id == "legal_agent"
 
 
-def test_legal_agent_sanctions_returns_stub():
-    agent = LegalAgent()
-    entity = Entity(entity_id="e1", name="E", identifiers={})
+def test_legal_agent_sanctions_returns_legal_evidence(tmp_path):
+    """Sanctions screening returns real Evidence (not old stub), risk_category='legal'."""
+    agent = LegalAgent(data_root=tmp_path)  # no SDN cache → graceful fallback
+    entity = Entity(entity_id="e1", name="Some Corp", identifiers={})
     task = SubTask("sanctions_screening", "legal_agent", "Screen sanctions")
     ctx = InvestigationContext()
     findings = agent.run(entity, task, ctx)
-    assert len(findings) == 1
-    assert "sanctions" in findings[0].summary.lower() or "stub" in findings[0].summary.lower()
+
+    assert len(findings) >= 1
     assert findings[0].risk_category == "legal"
-    assert findings[0].attributes.get("stub") is True
+    # stub flag must be False — we replaced the stub
+    assert findings[0].attributes.get("stub") is False
+
+
+def test_legal_agent_sanctions_fallback_confidence_zero_without_cache(tmp_path):
+    """Without SDN cache, screener returns confidence=0.0 and a helpful message."""
+    agent = LegalAgent(data_root=tmp_path)
+    entity = Entity(entity_id="e1", name="E Corp", identifiers={})
+    task = SubTask("sanctions_screening", "legal_agent", "Screen")
+    ctx = InvestigationContext()
+    findings = agent.run(entity, task, ctx)
+
+    assert findings[0].confidence == 0.0
+    assert "pull_ofac_sdn" in findings[0].summary.lower() or "cache" in findings[0].summary.lower()
 
 
 def test_legal_agent_litigation_returns_pacer_stub():
@@ -33,4 +47,3 @@ def test_legal_agent_litigation_returns_pacer_stub():
     findings = agent.run(entity, task, ctx)
     assert len(findings) == 1
     assert "pacer" in findings[0].summary.lower() or "court" in findings[0].summary.lower()
-

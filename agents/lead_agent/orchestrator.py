@@ -20,8 +20,8 @@ def _default_agent_stubs(data_root: Optional[Path] = None) -> Dict[str, AgentStu
     data_root = data_root or Path("data")
     from agents.specialist_agents import CorporateAgent, LegalAgent, SocialGraphAgent
     corporate = CorporateAgent(data_root=data_root)
-    legal = LegalAgent()
-    social = SocialGraphAgent()
+    legal = LegalAgent(data_root=data_root)
+    social = SocialGraphAgent(data_root=data_root)
     return {
         "corporate_agent": lambda e, t, c: corporate.run(e, t, c),
         "legal_agent": lambda e, t, c: legal.run(e, t, c),

@@ -1,6 +1,6 @@
 # Project Status — Autonomous OSINT Investigation Swarm
-**Last updated: 2026-03-15 | Fully audited & verified**
-**83/83 unit tests passing | NHTSA removed | GDELT integrated**
+**Last updated: 2026-03-15 | OFAC sanctions screening live**
+**119/119 unit tests passing | NHTSA removed | GDELT + OFAC integrated**
 
 ---
 
@@ -37,7 +37,7 @@ Lead Agent reads it → resolves "Tesla" → finds Tesla, Inc. in registry
 Task Planner creates 5 investigation tasks:
   • corporate_structure   → Corporate Agent (SEC filings)
   • beneficial_ownership  → Corporate Agent (stub for now)
-  • sanctions_screening   → Legal Agent (stub for now)
+  • sanctions_screening   → Legal Agent (OFAC SDN — LIVE)
   • transaction_patterns  → Corporate Agent (SEC filings)
   • adverse_media         → Social Graph Agent (GDELT news)
         │
@@ -66,14 +66,14 @@ Output: Evidence Report (Markdown/HTML) + Risk Dashboard + Audit Trail
 |--------|-----------------|------|------------|
 | **SEC EDGAR** | Governance filings: 10-K (annual reports), 8-K (material events, CEO changes), DEF 14A (proxy votes), ownership forms (SC 13G/D, Form 4) | `SEC_USER_AGENT` in `.env` (just your name + email — not an API key) | **0.85** |
 | **GDELT DOC 2.0** | Global news articles about adverse events: fraud, investigation, penalty, fine, violation, lawsuit, scandal, misconduct, bribery, corruption, sanctions, money laundering, settlement, indictment | **None** — completely free, no registration | **0.60** |
+| **OFAC SDN list** | US Treasury Specially Designated Nationals — 18,712 entries (9,521 entities, 7,394 individuals, 1,455 vessels, 342 aircraft). The gold standard AML sanctions screen. Download once: `python scripts/pull_ofac_sdn.py` | **None** — free public XML, no API key | **0.90** |
 
-> **Why 0.85 and 0.60?** SEC filings are authoritative government records → high confidence. News articles are noisy and not always directly relevant → lower confidence. This is honest, not a bug. The reflexion layer accounts for these weights when scoring overall risk.
+> **Why 0.85 / 0.60 / 0.90?** SEC filings are authoritative gov records → 0.85. GDELT news is noisy → 0.60. OFAC SDN is the definitive US government sanctions list → 0.90.
 
 ### Not yet integrated (stubs — placeholder code exists)
 | Source | What it would provide | Priority |
 |--------|----------------------|----------|
-| OFAC SDN list | US Treasury sanctions screening | Priority 1 |
-| CourtListener | US federal court dockets | Priority 1 |
+| CourtListener/RECAP | US federal court dockets | Priority 1 |
 | OpenCorporates | Beneficial ownership / corporate structure | Priority 2 |
 
 ### Removed (intentionally)
@@ -88,6 +88,7 @@ src/osint_swarm/           Core library
   data_sources/
     sec_edgar.py           SEC EDGAR HTTP connector
     gdelt.py               GDELT DOC 2.0 HTTP connector
+    ofac.py                OFAC SDN XML parser + entity matcher (no network — works on cached XML)
   entities.py              Entity + Evidence dataclasses (the shared schema)
   utils/io.py              read_json, write_json, write_csv_dicts helpers
 
@@ -127,6 +128,7 @@ app/                       Flask web demo
 scripts/                   Runnable scripts (all generic, all use --entity-id or --cik)
   pull_sec_submissions.py
   pull_gdelt_news.py
+  pull_ofac_sdn.py           Downloads OFAC SDN XML → data/raw/ofac/sdn.xml (run once)
   build_evidence.py          (generic — any registered entity)
   build_evidence_tesla.py    (thin wrapper → build_evidence.py)
   build_evidence_ford.py     (thin wrapper → build_evidence.py)
@@ -135,6 +137,7 @@ scripts/                   Runnable scripts (all generic, all use --entity-id or
 data/
   raw/sec/                 Cached SEC JSON (not committed to git)
   raw/gdelt/               Cached GDELT JSON (not committed to git)
+  raw/ofac/sdn.xml         Cached OFAC SDN XML — 27 MB, not committed to git (too large)
   data/processed/          Evidence CSVs (not committed to git)
 ```
 
@@ -155,12 +158,16 @@ data/
 - For `beneficial_ownership`: calls `structure_mapper` which is a **stub** (returns 1 placeholder Evidence row with `stub=True`, `confidence=0.0`)
 - The stub is clearly labeled and gap detection flags it as missing data
 
-### Legal Agent (`agents/specialist_agents/legal_agent/`) — **ALL STUBS**
-- Handles tasks: `sanctions_screening`, `litigation_review`, `transaction_patterns` (when assigned)
-- `sanctions_screener/screener.py` → returns 1 placeholder row ("Sanctions screening not yet integrated")
-- `pacer_fetcher/fetcher.py` → returns 1 placeholder row ("CourtListener not integrated")
-- Both stubs have `confidence=0.0` and `attributes={"stub": True}` — gap detection flags these
-- **This is the #1 priority to replace** — see Section 13
+### Legal Agent (`agents/specialist_agents/legal_agent/`) — **OFAC LIVE, PACER stub**
+- Handles tasks: `sanctions_screening`, `litigation`, `regulatory_actions`
+- **`sanctions_screener/screener.py` → now LIVE**: screens entity against all 18,712 OFAC SDN entries
+  - Returns 1 clean-result Evidence row (confidence=0.90, `sdn_matches=0`) if no match
+  - Returns 1 Evidence row per SDN match found (confidence=0.90, `⚠ OFAC SDN MATCH` in summary)
+  - Returns 1 fallback Evidence row (confidence=0.0) if `data/raw/ofac/sdn.xml` cache is missing
+  - `attributes={"stub": False}` — this is real data
+  - Gap detection no longer flags this as "not integrated" once the cache is downloaded
+- `pacer_fetcher/fetcher.py` → still a stub ("CourtListener not integrated"), `confidence=0.0`, `stub=True`
+- **Must download SDN cache before first run**: `python scripts/pull_ofac_sdn.py` (once, ~30-40 seconds)
 
 ### Social Graph Agent (`agents/specialist_agents/social_graph_agent/`) — **LIVE (GDELT)**
 - Handles tasks: `adverse_media`, `network_analysis`, `influence_mapping`
@@ -187,6 +194,10 @@ cp .env.example .env
 
 ### Pull raw data (run once per entity, or to refresh)
 ```bash
+# OFAC SDN list — run ONCE, covers all entities (~30-40 seconds download)
+python scripts/pull_ofac_sdn.py --stats   # shows entry counts after download
+# Output: data/raw/ofac/sdn.xml (27 MB, ~18,712 SDN entries)
+
 # SEC EDGAR (requires SEC_USER_AGENT in .env)
 python scripts/pull_sec_submissions.py --cik 0001318605    # Tesla
 python scripts/pull_sec_submissions.py --cik 0000037996    # Ford
@@ -197,7 +208,7 @@ python scripts/pull_gdelt_news.py --entity-id tesla_inc_cik_0001318605
 python scripts/pull_gdelt_news.py --entity-id ford_motor_cik_0000037996
 python scripts/pull_gdelt_news.py --entity-id boeing_cik_0000012927
 ```
-Output: `data/raw/sec/CIK*.json` and `data/raw/gdelt/news_*.json`
+Output: `data/raw/ofac/sdn.xml`, `data/raw/sec/CIK*.json`, `data/raw/gdelt/news_*.json`
 
 ### Build evidence CSVs (run after pulling raw data)
 ```bash
@@ -227,7 +238,7 @@ python app/app.py
 
 ### Run tests
 ```bash
-pytest tests/unit -v         # 83 tests, all should pass
+pytest tests/unit -v         # 119 tests, all should pass
 pytest tests/unit -q         # quick summary only
 ```
 
@@ -319,7 +330,7 @@ python scripts/run_lead_agent.py "Investigate Tesla for money laundering"
 python app/app.py              # then open http://127.0.0.1:5000
 
 # TESTS
-pytest tests/unit -v           # 83 tests
+pytest tests/unit -v           # 119 tests
 ```
 
 ---
@@ -355,22 +366,25 @@ pytest tests/unit -v           # 83 tests
 ## 10. Test Results & Honest Audit
 
 ### Test suite
-**Date: 2026-03-15 | Result: 83/83 passing | 0 skipped | 0 failures**
+**Date: 2026-03-15 | Result: 119/119 passing | 0 skipped | 0 failures**
 
 ```
-tests/unit/agents/lead_agent/          → 16 tests  ✅ PASS
-tests/unit/agents/specialist_agents/  → 9 tests   ✅ PASS
-tests/unit/mcp_layer/                 → 16 tests  ✅ PASS
-tests/unit/reflexion_layer/           → 14 tests  ✅ PASS
-tests/unit/knowledge_graph/           → 4 tests   ✅ PASS
-tests/unit/output_layer/              → 16 tests  ✅ PASS
-tests/unit/schemas (entities/utils)   → 8 tests   ✅ PASS
+tests/unit/agents/lead_agent/          → 16 tests   ✅ PASS
+tests/unit/agents/specialist_agents/  → 14 tests   ✅ PASS  (+5 OFAC screener tests)
+tests/unit/data_sources/              → 25 tests   ✅ PASS  (new — OFAC connector tests)
+tests/unit/mcp_layer/                 → 16 tests   ✅ PASS
+tests/unit/reflexion_layer/           → 15 tests   ✅ PASS  (+1 OFAC gap detection test)
+tests/unit/knowledge_graph/           → 4 tests    ✅ PASS
+tests/unit/output_layer/              → 16 tests   ✅ PASS
+tests/unit/schemas (entities/utils)   → 8 tests    ✅ PASS (includes schemas)
+tests/unit/mcp_layer/test_gdelt*      → 5 tests    ✅ PASS
 ```
 
 ### Honesty about test quality
-- Tests are **genuine** — they use `tmp_path` fixtures to write realistic mock JSON, then verify real parsing behavior. No test uses `assert True` or returns pre-fabricated results.
+- Tests are **genuine** — they use `tmp_path` fixtures to write realistic mock XML/JSON, then verify real parsing and matching behavior. No test uses `assert True` or returns pre-fabricated results.
+- OFAC connector tests use a hand-crafted minimal SDN XML with 5 entries including realistic structure (akaList, programList, remarks). Tests cover: exact match, case-insensitive match, alias match, false-positive prevention (Oxford≠Ford, Stanford≠Ford), duplicate deduplication, and empty XML.
 - `test_corporate_agent_sec_task_uses_mcp_when_cache_exists` uses `pytest.skip("no SEC cache")` as a guard — **it does NOT skip on this machine** because `data/raw/sec/` exists. It ran and passed with real SEC data.
-- Tests for stubs (legal agent, structure mapper) are testing that the stub interface is correct (confidence=0.0, `stub=True` in attributes) — this is the right thing to test until real integrations replace them.
+- Tests for stubs (pacer_fetcher, structure_mapper) test the stub interface correctly (confidence=0.0, `stub=True`) until real integrations replace them.
 
 ### Verification checks performed
 | Claim | Verified? | How |
@@ -385,6 +399,12 @@ tests/unit/schemas (entities/utils)   → 8 tests   ✅ PASS
 | Tesla date range 2018-02-14 → 2026-03-15 | ✅ | Parsed from actual CSV |
 | SEC confidence = 0.85 in pipeline | ✅ | `get_evidence_for_entity()` live check |
 | GDELT confidence = 0.60 in pipeline | ✅ | `get_evidence_for_entity()` live check |
+| OFAC SDN XML downloaded | ✅ | `pull_ofac_sdn.py --stats` → 18,712 entries (9,521 entities, 7,394 individuals) |
+| Tesla OFAC clean | ✅ | Live: `sdn_matches=0, screened=True, confidence=0.90` |
+| Ford OFAC clean | ✅ | Live: `sdn_matches=0, screened=True, confidence=0.90` |
+| Boeing OFAC clean | ✅ | Live: `sdn_matches=0, screened=True, confidence=0.90` |
+| OFAC false-positive prevention | ✅ | `search_entries("Ford Motor Company")` does NOT hit "OXFORD" or "STANFORD" entries |
+| OFAC match detection works | ✅ | Unit tests: "BLACKROCK TRADING CORP" → match found; alias "BRT CORP" → match found |
 
 ---
 
@@ -405,17 +425,18 @@ tests/unit/schemas (entities/utils)   → 8 tests   ✅ PASS
 ### What has fixed constant values (✅ intentional, by design)
 | Constant | Value | Reason |
 |----------|-------|--------|
-| SEC confidence | `0.85` | Authoritative government source — consistent across processor and build script (fixed in audit) |
+| SEC confidence | `0.85` | Authoritative government source — consistent across processor and build script |
 | GDELT confidence | `0.60` | News articles — lower confidence reflects noise (intentional) |
+| OFAC confidence | `0.90` | Definitive US gov sanctions list — 0.90 not 1.0 because name matching may have edge cases |
 | GDELT max records | `100` default | Balance between coverage and file size |
-| GDELT risk keywords | Fixed list | AML domain constants — these are the standard adverse media screening terms |
+| GDELT risk keywords | Fixed list | AML domain constants — standard adverse media screening terms |
 | SEC max_filings cap | `500` in processor | Prevents memory issues for large companies |
 
 ### Dead code (⚠️ not bugs, but cleanup opportunity)
-`agents/specialist_agents/social_graph_agent/gnn_analyzer/analyzer.py` and `influence_mapper/mapper.py` contain `run_stub()` functions that the `SocialGraphAgent` **no longer calls** (it now calls GDELT directly). They exist but are never reached in any pipeline path. They can be deleted in a later cleanup sprint — leaving them doesn't break anything.
+`agents/specialist_agents/social_graph_agent/gnn_analyzer/analyzer.py` and `influence_mapper/mapper.py` contain `run_stub()` functions that the `SocialGraphAgent` **no longer calls** (it now calls GDELT directly). They exist but are never reached. They can be deleted in a later cleanup sprint.
 
 ### Stubs (✅ intentional, documented)
-Legal Agent stubs (`sanctions_screener`, `pacer_fetcher`) and Corporate Agent `structure_mapper` are intentional placeholders for not-yet-integrated sources. They return clearly-labeled Evidence rows with `confidence=0.0` and `attributes={"stub": True}`. The gap detection layer flags these so the output always makes clear what data is missing.
+Legal Agent `pacer_fetcher` and Corporate Agent `structure_mapper` remain intentional placeholders. They return clearly-labeled Evidence rows with `confidence=0.0` and `attributes={"stub": True}`. Gap detection flags these. The `sanctions_screener` is **no longer a stub** — it runs live OFAC screening.
 
 ---
 
@@ -435,27 +456,27 @@ When tested for Tesla: **76/100 fetched articles do not have explicit risk keywo
 ### SEC filing cap
 The `SecEdgarProcessor` caps at 500 filings per call. The pre-built CSVs (`build_evidence.py`) have no cap and contain 675/894/838 rows. When the pipeline runs live via the MCP layer, it uses the capped processor (500 rows). This is intentional — the cap prevents memory issues when agents call the processor multiple times for the same entity.
 
-### Legal Agent is all stubs
-Until OFAC and CourtListener are integrated, all sanctions and court record output is placeholder data. The risk dashboard will show low legal coverage — this is correct behavior (gap detection flags it), not a bug.
+### Legal Agent: OFAC live, CourtListener still a stub
+OFAC sanctions screening is live. CourtListener court dockets are not yet integrated — `pacer_fetcher` returns a placeholder. The risk dashboard still shows low legal coverage until CourtListener is added. Gap detection reports this correctly.
 
 ---
 
 ## 13. Next Steps — Priority Order
 
+### Completed since last sprint ✅
+- **OFAC Sanctions Screening** — **DONE** (2026-03-15)
+  - `src/osint_swarm/data_sources/ofac.py` — OFAC SDN XML parser + entity matcher
+  - `agents/specialist_agents/legal_agent/sanctions_screener/screener.py` — replaced stub with live screener
+  - `scripts/pull_ofac_sdn.py` — one-time download script
+  - 36 new unit tests; 119/119 passing
+  - Verified live: Tesla / Ford / Boeing all clean against 18,712 real SDN entries
+  - SDN XML (27 MB) excluded from git via existing `data/raw/` ignore rule
+
+---
+
 ### Priority 1 — Must have before final demo
 
-#### 1a. OFAC Sanctions Screening — **Raj + Arnab (1–2 days)**
-**File to edit**: `agents/specialist_agents/legal_agent/sanctions_screener/screener.py`
-
-Replace the `run_stub()` function with:
-```python
-# Source: https://www.treasury.gov/ofac/downloads/sdn.xml (free, no auth)
-# Parse XML with lxml; match entity name/aliases against <sdnEntry> elements
-# Return Evidence rows with source_type="other", risk_category="legal", confidence=0.90
-```
-Add `lxml` to `requirements.txt`.
-
-#### 1b. CourtListener Court Records — **Jacob + Raj (1–2 days)**
+#### 1a. CourtListener Court Records — **Jacob + Raj (1–2 days)**
 **File to edit**: `agents/specialist_agents/legal_agent/pacer_fetcher/fetcher.py`
 
 Replace the `run_stub()` function with:
@@ -513,7 +534,7 @@ Delete or repurpose:
 
 | Task | Owner | Days |
 |------|-------|------|
-| OFAC SDN integration | Raj + Arnab | 1–2 |
+| ~~OFAC SDN integration~~ | ~~Raj + Arnab~~ | ✅ Done |
 | CourtListener integration | Jacob + Raj | 1–2 |
 | OpenCorporates | Arnab | 2 |
 | Flask UI polish | Aditya | 1–2 |
