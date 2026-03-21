@@ -8,12 +8,8 @@ __pycache__/
 # Environment variables (never commit real credentials)
 .env
 
-# Data (keep raw/processed out of git by default)
-data/raw/
+# Data (processed kept out; raw committed for Render deployment)
 data/processed/
-# ...but keep the folder structure visible on GitHub
-!data/raw/**/.gitkeep
-!data/processed/**/.gitkeep
 
 # Course submission extras (do not commit)
 extras/

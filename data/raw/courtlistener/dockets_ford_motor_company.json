@@ -1,0 +1,227 @@
+{
+  "entity_name": "Ford Motor Company",
+  "query": "\"Ford Motor Company\"",
+  "total_found": 21968,
+  "dockets": [
+    {
+      "id": "",
+      "case_name": "Wybenga v. Ford Motor Company",
+      "docket_number": "2:26-cv-10927",
+      "court_id": "mied",
+      "date_filed": "2026-03-20",
+      "date_terminated": null,
+      "suit_nature": "440 Civil Rights: Other",
+      "cause": "28:1331 Fed. Question",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Moore v. Ford Motor Company",
+      "docket_number": "2:25-cv-13651",
+      "court_id": "mied",
+      "date_filed": "2025-11-17",
+      "date_terminated": null,
+      "suit_nature": "442 Civil Rights: Jobs",
+      "cause": "42:2000 Job Discrimination (Sex)",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Lopez v. Ford Motor Company",
+      "docket_number": "5:26-cv-00229",
+      "court_id": "cand",
+      "date_filed": "2026-01-09",
+      "date_terminated": null,
+      "suit_nature": "190 Contract: Other",
+      "cause": "28:1332 Diversity-Other Contract",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Islam v. Ford Motor Company",
+      "docket_number": "2:25-cv-00960",
+      "court_id": "almd",
+      "date_filed": "2025-12-08",
+      "date_terminated": null,
+      "suit_nature": "355 Motor Vehicle Prod. Liability",
+      "cause": "15:2301 Magnuson-Moss Warranty Act",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Flippins v. Ford Motor Company",
+      "docket_number": "1:26-cv-00112",
+      "court_id": "gand",
+      "date_filed": "2026-01-08",
+      "date_terminated": null,
+      "suit_nature": "355 Motor Vehicle Prod. Liability",
+      "cause": "28:1446 Notice of Removal - Motor Vehicle Prod Liability",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Brown v. Ford Motor Company",
+      "docket_number": "2:25-cv-14045",
+      "court_id": "scd",
+      "date_filed": "2025-12-31",
+      "date_terminated": null,
+      "suit_nature": "365 Personal Inj. Prod. Liability",
+      "cause": "28:1332 Diversity-Tort/Motor Vehicle (P.I.)",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "v. Ford Motor Company",
+      "docket_number": "1:25-cv-01952",
+      "court_id": "cod",
+      "date_filed": "2025-06-23",
+      "date_terminated": "2025-06-25",
+      "suit_nature": "365 Personal Inj. Prod. Liability",
+      "cause": "28:1332 Diversity-Product Liability",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Andres v. Ford Motor Company",
+      "docket_number": "5:26-cv-01158",
+      "court_id": "cand",
+      "date_filed": "2026-02-06",
+      "date_terminated": null,
+      "suit_nature": "190 Contract: Other",
+      "cause": "28:1332 Diversity-Other Contract",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Mee v. Ford Motor Company",
+      "docket_number": "2:26-cv-10199",
+      "court_id": "mied",
+      "date_filed": "2026-01-20",
+      "date_terminated": null,
+      "suit_nature": "442 Civil Rights: Jobs",
+      "cause": "42:2000e Job Discrimination (Employment)",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Garofolo v. Ford Motor Company",
+      "docket_number": "3:26-cv-00223",
+      "court_id": "cand",
+      "date_filed": "2026-01-08",
+      "date_terminated": null,
+      "suit_nature": "190 Contract: Other",
+      "cause": "28:1332 Diversity-Petition for Removal",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Witt v. Ford Motor Company",
+      "docket_number": "1:25-cv-03507",
+      "court_id": "cod",
+      "date_filed": "2025-11-03",
+      "date_terminated": null,
+      "suit_nature": "365 Personal Inj. Prod. Liability",
+      "cause": "28:1331pl - Fed. Question - Product Liability",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Place v. Ford Motor Company",
+      "docket_number": "5:25-cv-07674",
+      "court_id": "cand",
+      "date_filed": "2025-09-09",
+      "date_terminated": null,
+      "suit_nature": "195 Contract Product Liability",
+      "cause": "28:1332 Diversity-Product Liability",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Ripley v. Ford Motor Company",
+      "docket_number": "5:26-cv-00428",
+      "court_id": "cand",
+      "date_filed": "2026-01-15",
+      "date_terminated": null,
+      "suit_nature": "190 Contract: Other",
+      "cause": "28:1332 Diversity-Other Contract",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Smith v. Ford Motor Company",
+      "docket_number": "6:25-cv-02114",
+      "court_id": "ord",
+      "date_filed": "2025-11-13",
+      "date_terminated": null,
+      "suit_nature": "355 Motor Vehicle Product Liability",
+      "cause": "28:1332 Diversity-Product Liability",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Farmer v. Ford Motor Company",
+      "docket_number": "2:25-cv-00244",
+      "court_id": "gand",
+      "date_filed": "2025-08-15",
+      "date_terminated": null,
+      "suit_nature": "355 Motor Vehicle Prod. Liability",
+      "cause": "28:1446 Notice of Removal - Motor Vehicle Prod Liability",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Espinoza v. Ford Motor Company",
+      "docket_number": "5:26-cv-01867",
+      "court_id": "cand",
+      "date_filed": "2026-03-04",
+      "date_terminated": null,
+      "suit_nature": "",
+      "cause": "",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Cordaro v. Ford Motor Company",
+      "docket_number": "9:26-cv-80259",
+      "court_id": "flsd",
+      "date_filed": "2026-03-12",
+      "date_terminated": null,
+      "suit_nature": "365 Personal Inj. Prod. Liability",
+      "cause": "28:1441 Notice of Removal-Personal Injury",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Mulkeen v. Ford Motor Company",
+      "docket_number": "5:25-cv-09261",
+      "court_id": "cand",
+      "date_filed": "2025-10-28",
+      "date_terminated": null,
+      "suit_nature": "190 Contract: Other",
+      "cause": "28:1332 Diversity-Other Contract",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "McCann v. Ford Motor Company",
+      "docket_number": "3:26-cv-01199",
+      "court_id": "casd",
+      "date_filed": "2026-02-25",
+      "date_terminated": null,
+      "suit_nature": "",
+      "cause": "",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Gandolfo v. Ford Motor Company",
+      "docket_number": "8:25-cv-02184",
+      "court_id": "cacd",
+      "date_filed": "2025-09-26",
+      "date_terminated": null,
+      "suit_nature": "190 Contract: Other",
+      "cause": "28:1332 Diversity-Other Contract",
+      "absolute_url": ""
+    }
+  ]
+}

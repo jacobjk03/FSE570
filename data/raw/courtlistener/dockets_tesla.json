@@ -1,0 +1,227 @@
+{
+  "entity_name": "Tesla, Inc.",
+  "query": "\"Tesla, Inc.\"",
+  "total_found": 2062,
+  "dockets": [
+    {
+      "id": "",
+      "case_name": "Tremblett v. Tesla, Inc.",
+      "docket_number": "1:26-cv-10567",
+      "court_id": "mad",
+      "date_filed": "2026-02-04",
+      "date_terminated": null,
+      "suit_nature": "355 Motor Vehicle Prod. Liability",
+      "cause": "28:1332 Diversity-Tort/Motor Vehicle (P.I.)",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Pitsch v. Tesla, Inc.",
+      "docket_number": "3:26-cv-02056",
+      "court_id": "cand",
+      "date_filed": "2026-03-10",
+      "date_terminated": null,
+      "suit_nature": "790 Labor: Other",
+      "cause": "28:1332 Diversity-Account Receivable",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Allen v. Tesla, Inc.",
+      "docket_number": "5:25-cv-07469",
+      "court_id": "cand",
+      "date_filed": "2025-09-04",
+      "date_terminated": null,
+      "suit_nature": "442 Civil Rights: Jobs",
+      "cause": "28:1332 Diversity-(Citizenship)",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Pendleton v. Tesla, Inc.",
+      "docket_number": "3:25-cv-09321",
+      "court_id": "cand",
+      "date_filed": "2025-10-29",
+      "date_terminated": null,
+      "suit_nature": "442 Civil Rights: Jobs",
+      "cause": "28:1332 Diversity-(Citizenship)",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Collins v. Tesla, Inc.",
+      "docket_number": "3:25-cv-06377",
+      "court_id": "cand",
+      "date_filed": "2025-07-30",
+      "date_terminated": null,
+      "suit_nature": "442 Civil Rights: Jobs",
+      "cause": "28:1332 Diversity-(Citizenship)",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Blaine v. Tesla, Inc.",
+      "docket_number": "1:25-cv-00206",
+      "court_id": "utd",
+      "date_filed": "2025-12-23",
+      "date_terminated": "2025-12-29",
+      "suit_nature": "245 Tort Product Liability",
+      "cause": "28:1441 Notice of Removal- Tort/Motor Vehicle (P.I.)",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Williams v. Tesla, Inc.",
+      "docket_number": "3:25-cv-09959",
+      "court_id": "cand",
+      "date_filed": "2025-11-19",
+      "date_terminated": null,
+      "suit_nature": "442 Civil Rights: Jobs",
+      "cause": "28:1441 Petition for Removal - Employment Discrimination",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Shaffer v. Tesla, Inc.",
+      "docket_number": "4:25-cv-03856",
+      "court_id": "cand",
+      "date_filed": "2025-05-02",
+      "date_terminated": null,
+      "suit_nature": "442 Civil Rights: Jobs",
+      "cause": "28:1332 Diversity-(Citizenship)",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Hyde v. Tesla, Inc.",
+      "docket_number": "3:26-cv-00942",
+      "court_id": "casd",
+      "date_filed": "2026-02-13",
+      "date_terminated": null,
+      "suit_nature": "380 Personal Property: Other",
+      "cause": "28:2241fd Petition for Writ of Habeas Corpus (federal)",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Worku v. Tesla, Inc.",
+      "docket_number": "0:26-cv-00131",
+      "court_id": "mnd",
+      "date_filed": "2026-01-09",
+      "date_terminated": null,
+      "suit_nature": "245 Tort Product Liability",
+      "cause": "28:1332-pip-Diversity-Personal Injury, Product Liability",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Peloquin v. Tesla, Inc.",
+      "docket_number": "3:25-cv-06690",
+      "court_id": "cand",
+      "date_filed": "2025-08-07",
+      "date_terminated": null,
+      "suit_nature": "442 Civil Rights: Jobs",
+      "cause": "28:1332 Diversity-Employment Discrimination",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Movassaghi v. Tesla, Inc.",
+      "docket_number": "3:26-cv-01508",
+      "court_id": "cand",
+      "date_filed": "2026-02-20",
+      "date_terminated": null,
+      "suit_nature": "365 Personal Inj. Prod. Liability",
+      "cause": "28:1441 Petition for Removal- Product Liability",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Boone v. Tesla, Inc.",
+      "docket_number": "3:25-cv-09404",
+      "court_id": "cand",
+      "date_filed": "2025-10-31",
+      "date_terminated": null,
+      "suit_nature": "442 Civil Rights: Jobs",
+      "cause": "28:1332 Diversity-(Citizenship)",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Mirani v. Tesla, Inc.",
+      "docket_number": "3:26-cv-01669",
+      "court_id": "cand",
+      "date_filed": "2026-02-26",
+      "date_terminated": null,
+      "suit_nature": "442 Civil Rights: Jobs",
+      "cause": "28:1441 Petition for Removal - Employment Discrimination",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Villanueva v. Tesla, Inc.",
+      "docket_number": "3:25-cv-00678",
+      "court_id": "nvd",
+      "date_filed": "2025-11-26",
+      "date_terminated": null,
+      "suit_nature": "442 Civil Rights: Jobs",
+      "cause": "42:2000e  Job Discrimination (Employment)",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Ward v. Tesla, Inc.",
+      "docket_number": "2:26-cv-00800",
+      "court_id": "nvd",
+      "date_filed": "2026-03-18",
+      "date_terminated": null,
+      "suit_nature": "",
+      "cause": "",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Trainer v. Tesla, Inc.",
+      "docket_number": "3:25-cv-09500",
+      "court_id": "cand",
+      "date_filed": "2025-11-04",
+      "date_terminated": null,
+      "suit_nature": "442 Civil Rights: Jobs",
+      "cause": "28:1332 Diversity-(Citizenship)",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Stelly v. Tesla, Inc.",
+      "docket_number": "3:25-cv-08933",
+      "court_id": "cand",
+      "date_filed": "2025-10-17",
+      "date_terminated": null,
+      "suit_nature": "442 Civil Rights: Jobs",
+      "cause": "28:1441  Petition for Removal - Employment Discrimination",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Dang v. Tesla, Inc.",
+      "docket_number": "1:25-cv-01568",
+      "court_id": "txwd",
+      "date_filed": "2025-09-29",
+      "date_terminated": null,
+      "suit_nature": "442 Civil Rights: Jobs",
+      "cause": "42:2000e  Job Discrimination (Employment)",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "FISHER v. TESLA, INC.",
+      "docket_number": "2:25-cv-06323",
+      "court_id": "paed",
+      "date_filed": "2025-11-06",
+      "date_terminated": null,
+      "suit_nature": "190 Contract: Other",
+      "cause": "28:1446 Breach of Contract- Insurance",
+      "absolute_url": ""
+    }
+  ]
+}
