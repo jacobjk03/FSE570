@@ -21,6 +21,10 @@ from output_layer.risk_dashboard import compute_risk_scores, format_dashboard_cl
 from output_layer.evaluation_metrics import compute_evaluation_metrics, format_metrics_cli
 from reflexion_layer import aggregate_confidence, cross_check_findings, detect_gaps
 
+from app.graph_viz import serialize_graph_for_vis
+from app.investigation_narrative import build_investigation_narrative
+from app.verdict_synthesis import build_verdict_synthesis
+
 
 def get_registered_entities() -> List[Dict[str, str]]:
     """Return list of registered entities for the UI dropdown."""
@@ -60,6 +64,9 @@ def run_investigation(query: str, data_root: Optional[Path] = None) -> Dict[str,
         "confidence_scores": None,
         "audit_events": [],
         "error": None,
+        "graph_vis": None,
+        "narrative": None,
+        "verdict": None,
     }
 
     import time as _time
@@ -122,6 +129,12 @@ def run_investigation(query: str, data_root: Optional[Path] = None) -> Dict[str,
         # Knowledge graph
         nodes, edges = build_graph_from_evidence(findings)
         result["graph_summary"] = {"nodes": len(nodes), "edges": len(edges), "entity_nodes": sum(1 for n in nodes if n.node_type == "entity"), "evidence_nodes": sum(1 for n in nodes if n.node_type == "evidence")}
+        result["graph_vis"] = serialize_graph_for_vis(
+            nodes,
+            edges,
+            entity_display_name=result.get("entity_name"),
+            max_evidence_nodes=72,
+        )
 
         # Report
         result["report_md"] = generate_markdown_report(findings, entity_id=result["entity_id"], query=query, graph=(nodes, edges))
@@ -154,6 +167,8 @@ def run_investigation(query: str, data_root: Optional[Path] = None) -> Dict[str,
         result["eval_metrics_cli"] = format_metrics_cli(eval_metrics)
 
         result["audit_events"] = audit.get_events()
+        result["narrative"] = build_investigation_narrative(result)
+        result["verdict"] = build_verdict_synthesis(result)
     except Exception as e:
         result["error"] = str(e)
         audit.record("pipeline_error", error=str(e))

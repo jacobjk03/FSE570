@@ -16,32 +16,87 @@
 </div>
 {% else %}
 
-{# ── Summary stats ─────────────────────────────────────── #}
+<nav class="tabs-nav" role="tablist" aria-label="Results sections">
+    <button type="button" class="tab-btn js-tab-btn active" role="tab" aria-selected="true" data-tab="overview" id="tabbtn-overview">Overview</button>
+    <button type="button" class="tab-btn js-tab-btn" role="tab" aria-selected="false" data-tab="analysis" id="tabbtn-analysis">Analysis</button>
+    <button type="button" class="tab-btn js-tab-btn" role="tab" aria-selected="false" data-tab="graph" id="tabbtn-graph">Knowledge graph</button>
+    <button type="button" class="tab-btn js-tab-btn" role="tab" aria-selected="false" data-tab="evidence" id="tabbtn-evidence">Evidence</button>
+    <button type="button" class="tab-btn js-tab-btn" role="tab" aria-selected="false" data-tab="explain" id="tabbtn-explain">Explanation</button>
+</nav>
+
+{# ═══════════════ Overview ═══════════════ #}
+<div id="tab-overview" class="tab-panel is-active" role="tabpanel" aria-labelledby="tabbtn-overview">
+
+{% if result.verdict %}
+<div class="verdict-report tier-{{ result.verdict.tier_css }}">
+    <span class="verdict-tier-pill tier-{{ result.verdict.tier_css }}">Lead synthesis · {{ result.verdict.tier_label }}</span>
+    <h2>Agent summary report</h2>
+    <p class="verdict-lead">{{ result.verdict.headline_html | safe }}</p>
+    {% for p in result.verdict.assessment_paragraphs_html %}
+    <p>{{ p | safe }}</p>
+    {% endfor %}
+    {% if result.verdict.key_observations_html %}
+    <h3>Key observations</h3>
+    <ul>
+        {% for b in result.verdict.key_observations_html %}
+        <li>{{ b | safe }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    <p class="verdict-caveat">{{ result.verdict.caveat_html | safe }}</p>
+    <p class="meta" style="margin-top:0.75rem;margin-bottom:0;">Synthesis is <strong>deterministic</strong> (rules over your result metrics) — not an external LLM. See <strong>Explanation</strong> for metric definitions.</p>
+</div>
+{% endif %}
+
+{% if result.narrative %}
+<div class="narrative-hero">
+    <h3 style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.5rem;">Supporting context</h3>
+    <p style="font-size:1.05rem;font-weight:600;color:var(--text);margin-bottom:0.65rem;">{{ result.narrative.headline_html | safe }}</p>
+    {% for p in result.narrative.executive_paragraphs_html %}
+    <p>{{ p | safe }}</p>
+    {% endfor %}
+    <div class="narrative-takeaway">
+        <span class="badge badge-blue" style="margin-right:0.5rem;">Takeaway</span>
+        {{ result.narrative.takeaway_html | safe }}
+    </div>
+</div>
+{% endif %}
+
 <div class="stat-grid">
-    <div class="stat-card">
+    <div class="stat-card" {% if result.narrative %}title="{{ result.narrative.metric_hints.findings }}"{% endif %}>
         <div class="value">{{ result.findings_count }}</div>
         <div class="label">Total Findings</div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card" {% if result.narrative %}title="{{ result.narrative.metric_hints.tasks }}"{% endif %}>
         <div class="value">{{ result.tasks | length }}</div>
         <div class="label">Tasks</div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card" {% if result.narrative %}title="{{ result.narrative.metric_hints.gaps }}"{% endif %}>
         <div class="value">{{ result.gaps | length }}</div>
         <div class="label">Gaps</div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card" {% if result.narrative %}title="{{ result.narrative.metric_hints.conflicts }}"{% endif %}>
         <div class="value">{{ result.conflicts | length }}</div>
         <div class="label">Conflicts</div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card" {% if result.narrative %}title="{{ result.narrative.metric_hints.runtime }}"{% endif %}>
         <div class="value">{{ "%.1f"|format(result.runtime_seconds or 0) }}s</div>
         <div class="label">Runtime</div>
     </div>
 </div>
 
+{% if result.narrative %}
+<div class="card">
+    <h2>What we ran</h2>
+    <ul class="task-list" style="list-style: disc; padding-left: 1.25rem;">
+        {% for w in result.narrative.what_we_did_html %}
+        <li style="border:none; display:list-item;">{{ w | safe }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
 <div class="two-col">
-    {# ── Entity info ──────────────────────────────────── #}
     <div class="card">
         <h2>Entity</h2>
         {% if result.entity_id %}
@@ -58,10 +113,8 @@
         <p class="meta"><em>No entity resolved for this query.</em></p>
         {% endif %}
     </div>
-
-    {# ── Task list ─────────────────────────────────────── #}
     <div class="card">
-        <h2>Tasks Executed</h2>
+        <h2>Tasks executed</h2>
         <ul class="task-list">
         {% for t in result.tasks %}
             <li>
@@ -72,10 +125,13 @@
         </ul>
     </div>
 </div>
+</div>
 
-{# ── Data source breakdown ─────────────────────────────── #}
+{# ═══════════════ Analysis ═══════════════ #}
+<div id="tab-analysis" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-analysis" hidden>
+
 <div class="card">
-    <h2>Findings by Data Source</h2>
+    <h2>Findings by data source</h2>
     {% set ds_colors = {"sec_edgar": "#38bdf8", "gdelt": "#fbbf24", "ofac": "#f87171", "courtlistener": "#a78bfa", "opencorporates": "#4ade80"} %}
     {% set ds_labels = {"sec_edgar": "SEC EDGAR", "gdelt": "GDELT News", "ofac": "OFAC Sanctions", "courtlistener": "CourtListener", "opencorporates": "OpenCorporates"} %}
     {% set max_ds = result.findings_by_data_source.values()|max if result.findings_by_data_source else 1 %}
@@ -94,22 +150,24 @@
     </div>
     {% if result.gdelt_total %}
     <p class="meta" style="margin-top: 0.75rem;">
-        GDELT relevance: <strong>{{ result.gdelt_relevant }}</strong> of {{ result.gdelt_total }} articles are relevant
-        ({{ "%.0f"|format(result.gdelt_relevant / result.gdelt_total * 100 if result.gdelt_total else 0) }}%)
+        <strong>GDELT relevance:</strong> {{ result.gdelt_relevant }} of {{ result.gdelt_total }} articles scored as title-relevant
+        ({{ "%.0f"|format(result.gdelt_relevant / result.gdelt_total * 100 if result.gdelt_total else 0) }}%). Others are kept but down-weighted.
     </p>
     {% endif %}
 </div>
 
-{# ── Risk dashboard ────────────────────────────────────── #}
 <div class="card">
-    <h2>Risk Scores</h2>
+    <h2>Risk scores</h2>
+    {% if result.narrative %}
+    <p class="meta" style="margin-bottom: 1rem;">Mean confidence across findings — not a legal verdict. See <strong>Explanation</strong> tab.</p>
+    {% endif %}
     {% if result.risk_scores %}
     <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
         <div style="font-size: 2rem; font-weight: 700; color: {% if result.risk_scores.overall > 0.7 %}var(--red){% elif result.risk_scores.overall > 0.4 %}var(--yellow){% else %}var(--green){% endif %};">
             {{ "%.2f"|format(result.risk_scores.overall) }}
         </div>
         <div>
-            <div style="font-weight: 600;">Overall Risk Score</div>
+            <div style="font-weight: 600;">Overall risk score</div>
             <div class="meta">Based on {{ result.risk_scores.finding_count }} findings</div>
         </div>
     </div>
@@ -129,7 +187,8 @@
 {% if result.confidence_scores %}
 <div class="two-col">
     <div class="card">
-        <h2>Confidence by Risk Category</h2>
+        <h2>Confidence by risk category</h2>
+        <p class="meta" style="margin-bottom:0.75rem;">Trust in sources for that category.</p>
         {% for cat, score in result.confidence_scores.by_risk_category.items()|sort(attribute='1', reverse=true) %}
         <div class="risk-bar">
             <span class="risk-label">{{ cat }}</span>
@@ -141,7 +200,7 @@
         {% endfor %}
     </div>
     <div class="card">
-        <h2>Confidence by Source Type</h2>
+        <h2>Confidence by source type</h2>
         {% for src, score in result.confidence_scores.by_source_type.items()|sort(attribute='1', reverse=true) %}
         <div class="risk-bar">
             <span class="risk-label" style="width: 130px;">{{ src }}</span>
@@ -155,35 +214,9 @@
 </div>
 {% endif %}
 
-{# ── Knowledge graph summary ──────────────────────────── #}
-{% if result.graph_summary %}
-<div class="card">
-    <h2>Knowledge Graph</h2>
-    <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr);">
-        <div class="stat-card">
-            <div class="value">{{ result.graph_summary.nodes }}</div>
-            <div class="label">Nodes</div>
-        </div>
-        <div class="stat-card">
-            <div class="value">{{ result.graph_summary.edges }}</div>
-            <div class="label">Edges</div>
-        </div>
-        <div class="stat-card">
-            <div class="value">{{ result.graph_summary.entity_nodes }}</div>
-            <div class="label">Entity Nodes</div>
-        </div>
-        <div class="stat-card">
-            <div class="value">{{ result.graph_summary.evidence_nodes }}</div>
-            <div class="label">Evidence Nodes</div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-{# ── Gaps & conflicts ──────────────────────────────────── #}
 {% if result.gaps %}
 <div class="card">
-    <h2>Coverage Gaps</h2>
+    <h2>Coverage gaps</h2>
     <ul class="gap-list">
     {% for g in result.gaps %}
         <li>
@@ -200,34 +233,110 @@
 
 {% if result.conflicts %}
 <div class="card">
-    <h2>Cross-check Conflicts</h2>
-    <ul class="gap-list">
+    <h2>Cross-check conflicts</h2>
+    {% if result.narrative and result.narrative.summary_consistency_note %}
+    <p class="meta" style="margin-bottom: 1rem;">
+        Large counts usually mean <strong>multiple SEC filings on the same calendar day</strong> with different one-line summaries — expected, not 87 separate “errors.”
+    </p>
+    {% endif %}
+    <ul class="gap-list" id="conflicts-list">
     {% for c in result.conflicts %}
-        <li>
+        <li class="conflict-item {% if loop.index > 10 %}conflict-item--extra{% endif %}">
             <span class="badge badge-red">{{ c.dimension }}</span>
             {{ c.description }}
         </li>
     {% endfor %}
     </ul>
+    {% if result.conflicts | length > 10 %}
+    <button type="button" class="ghost-btn" id="conflicts-toggle" aria-expanded="false">
+        Show all {{ result.conflicts | length }} conflicts
+    </button>
+    {% endif %}
 </div>
 {% endif %}
 
-{# ── Evidence report (embedded) ────────────────────────── #}
+</div>
+
+{# ═══════════════ Knowledge graph ═══════════════ #}
+<div id="tab-graph" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-graph" hidden>
+
+{% if result.graph_summary %}
 <div class="card">
-    <h2>Full Evidence Report</h2>
+    <h2>Knowledge graph</h2>
+    <p class="meta" style="margin-bottom: 1rem;">
+        <strong>Tip:</strong> Evidence labels stay hidden until you <strong>hover or select</strong> a node — less clutter. Use the filter to focus on one source family.
+        The full graph has <strong>{{ result.graph_summary.nodes }}</strong> nodes and <strong>{{ result.graph_summary.edges }}</strong> edges;
+        {% if result.graph_vis and result.graph_vis.truncated %}
+        the canvas shows a <strong>random sample of {{ result.graph_vis.shown_evidence }}</strong> of {{ result.graph_vis.total_evidence }} evidence nodes.
+        {% else %}
+        all evidence nodes are shown below.
+        {% endif %}
+    </p>
+    <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 1rem;">
+        <div class="stat-card"><div class="value">{{ result.graph_summary.nodes }}</div><div class="label">Nodes</div></div>
+        <div class="stat-card"><div class="value">{{ result.graph_summary.edges }}</div><div class="label">Edges</div></div>
+        <div class="stat-card"><div class="value">{{ result.graph_summary.entity_nodes }}</div><div class="label">Entity</div></div>
+        <div class="stat-card"><div class="value">{{ result.graph_summary.evidence_nodes }}</div><div class="label">Evidence</div></div>
+    </div>
+    {% if result.graph_vis and result.graph_vis.nodes %}
+    <div class="graph-controls-row">
+        <label>Filter evidence
+            <select id="graph-filter-source" aria-label="Filter graph by source type">
+                <option value="all">All types</option>
+                <option value="sec">SEC / filings</option>
+                <option value="news">News</option>
+                <option value="court">Court</option>
+                <option value="sanctions">Sanctions</option>
+                <option value="other">Other</option>
+            </select>
+        </label>
+        <label style="cursor:pointer;">
+            <input type="checkbox" id="graph-labels-always" style="width:auto;">
+            Always show labels
+        </label>
+    </div>
+    <div class="graph-toolbar">
+        <button type="button" id="graph-fit" title="Fit graph to view">Fit view</button>
+        <button type="button" id="graph-stabilize" title="Re-run physics layout">Stabilize</button>
+    </div>
+    <div id="graph-network" class="graph-viz-wrap" style="height:min(560px,75vh);min-height:400px;" role="img" aria-label="Interactive knowledge graph"></div>
+    <div class="graph-legend">
+        <span><i style="background:#0ea5e9;border-color:#38bdf8;"></i> Entity</span>
+        <span><i style="background:#0369a1;border-color:#38bdf8;"></i> SEC / filings</span>
+        <span><i style="background:#b45309;border-color:#fbbf24;"></i> News</span>
+        <span><i style="background:#6d28d9;border-color:#a78bfa;"></i> Court</span>
+        <span><i style="background:#b91c1c;border-color:#f87171;"></i> Sanctions</span>
+        <span><i style="background:#475569;border-color:#64748b;"></i> Other</span>
+    </div>
+    <script type="application/json" id="graph-vis-data">{{ result.graph_vis | tojson }}</script>
+    {% elif result.graph_summary.nodes %}
+    <p class="meta"><em>No graph nodes to visualize.</em></p>
+    {% endif %}
+</div>
+{% else %}
+<div class="card"><p class="meta">No graph summary available.</p></div>
+{% endif %}
+
+</div>
+
+{# ═══════════════ Evidence ═══════════════ #}
+<div id="tab-evidence" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-evidence" hidden>
+
+<div class="card">
+    <h2>Full evidence report</h2>
     <div class="report-embed">
         {{ result.report_body | safe }}
     </div>
 </div>
 
-{# ── Evaluation metrics ─────────────────────────────────── #}
 {% if result.eval_metrics %}
 <div class="card">
-    <h2>Evaluation Metrics</h2>
+    <h2>Evaluation metrics</h2>
+    <p class="meta" style="margin-bottom:1rem;">Quality signals for this run — see <strong>Explanation</strong> for what they mean.</p>
     <div class="stat-grid" style="margin-bottom: 1rem;">
         <div class="stat-card">
             <div class="value">{{ "%.0f"|format(result.eval_metrics.citation_rate * 100) }}%</div>
-            <div class="label">Citation Rate</div>
+            <div class="label">Citation rate</div>
         </div>
         <div class="stat-card">
             <div class="value">{{ result.eval_metrics.cited_count }}</div>
@@ -240,11 +349,11 @@
         {% if result.eval_metrics.gdelt_total %}
         <div class="stat-card">
             <div class="value">{{ "%.0f"|format(result.eval_metrics.gdelt_signal_rate * 100) }}%</div>
-            <div class="label">GDELT Signal</div>
+            <div class="label">GDELT signal</div>
         </div>
         {% endif %}
     </div>
-    <h2 style="margin-top: 0.5rem;">Confidence Distribution</h2>
+    <h2 style="margin-top: 0.5rem;">Confidence distribution</h2>
     <div class="bar-chart">
         {% set max_bucket = result.eval_metrics.confidence_buckets.values()|max if result.eval_metrics.confidence_buckets.values()|max else 1 %}
         {% for bucket, count in result.eval_metrics.confidence_buckets.items() %}
@@ -269,12 +378,240 @@
 </div>
 {% endif %}
 
-{# ── Audit trail ──────────────────────────────────────── #}
 <div class="card">
-    <h2>Audit Trail</h2>
+    <h2>Audit trail</h2>
     <pre>{% for e in result.audit_events %}{{ e.get('timestamp', '') }}  {{ e.get('step', '') }}{% if e.get('query') %}  query={{ e.get('query')[:80] }}{% endif %}{% if e.get('entity_resolved') is not none %}  entity_resolved={{ e.get('entity_resolved') }}{% endif %}{% if e.get('task_count') is not none %}  task_count={{ e.get('task_count') }}{% endif %}
 {% endfor %}</pre>
 </div>
 
+</div>
+
+{# ═══════════════ Explanation ═══════════════ #}
+<div id="tab-explain" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-explain" hidden>
+
+{% if result.narrative %}
+<div class="card">
+    <h2>Agent summary report (how it works)</h2>
+    <div class="def-card" style="margin-bottom:1rem;">
+        <h4>Deterministic synthesis layer</h4>
+        <p>The <strong>Agent summary report</strong> on the Overview tab is produced by a small <strong>synthesis module</strong> that reads this run’s metrics (findings counts, sources, gaps, conflicts, scores). It does <strong>not</strong> call an external LLM. It issues <strong>cautious, template-guided language</strong> so you get a single narrative “verdict” shape without hallucinating facts.</p>
+    </div>
+</div>
+<div class="card">
+    <h2>How to read this dashboard</h2>
+    <p class="meta" style="margin-bottom:1rem;">Short guide to scores, conflicts, and gaps — no substitute for analyst judgment.</p>
+    {% for d in result.narrative.definitions_html %}
+    <div class="def-card">
+        <h4>{{ d.title }}</h4>
+        <p>{{ d.body | safe }}</p>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="card">
+    <h2>Metric hints (overview cards)</h2>
+    <ul class="gap-list">
+        {% for key, hint in result.narrative.metric_hints.items() %}
+        <li><span class="badge badge-blue">{{ key|replace('_',' ') }}</span> {{ hint }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% else %}
+<div class="card"><p class="meta">No narrative available for this run.</p></div>
+{% endif %}
+
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if not result.error %}
+<script>
+(function () {
+  var buttons = document.querySelectorAll('.js-tab-btn');
+  var panels = document.querySelectorAll('.tab-panel');
+  function activate(tab) {
+    buttons.forEach(function (b) {
+      var on = b.getAttribute('data-tab') === tab;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    panels.forEach(function (p) {
+      var on = p.id === 'tab-' + tab;
+      p.classList.toggle('is-active', on);
+      if (on) { p.removeAttribute('hidden'); } else { p.setAttribute('hidden', ''); }
+    });
+    if (tab === 'graph' && window.__osintGraphFit) {
+      setTimeout(function () { window.__osintGraphFit(); }, 80);
+    }
+  }
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      activate(btn.getAttribute('data-tab'));
+    });
+  });
+
+  var ct = document.getElementById('conflicts-toggle');
+  if (ct) {
+    var total = document.querySelectorAll('#conflicts-list .conflict-item').length;
+    var expanded = false;
+    ct.addEventListener('click', function () {
+      expanded = !expanded;
+      document.querySelectorAll('.conflict-item--extra').forEach(function (el) {
+        el.classList.toggle('is-visible', expanded);
+      });
+      ct.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      ct.textContent = expanded ? 'Show fewer (preview first 10)' : ('Show all ' + total + ' conflicts');
+    });
+  }
+})();
+</script>
+{% endif %}
+{% if result.graph_vis and result.graph_vis.nodes %}
+<script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.9/standalone/umd/vis-network.min.js" crossorigin="anonymous"></script>
+<script>
+(function () {
+  var el = document.getElementById('graph-network');
+  var raw = document.getElementById('graph-vis-data');
+  if (!el || !raw || !window.vis) return;
+  var rawGraph;
+  try { rawGraph = JSON.parse(raw.textContent); } catch (e) { return; }
+
+  var labelById = {};
+  rawGraph.nodes.forEach(function (n) {
+    labelById[n.id] = n.label || '';
+  });
+
+  function buildNodes(filterVal, labelsAlways) {
+    return rawGraph.nodes.map(function (n) {
+      var o = Object.assign({}, n);
+      if (n.group === 'entity') {
+        o.label = labelById[n.id] || n.id;
+        return o;
+      }
+      if (filterVal !== 'all' && (n.filterGroup || 'other') !== filterVal) {
+        return null;
+      }
+      if (labelsAlways) {
+        o.label = labelById[n.id] || '';
+      } else {
+        o.label = '';
+      }
+      return o;
+    }).filter(Boolean);
+  }
+
+  function buildEdges(nodeIds) {
+    var set = {};
+    nodeIds.forEach(function (id) { set[id] = true; });
+    return rawGraph.edges.filter(function (e) {
+      return set[e.from] && set[e.to];
+    });
+  }
+
+  var filterSel = document.getElementById('graph-filter-source');
+  var labelsCb = document.getElementById('graph-labels-always');
+  var filterVal = 'all';
+  var labelsAlways = false;
+
+  var initialNodes = buildNodes(filterVal, labelsAlways);
+  var initialIds = initialNodes.map(function (n) { return n.id; });
+  var nodes = new vis.DataSet(initialNodes);
+  var edges = new vis.DataSet(buildEdges(initialIds));
+  var netData = { nodes: nodes, edges: edges };
+
+  var options = {
+    autoResize: true,
+    interaction: {
+      hover: true,
+      tooltipDelay: 100,
+      navigationButtons: false,
+      keyboard: true,
+      zoomView: true,
+      dragView: true
+    },
+    physics: {
+      enabled: true,
+      solver: 'forceAtlas2Based',
+      forceAtlas2Based: {
+        gravitationalConstant: -38,
+        centralGravity: 0.01,
+        springLength: 140,
+        springConstant: 0.05,
+        damping: 0.57,
+        avoidOverlap: 0.65
+      },
+      stabilization: { iterations: 200, updateInterval: 25 }
+    },
+    nodes: {
+      shadow: { enabled: true, color: 'rgba(0,0,0,0.4)', size: 12, x: 2, y: 2 },
+      chosen: {
+        node: function (values, id, selected, hovering) {
+          values.borderWidth = 3;
+          if (labelsAlways) {
+            values.label = labelById[id] || '';
+            return;
+          }
+          var isEntity = false;
+          rawGraph.nodes.forEach(function (rn) {
+            if (rn.id === id && rn.group === 'entity') isEntity = true;
+          });
+          if (isEntity) {
+            values.label = labelById[id] || id;
+          } else if (hovering || selected) {
+            values.label = labelById[id] || '';
+          } else {
+            values.label = '';
+          }
+        }
+      }
+    },
+    edges: {
+      smooth: { type: 'continuous', roundness: 0.35 }
+    },
+    layout: { improvedLayout: true }
+  };
+
+  var network = new vis.Network(el, netData, options);
+  window.__graphNetwork = network;
+  window.__osintGraphFit = function () {
+    network.fit({ animation: { duration: 380, easingFunction: 'easeInOutQuad' } });
+  };
+
+  network.once('stabilizationIterationsDone', function () {
+    window.__osintGraphFit();
+  });
+
+  function applyFilter() {
+    filterVal = filterSel ? filterSel.value : 'all';
+    labelsAlways = labelsCb && labelsCb.checked;
+    var nl = buildNodes(filterVal, labelsAlways);
+    var ids = nl.map(function (n) { return n.id; });
+    nodes.clear();
+    edges.clear();
+    nodes.add(nl);
+    edges.add(buildEdges(ids));
+    network.setOptions({
+      nodes: {
+        chosen: options.nodes.chosen
+      }
+    });
+    network.stabilize(150);
+    setTimeout(window.__osintGraphFit, 400);
+  }
+
+  if (filterSel) filterSel.addEventListener('change', applyFilter);
+  if (labelsCb) labelsCb.addEventListener('change', applyFilter);
+
+  var fitBtn = document.getElementById('graph-fit');
+  var stabBtn = document.getElementById('graph-stabilize');
+  if (fitBtn) fitBtn.addEventListener('click', window.__osintGraphFit);
+  if (stabBtn) stabBtn.addEventListener('click', function () {
+    network.setOptions({ physics: { enabled: true } });
+    network.stabilize(120);
+  });
+})();
+</script>
 {% endif %}
 {% endblock %}

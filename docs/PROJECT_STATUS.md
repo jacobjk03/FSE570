@@ -1,7 +1,7 @@
 # Project Status — Autonomous OSINT Investigation Swarm
 
 **Last updated: 2026-03-15**
-**210/210 unit tests passing | 5 live data sources | 3 entities verified | All agents fully live (0 stubs) | GDELT noise filtering active | Evaluation metrics integrated**
+**214/214 unit tests passing | 5 live data sources | 3 entities verified | All agents fully live (0 stubs) | GDELT noise filtering active | Evaluation metrics integrated | Interactive knowledge graph + synthesis report tabs live**
 
 ---
 
@@ -947,7 +947,7 @@ The registry requirement could be removed by adding a live SEC EDGAR company nam
 
 ### Test suite summary
 
-**Date: 2026-03-15 | Result: 210/210 passing | 0 skipped | 0 failures**
+**Date: 2026-03-15 | Result: 214/214 passing | 0 skipped | 0 failures**
 
 | Test Group | Count | What it tests |
 |------------|-------|---------------|
@@ -1229,6 +1229,14 @@ Cache files use slugified entity names (e.g. `news_tesla.json`, `dockets_ford_mo
 - **Dead code cleanup:** Deleted `gnn_analyzer/` and `influence_mapper/` (never called)
 - Tests: 197 → **210** (3 GDELT relevance tests + 11 evaluation metrics tests - 1 dead code test)
 
+### Sprint 7 — Explainability + UX Clarity (2026-03-15)
+- **Interactive knowledge graph shipped:** vis-network renderer with themed styling, fit/stabilize controls, source-family filter, and lower-clutter label behavior (labels on hover/select by default).
+- **Graph readability improvements:** sampled evidence-node rendering for browser performance, removed `same_source_type` link clutter from the browser view, deduplicated entity→evidence edges.
+- **Tabbed results UI:** split into Overview, Analysis, Knowledge graph, Evidence, and Explanation tabs to reduce cognitive overload on first read.
+- **Agent-style synthesis report:** added deterministic `verdict_synthesis` layer that aggregates findings/gaps/conflicts/sources into one lead summary with explicit caveats (non-legal verdict).
+- **Explanation guidance:** added in-product definitions for risk vs confidence, conflict interpretation, gap meaning, and metric hints.
+- **Tests:** 210 → **214** (new app-layer tests for narrative and verdict synthesis).
+
 ### Bug Fix Log
 
 | Bug | Root Cause | Fix | Sprint |
@@ -1268,7 +1276,7 @@ Cache files use slugified entity names (e.g. `news_tesla.json`, `dockets_ford_mo
 
 | Task | Description | Effort |
 |------|------------|--------|
-| Knowledge graph visualization | Render NetworkX graph as interactive D3.js/vis.js diagram in Flask UI | 3–4 hours |
+| ~~Knowledge graph visualization~~ | ~~Render NetworkX graph as interactive D3.js/vis.js diagram in Flask UI~~ (implemented with vis-network + filters + cleaner labels) | ✅ Done |
 | PDF report export | "Download PDF" button on results page | 2 hours |
 | Loading spinner | Flask form blocks for 2–3s — add progress indicator | 30 min |
 
@@ -1294,4 +1302,6 @@ Cache files use slugified entity names (e.g. `news_tesla.json`, `dockets_ford_mo
 | ~~Flask UI overhaul~~ | ~~Aditya~~ | ✅ Done |
 | ~~Evaluation metrics~~ | ~~Taljinder~~ | ✅ Done |
 | ~~Dead code cleanup~~ | ~~Anyone~~ | ✅ Done |
+| ~~Interactive knowledge graph + explanation tab~~ | ~~Arnab + Aditya~~ | ✅ Done |
+| ~~Agent summary report (deterministic synthesis)~~ | ~~Arnab~~ | ✅ Done |
 | Demo rehearsal | All | **Next** |
