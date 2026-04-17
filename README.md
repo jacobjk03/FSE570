@@ -131,7 +131,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for a full plain-English walk
 ## Testing
 
 ```bash
-pytest tests/unit -v    # 219 tests
+pytest tests/unit -v
 ```
 
 ---
