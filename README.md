@@ -2,7 +2,7 @@
 
 A modular, multi-agent system for corporate AML and financial risk assessment. Submit a plain-English query — the system queries five public data sources, scores and cross-validates hundreds of evidence items, runs NetworkX graph analysis, generates an LLM-powered analyst narrative via Llama 3.1, and returns a full audit-ready investigation report in under 4 seconds.
 
-**Live demo:** deployed on Render.com (auto-deploys on every push to `main`)
+**Live demo:** https://osint-investigation-swarm.onrender.com (auto-deploys on every push to `main`)
 
 ---
 
