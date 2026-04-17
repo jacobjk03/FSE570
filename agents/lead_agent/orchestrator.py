@@ -8,7 +8,7 @@ from typing import Callable, Dict, List, Optional
 from osint_swarm.entities import Entity, Evidence
 
 from agents.lead_agent.context_manager import InvestigationContext
-from agents.lead_agent.entity_resolution import resolve_one
+from agents.lead_agent.entity_resolution import resolve_one_with_auto as resolve_one
 from agents.lead_agent.task_planner import SubTask, decompose
 
 

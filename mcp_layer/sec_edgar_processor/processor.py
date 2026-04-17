@@ -17,6 +17,26 @@ if TYPE_CHECKING:
 
 ARCHIVES_BASE = "https://www.sec.gov/Archives"
 
+# Confidence weights by filing type — higher for material/restatement forms,
+# lower for routine disclosures that carry less investigative signal.
+_FORM_CONFIDENCE: dict = {
+    "8-K":     0.95,  # material events, restatements, significant disclosures
+    "8-K/A":   0.95,
+    "10-K":    0.85,  # annual report
+    "10-K/A":  0.85,
+    "10-Q":    0.85,  # quarterly report
+    "10-Q/A":  0.85,
+    "DEF 14A": 0.80,  # proxy statement
+    "DEFA14A": 0.80,
+    "4":       0.75,  # routine Form 4 insider trades
+    "4/A":     0.75,
+    "SC 13G":  0.75,  # beneficial ownership (passive)
+    "SC 13G/A":0.75,
+    "SC 13D":  0.80,  # beneficial ownership (active)
+    "SC 13D/A":0.80,
+}
+_DEFAULT_CONFIDENCE = 0.85
+
 
 def _submissions_to_evidence(
     submissions: dict,
@@ -46,7 +66,8 @@ def _submissions_to_evidence(
         ev_id = f"{entity_id}_sec_{accession_nodash}".lower().replace(" ", "_")
         source_uri = filing_primary_doc_url(cik, accession, primary_doc) if primary_doc else f"{ARCHIVES_BASE}/edgar/data/{cik}/{accession_nodash}/"
         summary = f"SEC filing: {form} filed on {filing_date}"
-        risk = "governance" if form in ("8-K", "4", "DEF 14A") else "regulatory"
+        risk = "governance" if form in ("8-K", "8-K/A", "4", "4/A", "DEF 14A", "DEFA14A") else "regulatory"
+        confidence = _FORM_CONFIDENCE.get(form, _DEFAULT_CONFIDENCE)
         out.append(
             Evidence(
                 evidence_id=ev_id,
@@ -57,11 +78,12 @@ def _submissions_to_evidence(
                 summary=summary,
                 source_uri=source_uri,
                 raw_location=raw_location,
-                confidence=0.85,
+                confidence=confidence,
                 attributes={
                     "form": form,
                     "accessionNumber": accession,
                     "primaryDocument": primary_doc,
+                    "confidence_basis": f"form_type:{form}",
                 },
             )
         )

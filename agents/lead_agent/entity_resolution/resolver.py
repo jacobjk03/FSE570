@@ -34,6 +34,20 @@ ENTITY_REGISTRY: List[Entity] = [
         identifiers={"cik": "0000012927", "ticker": "BA"},
         aliases=["Boeing", "Boeing Company", "The Boeing Company", "BA"],
     ),
+    Entity(
+        entity_id="alphabet_inc_cik_0001652044",
+        name="Alphabet Inc.",
+        entity_type="public_company",
+        identifiers={"cik": "0001652044", "ticker": "GOOGL"},
+        aliases=["Alphabet", "Alphabet Inc", "Google", "Google LLC", "GOOGL", "Alphabet Google"],
+    ),
+    Entity(
+        entity_id="jpmorgan_chase_cik_0000019617",
+        name="JPMorgan Chase & Co.",
+        entity_type="public_company",
+        identifiers={"cik": "0000019617", "ticker": "JPM"},
+        aliases=["JPMorgan", "JPMorgan Chase", "JP Morgan", "JPMorgan Chase & Co", "JPM"],
+    ),
 ]
 
 # Minimum token length for substring matching. Terms shorter than this require
@@ -96,3 +110,33 @@ def resolve_one(query: str) -> Optional[Entity]:
     """Return the first resolved entity, or None if no match."""
     candidates = resolve(query)
     return candidates[0] if candidates else None
+
+
+def resolve_one_with_auto(query: str) -> Optional[Entity]:
+    """
+    Resolve entity from query — registry first, then auto-resolution via SEC EDGAR.
+    If the registry has no match, extracts the company name from the query and
+    queries SEC EDGAR full-text search to find the CIK automatically.
+    Returns an Entity (possibly auto-resolved) or None.
+    """
+    entity = resolve_one(query)
+    if entity:
+        return entity
+
+    # Registry miss — try SEC EDGAR auto-resolution
+    from agents.lead_agent.entity_resolution.sec_name_resolver import (
+        build_auto_entity,
+        extract_company_name,
+        resolve_company_name,
+    )
+
+    company_name = extract_company_name(query)
+    if not company_name:
+        return None
+
+    result = resolve_company_name(company_name)
+    if not result:
+        return None
+
+    cik10, official_name = result
+    return build_auto_entity(company_name, cik10, official_name)

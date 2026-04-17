@@ -1,0 +1,227 @@
+{
+  "entity_name": "Alphabet Inc.",
+  "query": "\"Alphabet Inc.\"",
+  "total_found": 2512,
+  "dockets": [
+    {
+      "id": "",
+      "case_name": "MAZIE v. ALPHABET INC.",
+      "docket_number": "2:26-cv-00113",
+      "court_id": "paed",
+      "date_filed": "2026-01-08",
+      "date_terminated": null,
+      "suit_nature": "440 Civil Rights: Other",
+      "cause": "42:1983 Civil Rights Act",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Barnes v. Alphabet Inc.",
+      "docket_number": "1:26-cv-01032",
+      "court_id": "tnwd",
+      "date_filed": "2026-02-20",
+      "date_terminated": null,
+      "suit_nature": "950 Constitutional - State Statute",
+      "cause": "28:2201 Declaratory Judgement",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Tsourdinis v. Alphabet, Inc.",
+      "docket_number": "5:26-cv-01770",
+      "court_id": "cand",
+      "date_filed": "2026-03-02",
+      "date_terminated": null,
+      "suit_nature": "190 Contract: Other",
+      "cause": "28:1332 Diversity-Contract Default",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Warman v. Alphabet Inc.",
+      "docket_number": "1:26-cv-01197",
+      "court_id": "nysd",
+      "date_filed": "2026-02-12",
+      "date_terminated": null,
+      "suit_nature": "440 Civil Rights: Other",
+      "cause": "28:1331 Fed. Question",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Carlton v. Alphabet Inc.",
+      "docket_number": "2:26-cv-00156",
+      "court_id": "laed",
+      "date_filed": "2026-01-21",
+      "date_terminated": null,
+      "suit_nature": "Civil Rights: Other",
+      "cause": "42:1983 Civil Rights Act",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Smith v. Alphabet, Inc.",
+      "docket_number": "1:26-cv-00006",
+      "court_id": "cod",
+      "date_filed": "2026-01-02",
+      "date_terminated": null,
+      "suit_nature": "442 Civil Rights: Jobs",
+      "cause": "42:2000 Job Discrimination (Age)",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Patel v. Alphabet Inc.",
+      "docket_number": "5:24-cv-01548",
+      "court_id": "cand",
+      "date_filed": "2024-03-13",
+      "date_terminated": "2024-03-28",
+      "suit_nature": "Contract: Other",
+      "cause": "42:1983 Civil Rights Act",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Wolfe v. Alphabet Inc.",
+      "docket_number": "3:25-cv-00621",
+      "court_id": "vaed",
+      "date_filed": "2025-08-08",
+      "date_terminated": null,
+      "suit_nature": "470 Racketeer/Corrupt Organization",
+      "cause": "18:1961 Racketeering (RICO) Act",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Patel v. Alphabet Inc.",
+      "docket_number": "1:24-cv-00409",
+      "court_id": "ded",
+      "date_filed": "2024-04-01",
+      "date_terminated": "2024-04-30",
+      "suit_nature": "190 Contract: Other",
+      "cause": "28:1330 Breach of Contract",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Tall v. Alphabet Inc.",
+      "docket_number": "8:23-cv-01393",
+      "court_id": "mdd",
+      "date_filed": "2023-05-24",
+      "date_terminated": "2024-04-17",
+      "suit_nature": "446 Civil Rights: Americans with Disabilities - Other",
+      "cause": "28:1331 Federal Question: Other Civil Rights",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Dahl v. Alphabet, Inc.",
+      "docket_number": "1:23-cv-01496",
+      "court_id": "txwd",
+      "date_filed": "2023-12-11",
+      "date_terminated": "2025-09-25",
+      "suit_nature": "360 P.I.: Other",
+      "cause": "28:1332 Diversity-Personal Injury",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Kremer v. Alphabet Inc.",
+      "docket_number": "2:23-cv-00052",
+      "court_id": "tnmd",
+      "date_filed": "2023-08-30",
+      "date_terminated": "2024-04-01",
+      "suit_nature": "Copyright",
+      "cause": "28:1441 Trademark Infringement",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Long v. Alphabet Inc.",
+      "docket_number": "3:25-cv-09760",
+      "court_id": "cand",
+      "date_filed": "2025-11-13",
+      "date_terminated": null,
+      "suit_nature": "446 American with Disabilities - Other",
+      "cause": "42:12101 Americans w/ Disabilities Act (ADA)",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Feldman v. Google LLC/Alphabet Inc.",
+      "docket_number": "9:25-cv-80818",
+      "court_id": "flsd",
+      "date_filed": "2025-06-27",
+      "date_terminated": "2025-08-19",
+      "suit_nature": "440 Civil Rights: Other",
+      "cause": "28:1331 Federal Question",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Morilha v. Alphabet Inc.",
+      "docket_number": "4:24-cv-02793",
+      "court_id": "cand",
+      "date_filed": "2024-05-10",
+      "date_terminated": "2025-04-02",
+      "suit_nature": "190 Contract: Other",
+      "cause": "28:1331 Fed. Question",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Patel v. Alphabet Inc.",
+      "docket_number": "5:23-cv-03647",
+      "court_id": "cand",
+      "date_filed": "2023-07-24",
+      "date_terminated": "2024-04-11",
+      "suit_nature": "Contract: Other",
+      "cause": "28:1331 Fed. Question",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Raj Patel v. Alphabet Inc",
+      "docket_number": "24-1147",
+      "court_id": "ca3",
+      "date_filed": "2024-01-26",
+      "date_terminated": null,
+      "suit_nature": "4190 Other Contract Actions",
+      "cause": "",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Safety Direct LLC v. Alphabet, Inc.",
+      "docket_number": "3:23-cv-03243",
+      "court_id": "cand",
+      "date_filed": "2023-06-29",
+      "date_terminated": "2023-09-18",
+      "suit_nature": "830 Patent",
+      "cause": "35:271 Patent Infringement",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Jones v. Alphabet Inc",
+      "docket_number": "2:23-cv-01292",
+      "court_id": "wawd",
+      "date_filed": "2023-08-23",
+      "date_terminated": "2023-12-22",
+      "suit_nature": "Civil Rights: Other",
+      "cause": "28:1331 Federal Question: Other Civil Rights",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Morilha v. Alphabet Inc., et al.",
+      "docket_number": "25-2224",
+      "court_id": "ca9",
+      "date_filed": "2025-04-07",
+      "date_terminated": null,
+      "suit_nature": "",
+      "cause": "",
+      "absolute_url": ""
+    }
+  ]
+}

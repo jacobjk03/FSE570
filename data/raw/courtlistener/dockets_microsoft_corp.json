@@ -1,0 +1,227 @@
+{
+  "entity_name": "Microsoft Corp",
+  "query": "\"Microsoft Corp\"",
+  "total_found": 28948,
+  "dockets": [
+    {
+      "id": "",
+      "case_name": "Hart v. Microsoft Corp.",
+      "docket_number": "3:26-cv-02483",
+      "court_id": "cand",
+      "date_filed": "2026-03-23",
+      "date_terminated": null,
+      "suit_nature": "190 Contract: Other",
+      "cause": "28:1331 Fed. Question",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Brown v. Microsoft Corp.",
+      "docket_number": "1:24-cv-11585",
+      "court_id": "mad",
+      "date_filed": "2024-06-19",
+      "date_terminated": "2025-01-03",
+      "suit_nature": "190 Contract: Other",
+      "cause": "28:1441 Petition for Removal- Contract Dispute",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Westbrook v. Microsoft Corp",
+      "docket_number": "25-10032",
+      "court_id": "ca5",
+      "date_filed": "2025-01-06",
+      "date_terminated": "2025-03-11",
+      "suit_nature": "3440 Other Civil Rights",
+      "cause": "",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Stephens v. Microsoft Corp.",
+      "docket_number": "3:24-cv-01432",
+      "court_id": "tnmd",
+      "date_filed": "2024-12-05",
+      "date_terminated": "2025-03-04",
+      "suit_nature": "",
+      "cause": "",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Neff v. Microsoft Corp",
+      "docket_number": "4:22-cv-00333",
+      "court_id": "iasd",
+      "date_filed": "2022-09-30",
+      "date_terminated": "2024-03-13",
+      "suit_nature": "360 P.I.: Other",
+      "cause": "28:1332 Diversity-Personal Injury",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Never-Search, Inc. v. Microsoft Corp.",
+      "docket_number": "3:24-cv-03950",
+      "court_id": "cand",
+      "date_filed": "2024-07-01",
+      "date_terminated": "2025-02-28",
+      "suit_nature": "830 Patent",
+      "cause": "15:1126 Patent Infringement",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Karmel Graham v. Microsoft Corp.",
+      "docket_number": "2:23-cv-05995",
+      "court_id": "cacd",
+      "date_filed": "2023-07-25",
+      "date_terminated": "2024-03-14",
+      "suit_nature": "Civil Rights: Jobs",
+      "cause": "28:1441  Notice of Removal - Employment Discrimination",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Steward Health Care System LLC v. Microsoft Corp",
+      "docket_number": "25-03540",
+      "court_id": "txsb",
+      "date_filed": "2025-07-15",
+      "date_terminated": null,
+      "suit_nature": "",
+      "cause": "",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "MediaPointe, Inc. v. Microsoft Corp.",
+      "docket_number": "6:21-cv-00855",
+      "court_id": "txwd",
+      "date_filed": "2021-08-16",
+      "date_terminated": "2022-02-11",
+      "suit_nature": "830 Patent",
+      "cause": "35:271 Patent Infringement",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Akoloutheo, LLC v. Microsoft Corp.",
+      "docket_number": "4:20-cv-00009",
+      "court_id": "txed",
+      "date_filed": "2020-01-06",
+      "date_terminated": "2020-03-03",
+      "suit_nature": "830 Patent",
+      "cause": "35:271 Patent Infringement",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Wilfred Alexander Page v. Microsoft Corp.",
+      "docket_number": "8:19-cv-02413",
+      "court_id": "cacd",
+      "date_filed": "2019-12-13",
+      "date_terminated": "2020-02-13",
+      "suit_nature": "890 Other Statutory Actions",
+      "cause": "28:1331 Forma Pauperis Denial",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Pantaleon v. Microsoft Corp",
+      "docket_number": "3:16-cv-02950",
+      "court_id": "casd",
+      "date_filed": "2016-12-02",
+      "date_terminated": "2017-04-13",
+      "suit_nature": "790 Labor: Other",
+      "cause": "28:1441wt Removal- Employment (Wrongful Termination)",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Lucio Development LLC v. Microsoft Corp.",
+      "docket_number": "6:19-cv-00283",
+      "court_id": "txed",
+      "date_filed": "2019-06-27",
+      "date_terminated": "2020-01-09",
+      "suit_nature": "830 Patent",
+      "cause": "",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Katherine Moussouris v. Microsoft Corp.",
+      "docket_number": "18-35791",
+      "court_id": "ca9",
+      "date_filed": "2018-09-21",
+      "date_terminated": "2019-12-24",
+      "suit_nature": "3442 Jobs",
+      "cause": "",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Microsoft Corp. v. John Does 1-2",
+      "docket_number": "1:20-cv-01217",
+      "court_id": "nyed",
+      "date_filed": "2020-03-05",
+      "date_terminated": "2021-09-22",
+      "suit_nature": "840 Trademark",
+      "cause": "28:1331 Fed. Question",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Katherine Moussouris v. Microsoft Corp.",
+      "docket_number": "18-35791",
+      "court_id": "ca9",
+      "date_filed": "2018-09-21",
+      "date_terminated": "2019-12-24",
+      "suit_nature": "3442 Jobs",
+      "cause": "",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Infernal Technology, LLC v. Microsoft Corp.",
+      "docket_number": "2:18-cv-00144",
+      "court_id": "txed",
+      "date_filed": "2018-04-11",
+      "date_terminated": "2019-09-11",
+      "suit_nature": "830 Patent",
+      "cause": "28:1338 Patent Infringement",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "(PS) Draper v. Microsoft Corp.",
+      "docket_number": "2:17-cv-02526",
+      "court_id": "caed",
+      "date_filed": "2017-12-01",
+      "date_terminated": "2018-03-05",
+      "suit_nature": "190 Contract: Other",
+      "cause": "42:1983 Civil Rights Act",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Alisha Pantaleon v. Microsoft Corp",
+      "docket_number": "2:17-cv-02868",
+      "court_id": "cacd",
+      "date_filed": "2017-04-14",
+      "date_terminated": "2017-05-26",
+      "suit_nature": "790 Labor: Other",
+      "cause": "28:1441 Notice of Removal - Labor/Mgmnt. Relations",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Beck Branch LLC v. Microsoft Corp.",
+      "docket_number": "6:18-cv-00311",
+      "court_id": "txed",
+      "date_filed": "2018-06-27",
+      "date_terminated": "2018-10-15",
+      "suit_nature": "830 Patent",
+      "cause": "",
+      "absolute_url": ""
+    }
+  ]
+}

@@ -11,6 +11,11 @@ for p in (ROOT, SRC):
     if str(p) not in sys.path:
         sys.path.insert(0, str(p))
 
+from dotenv import load_dotenv
+load_dotenv(dotenv_path=ROOT / ".env")
+import os as _os
+print(f"[app] GROQ_API_KEY loaded: {bool(_os.environ.get('GROQ_API_KEY'))}", flush=True)
+
 from flask import Flask, render_template, request
 
 from app.pipeline import run_investigation, get_registered_entities, QUERY_TEMPLATES

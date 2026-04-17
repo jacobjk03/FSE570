@@ -154,4 +154,6 @@ class GdeltProcessor(DataSourceProcessor):
                 return []
 
         articles = gdelt.extract_article_records(payload)
+        # Keep only English-language articles (filters cached non-English entries too)
+        articles = [a for a in articles if (a.get("language") or "").lower() in ("english", "")]
         return _articles_to_evidence(articles, entity_id, entity.name, raw_location=raw_location)

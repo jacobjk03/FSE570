@@ -63,6 +63,7 @@ def fetch_news_for_entity(
         "maxrecords": str(min(max_records, 250)),  # GDELT caps at 250
         "format": "json",
         "sort": "DateDesc",
+        "sourcelang": "english",  # filter to English-language sources only
     }
 
     url = f"{GDELT_DOC_API}?{urlencode(params)}"

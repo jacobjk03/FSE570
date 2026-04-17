@@ -67,5 +67,18 @@ function fillQuery() {
         document.getElementById('query').value = template.replace('{entity}', entity);
     }
 }
+
+document.getElementById('queryForm').addEventListener('submit', function (e) {
+    const query = document.getElementById('query').value.trim();
+    if (!query) return;
+    const overlay = document.getElementById('loading-overlay');
+    const sub = document.getElementById('loading-query');
+    sub.textContent = '\u201c' + query + '\u201d';
+    overlay.classList.add('is-visible');
+    // Safety: hide overlay if browser navigates back via bfcache
+    window.addEventListener('pageshow', function (ev) {
+        if (ev.persisted) overlay.classList.remove('is-visible');
+    });
+});
 </script>
 {% endblock %}

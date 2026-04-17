@@ -1,0 +1,967 @@
+{
+  "articles": [
+    {
+      "url": "https://reuters.com/technology/google-antitrust-trial-begins-doj-2025",
+      "url_mobile": "",
+      "title": "Google faces antitrust trial as DOJ alleges search monopoly violation",
+      "seendate": "20260310T120000Z",
+      "socialimage": "",
+      "domain": "reuters.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://wsj.com/articles/alphabet-eu-fine-antitrust-2026",
+      "url_mobile": "",
+      "title": "Alphabet fined 4.3 billion euros by EU over antitrust violations in advertising",
+      "seendate": "20260308T090000Z",
+      "socialimage": "",
+      "domain": "wsj.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://ft.com/content/google-gdpr-investigation-2026",
+      "url_mobile": "",
+      "title": "Google faces GDPR investigation over user data privacy misconduct",
+      "seendate": "20260305T140000Z",
+      "socialimage": "",
+      "domain": "ft.com",
+      "language": "English",
+      "sourcecountry": "United Kingdom"
+    },
+    {
+      "url": "https://bloomberg.com/news/google-doj-lawsuit-settlement",
+      "url_mobile": "",
+      "title": "Google in settlement talks with DOJ over search monopoly lawsuit",
+      "seendate": "20260301T110000Z",
+      "socialimage": "",
+      "domain": "bloomberg.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://theguardian.com/technology/alphabet-data-breach-fine",
+      "url_mobile": "",
+      "title": "Alphabet hit with 500 million fine over data breach misconduct in Europe",
+      "seendate": "20260228T080000Z",
+      "socialimage": "",
+      "domain": "theguardian.com",
+      "language": "English",
+      "sourcecountry": "United Kingdom"
+    },
+    {
+      "url": "https://nytimes.com/2026/02/google-advertising-monopoly-penalty",
+      "url_mobile": "",
+      "title": "Google ordered to pay penalty for illegal advertising monopoly practices",
+      "seendate": "20260225T130000Z",
+      "socialimage": "",
+      "domain": "nytimes.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://washingtonpost.com/technology/google-antitrust-ruling-2026",
+      "url_mobile": "",
+      "title": "Federal judge rules Google violated antitrust law in search distribution deals",
+      "seendate": "20260220T150000Z",
+      "socialimage": "",
+      "domain": "washingtonpost.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://cnbc.com/2026/02/alphabet-ftc-investigation",
+      "url_mobile": "",
+      "title": "Alphabet faces FTC investigation into Google cloud pricing misconduct allegations",
+      "seendate": "20260215T100000Z",
+      "socialimage": "",
+      "domain": "cnbc.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://techcrunch.com/2026/02/google-privacy-lawsuit-settlement",
+      "url_mobile": "",
+      "title": "Google agrees to 1.3 billion settlement in consumer privacy lawsuit",
+      "seendate": "20260210T120000Z",
+      "socialimage": "",
+      "domain": "techcrunch.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://politico.com/news/google-eu-antitrust-fine-appeal",
+      "url_mobile": "",
+      "title": "Alphabet appeals record EU fine for Google Shopping antitrust violation",
+      "seendate": "20260205T090000Z",
+      "socialimage": "",
+      "domain": "politico.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://reuters.com/google-youtube-misinformation-investigation",
+      "url_mobile": "",
+      "title": "Google YouTube faces congressional investigation over content moderation misconduct",
+      "seendate": "20260201T110000Z",
+      "socialimage": "",
+      "domain": "reuters.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://bloomberg.com/alphabet-tax-evasion-ireland-investigation",
+      "url_mobile": "",
+      "title": "Alphabet under investigation for tax evasion through Irish subsidiary structure",
+      "seendate": "20260128T140000Z",
+      "socialimage": "",
+      "domain": "bloomberg.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://wsj.com/google-cloud-contract-fraud-allegation",
+      "url_mobile": "",
+      "title": "Google Cloud accused of fraud in government contract billing lawsuit",
+      "seendate": "20260125T080000Z",
+      "socialimage": "",
+      "domain": "wsj.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://ft.com/alphabet-android-antitrust-eu-penalty",
+      "url_mobile": "",
+      "title": "EU upholds 4.1 billion penalty against Alphabet for Android antitrust violations",
+      "seendate": "20260120T130000Z",
+      "socialimage": "",
+      "domain": "ft.com",
+      "language": "English",
+      "sourcecountry": "United Kingdom"
+    },
+    {
+      "url": "https://nytimes.com/2026/01/google-workplace-misconduct-lawsuit",
+      "url_mobile": "",
+      "title": "Google faces class action lawsuit over workplace misconduct and discrimination",
+      "seendate": "20260115T090000Z",
+      "socialimage": "",
+      "domain": "nytimes.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://cnbc.com/alphabet-stock-earnings-q4-2026",
+      "url_mobile": "",
+      "title": "Alphabet reports strong Q4 earnings driven by cloud and advertising growth",
+      "seendate": "20260110T180000Z",
+      "socialimage": "",
+      "domain": "cnbc.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://techcrunch.com/google-ai-gemini-launch",
+      "url_mobile": "",
+      "title": "Google launches Gemini Ultra AI model to compete with OpenAI GPT-4",
+      "seendate": "20260108T140000Z",
+      "socialimage": "",
+      "domain": "techcrunch.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://reuters.com/alphabet-waymo-expansion",
+      "url_mobile": "",
+      "title": "Alphabet Waymo expands autonomous vehicle service to new cities",
+      "seendate": "20260105T110000Z",
+      "socialimage": "",
+      "domain": "reuters.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://bloomberg.com/google-search-lawsuit-advertisers",
+      "url_mobile": "",
+      "title": "Google faces advertiser lawsuit over search auction fraud and overcharging",
+      "seendate": "20260103T090000Z",
+      "socialimage": "",
+      "domain": "bloomberg.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://ft.com/google-pixel-investigation-safety",
+      "url_mobile": "",
+      "title": "Google Pixel under investigation for safety violations in product recall",
+      "seendate": "20251228T120000Z",
+      "socialimage": "",
+      "domain": "ft.com",
+      "language": "English",
+      "sourcecountry": "United Kingdom"
+    },
+    {
+      "url": "https://reuters.com/google-antitrust-breakup-proposal",
+      "url_mobile": "",
+      "title": "DOJ proposes breaking up Google as remedy for antitrust violation findings",
+      "seendate": "20251220T150000Z",
+      "socialimage": "",
+      "domain": "reuters.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://wsj.com/alphabet-executive-scandal-departure",
+      "url_mobile": "",
+      "title": "Alphabet executive departs amid internal scandal over expense misconduct",
+      "seendate": "20251215T090000Z",
+      "socialimage": "",
+      "domain": "wsj.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://nytimes.com/2025/12/google-maps-antitrust-suit",
+      "url_mobile": "",
+      "title": "Google Maps faces antitrust suit over location data monopoly practices",
+      "seendate": "20251210T110000Z",
+      "socialimage": "",
+      "domain": "nytimes.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://bloomberg.com/alphabet-layoffs-restructuring",
+      "url_mobile": "",
+      "title": "Alphabet announces layoffs affecting 12000 employees in restructuring",
+      "seendate": "20251205T140000Z",
+      "socialimage": "",
+      "domain": "bloomberg.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://cnbc.com/google-ad-market-share-report",
+      "url_mobile": "",
+      "title": "Google maintains dominant ad market share despite regulatory pressure",
+      "seendate": "20251201T090000Z",
+      "socialimage": "",
+      "domain": "cnbc.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://techcrunch.com/google-chrome-privacy-sandbox",
+      "url_mobile": "",
+      "title": "Google Chrome Privacy Sandbox faces regulatory scrutiny over cookie replacement",
+      "seendate": "20251128T120000Z",
+      "socialimage": "",
+      "domain": "techcrunch.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://ft.com/alphabet-deepmind-regulation",
+      "url_mobile": "",
+      "title": "Alphabet DeepMind faces EU AI regulation compliance investigation",
+      "seendate": "20251125T090000Z",
+      "socialimage": "",
+      "domain": "ft.com",
+      "language": "English",
+      "sourcecountry": "United Kingdom"
+    },
+    {
+      "url": "https://reuters.com/google-india-antitrust-fine",
+      "url_mobile": "",
+      "title": "Google fined 162 million by India antitrust regulator for Play Store violation",
+      "seendate": "20251120T140000Z",
+      "socialimage": "",
+      "domain": "reuters.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://wsj.com/alphabet-q3-earnings-miss",
+      "url_mobile": "",
+      "title": "Alphabet Q3 earnings miss analyst expectations amid ad revenue slowdown",
+      "seendate": "20251115T180000Z",
+      "socialimage": "",
+      "domain": "wsj.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://bloomberg.com/google-cloud-outage-investigation",
+      "url_mobile": "",
+      "title": "Google Cloud major outage prompts regulatory investigation into reliability",
+      "seendate": "20251110T090000Z",
+      "socialimage": "",
+      "domain": "bloomberg.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://nytimes.com/2025/11/google-copyright-lawsuit-ai",
+      "url_mobile": "",
+      "title": "Google faces copyright lawsuit over AI training data scraping misconduct",
+      "seendate": "20251105T110000Z",
+      "socialimage": "",
+      "domain": "nytimes.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://cnbc.com/alphabet-stock-buyback-2025",
+      "url_mobile": "",
+      "title": "Alphabet announces 70 billion stock buyback program for shareholders",
+      "seendate": "20251101T140000Z",
+      "socialimage": "",
+      "domain": "cnbc.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://techcrunch.com/google-maps-data-privacy-fine",
+      "url_mobile": "",
+      "title": "Google Maps fined over location data privacy violation in France",
+      "seendate": "20251028T090000Z",
+      "socialimage": "",
+      "domain": "techcrunch.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://reuters.com/alphabet-fiber-investigation",
+      "url_mobile": "",
+      "title": "Alphabet Google Fiber faces investigation over broadband monopoly practices",
+      "seendate": "20251025T120000Z",
+      "socialimage": "",
+      "domain": "reuters.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://ft.com/google-youtube-child-safety-violation",
+      "url_mobile": "",
+      "title": "Google YouTube fined 170 million for COPPA child privacy violation",
+      "seendate": "20251020T140000Z",
+      "socialimage": "",
+      "domain": "ft.com",
+      "language": "English",
+      "sourcecountry": "United Kingdom"
+    },
+    {
+      "url": "https://wsj.com/google-search-algorithm-antitrust-evidence",
+      "url_mobile": "",
+      "title": "Internal Google documents show deliberate search algorithm manipulation",
+      "seendate": "20251015T090000Z",
+      "socialimage": "",
+      "domain": "wsj.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://bloomberg.com/alphabet-sundar-pichai-testimony",
+      "url_mobile": "",
+      "title": "Alphabet CEO Sundar Pichai testifies before Senate antitrust committee",
+      "seendate": "20251010T130000Z",
+      "socialimage": "",
+      "domain": "bloomberg.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://nytimes.com/2025/10/google-ai-bias-investigation",
+      "url_mobile": "",
+      "title": "Google AI products face federal investigation over bias and discrimination",
+      "seendate": "20251005T110000Z",
+      "socialimage": "",
+      "domain": "nytimes.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://cnbc.com/google-digital-markets-act-eu",
+      "url_mobile": "",
+      "title": "Google faces EU Digital Markets Act penalty for non-compliance violations",
+      "seendate": "20251001T140000Z",
+      "socialimage": "",
+      "domain": "cnbc.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://techcrunch.com/alphabet-venture-investment-news",
+      "url_mobile": "",
+      "title": "Alphabet GV invests 500 million in biotech startup Isomorphic Labs",
+      "seendate": "20250928T090000Z",
+      "socialimage": "",
+      "domain": "techcrunch.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://reuters.com/google-pension-fund-lawsuit",
+      "url_mobile": "",
+      "title": "Google pension fund lawsuit alleges fiduciary misconduct by executives",
+      "seendate": "20250925T120000Z",
+      "socialimage": "",
+      "domain": "reuters.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://ft.com/alphabet-russia-fine-assets",
+      "url_mobile": "",
+      "title": "Alphabet faces undecillion ruble fine from Russia over content violation ruling",
+      "seendate": "20250920T090000Z",
+      "socialimage": "",
+      "domain": "ft.com",
+      "language": "English",
+      "sourcecountry": "United Kingdom"
+    },
+    {
+      "url": "https://wsj.com/google-shopping-ads-investigation-2025",
+      "url_mobile": "",
+      "title": "Google Shopping ads face renewed investigation over deceptive pricing practices",
+      "seendate": "20250915T140000Z",
+      "socialimage": "",
+      "domain": "wsj.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://bloomberg.com/alphabet-executive-comp-scandal",
+      "url_mobile": "",
+      "title": "Alphabet board faces shareholder lawsuit over excessive executive compensation",
+      "seendate": "20250910T110000Z",
+      "socialimage": "",
+      "domain": "bloomberg.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://nytimes.com/2025/09/google-health-data-privacy-case",
+      "url_mobile": "",
+      "title": "Google Health data sharing with insurers triggers privacy investigation",
+      "seendate": "20250905T090000Z",
+      "socialimage": "",
+      "domain": "nytimes.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://cnbc.com/alphabet-cloud-revenue-growth",
+      "url_mobile": "",
+      "title": "Alphabet Google Cloud revenue grows 28 percent year over year in Q2 2025",
+      "seendate": "20250901T180000Z",
+      "socialimage": "",
+      "domain": "cnbc.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://techcrunch.com/google-chromebook-market-share",
+      "url_mobile": "",
+      "title": "Google Chromebook gains education market share in post-pandemic recovery",
+      "seendate": "20250828T140000Z",
+      "socialimage": "",
+      "domain": "techcrunch.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://reuters.com/alphabet-antitrust-doj-remedy-hearing",
+      "url_mobile": "",
+      "title": "Alphabet antitrust remedy hearing begins as DOJ pushes for structural breakup",
+      "seendate": "20250825T090000Z",
+      "socialimage": "",
+      "domain": "reuters.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://ft.com/google-contractor-labor-violation",
+      "url_mobile": "",
+      "title": "Google contractors file lawsuit alleging labor law violations and wage theft",
+      "seendate": "20250820T120000Z",
+      "socialimage": "",
+      "domain": "ft.com",
+      "language": "English",
+      "sourcecountry": "United Kingdom"
+    },
+    {
+      "url": "https://wsj.com/alphabet-sec-investigation-disclosure",
+      "url_mobile": "",
+      "title": "Alphabet receives SEC investigation notice over earnings disclosure violations",
+      "seendate": "20250815T090000Z",
+      "socialimage": "",
+      "domain": "wsj.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://bloomberg.com/google-maps-monopoly-complaint",
+      "url_mobile": "",
+      "title": "Maps monopoly complaint against Google filed with FTC by competitor firms",
+      "seendate": "20250810T140000Z",
+      "socialimage": "",
+      "domain": "bloomberg.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://nytimes.com/2025/08/alphabet-2025-annual-report",
+      "url_mobile": "",
+      "title": "Alphabet annual report highlights regulatory risk as primary business concern",
+      "seendate": "20250805T110000Z",
+      "socialimage": "",
+      "domain": "nytimes.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://cnbc.com/google-doj-trial-update-week3",
+      "url_mobile": "",
+      "title": "Google antitrust trial week three sees key executive testimonies on search deals",
+      "seendate": "20250801T090000Z",
+      "socialimage": "",
+      "domain": "cnbc.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://techcrunch.com/alphabet-pixel-recall-battery",
+      "url_mobile": "",
+      "title": "Alphabet recalls Pixel 9 phones due to battery safety violation and fire risk",
+      "seendate": "20250728T120000Z",
+      "socialimage": "",
+      "domain": "techcrunch.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://reuters.com/google-france-digital-services-fine",
+      "url_mobile": "",
+      "title": "Google fined by French regulator for digital services act compliance violation",
+      "seendate": "20250725T140000Z",
+      "socialimage": "",
+      "domain": "reuters.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://ft.com/alphabet-workspace-antitrust-complaint",
+      "url_mobile": "",
+      "title": "Alphabet Google Workspace faces antitrust complaint from enterprise software rivals",
+      "seendate": "20250720T090000Z",
+      "socialimage": "",
+      "domain": "ft.com",
+      "language": "English",
+      "sourcecountry": "United Kingdom"
+    },
+    {
+      "url": "https://wsj.com/google-ai-copyright-settlement-publishers",
+      "url_mobile": "",
+      "title": "Google reaches copyright settlement with news publishers over AI training data",
+      "seendate": "20250715T130000Z",
+      "socialimage": "",
+      "domain": "wsj.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://bloomberg.com/alphabet-cyber-security-breach-report",
+      "url_mobile": "",
+      "title": "Alphabet discloses cybersecurity breach affecting 500000 Google accounts",
+      "seendate": "20250710T110000Z",
+      "socialimage": "",
+      "domain": "bloomberg.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://nytimes.com/2025/07/google-internal-memo-antitrust",
+      "url_mobile": "",
+      "title": "Leaked Google internal memo reveals awareness of antitrust vulnerability",
+      "seendate": "20250705T090000Z",
+      "socialimage": "",
+      "domain": "nytimes.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://cnbc.com/alphabet-q2-earnings-2025",
+      "url_mobile": "",
+      "title": "Alphabet Q2 2025 earnings beat despite ongoing antitrust legal costs",
+      "seendate": "20250701T180000Z",
+      "socialimage": "",
+      "domain": "cnbc.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://techcrunch.com/google-cloud-ai-regulation",
+      "url_mobile": "",
+      "title": "Google Cloud AI services face new EU regulation requiring algorithmic transparency",
+      "seendate": "20250628T140000Z",
+      "socialimage": "",
+      "domain": "techcrunch.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://reuters.com/alphabet-google-texas-antitrust-settlement",
+      "url_mobile": "",
+      "title": "Alphabet settles Texas antitrust lawsuit for 700 million in consumer penalty fund",
+      "seendate": "20250625T090000Z",
+      "socialimage": "",
+      "domain": "reuters.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://ft.com/google-eu-remedies-antitrust",
+      "url_mobile": "",
+      "title": "EU demands Google offer remedies for comparison shopping antitrust violation",
+      "seendate": "20250620T120000Z",
+      "socialimage": "",
+      "domain": "ft.com",
+      "language": "English",
+      "sourcecountry": "United Kingdom"
+    },
+    {
+      "url": "https://wsj.com/alphabet-board-diversity-lawsuit",
+      "url_mobile": "",
+      "title": "Alphabet faces shareholder lawsuit over board diversity disclosure violations",
+      "seendate": "20250615T090000Z",
+      "socialimage": "",
+      "domain": "wsj.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://bloomberg.com/google-youtube-premium-pricing",
+      "url_mobile": "",
+      "title": "Google YouTube Premium price hike triggers FTC investigation into bundling practices",
+      "seendate": "20250610T140000Z",
+      "socialimage": "",
+      "domain": "bloomberg.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://nytimes.com/2025/06/alphabet-sundar-pay-package",
+      "url_mobile": "",
+      "title": "Alphabet approves 226 million pay package for CEO Sundar Pichai amid layoffs",
+      "seendate": "20250605T110000Z",
+      "socialimage": "",
+      "domain": "nytimes.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://cnbc.com/google-cloud-gov-contract-win",
+      "url_mobile": "",
+      "title": "Google Cloud wins 9 billion US government cloud contract over AWS",
+      "seendate": "20250601T180000Z",
+      "socialimage": "",
+      "domain": "cnbc.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://techcrunch.com/alphabet-loon-moonshot-failure",
+      "url_mobile": "",
+      "title": "Alphabet shuts down Loon balloon internet project after regulatory hurdles",
+      "seendate": "20250528T090000Z",
+      "socialimage": "",
+      "domain": "techcrunch.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://reuters.com/google-app-store-fine-korea",
+      "url_mobile": "",
+      "title": "Google fined 177 million by South Korean regulator for Play Store violations",
+      "seendate": "20250525T120000Z",
+      "socialimage": "",
+      "domain": "reuters.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://ft.com/alphabet-carbon-emissions-controversy",
+      "url_mobile": "",
+      "title": "Alphabet misses carbon neutrality targets raising greenwashing misconduct concerns",
+      "seendate": "20250520T140000Z",
+      "socialimage": "",
+      "domain": "ft.com",
+      "language": "English",
+      "sourcecountry": "United Kingdom"
+    },
+    {
+      "url": "https://wsj.com/google-ai-hallucination-lawsuit",
+      "url_mobile": "",
+      "title": "Google faces lawsuit over AI Gemini hallucinations causing financial harm",
+      "seendate": "20250515T090000Z",
+      "socialimage": "",
+      "domain": "wsj.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://bloomberg.com/alphabet-stock-split-history",
+      "url_mobile": "",
+      "title": "Alphabet stock split history reviewed as shares hit record high in 2025",
+      "seendate": "20250510T130000Z",
+      "socialimage": "",
+      "domain": "bloomberg.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://nytimes.com/2025/05/google-antitrust-closing-arguments",
+      "url_mobile": "",
+      "title": "Closing arguments in Google antitrust trial expected to last two weeks",
+      "seendate": "20250505T090000Z",
+      "socialimage": "",
+      "domain": "nytimes.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://cnbc.com/google-workspace-enterprise-growth",
+      "url_mobile": "",
+      "title": "Google Workspace hits 10 million enterprise users amid Microsoft competition",
+      "seendate": "20250501T180000Z",
+      "socialimage": "",
+      "domain": "cnbc.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://techcrunch.com/alphabet-self-driving-lawsuit",
+      "url_mobile": "",
+      "title": "Alphabet Waymo faces injury lawsuit after autonomous vehicle collision incident",
+      "seendate": "20250428T110000Z",
+      "socialimage": "",
+      "domain": "techcrunch.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://reuters.com/google-advertising-class-action",
+      "url_mobile": "",
+      "title": "Google faces class action advertising fraud lawsuit from small business owners",
+      "seendate": "20250425T090000Z",
+      "socialimage": "",
+      "domain": "reuters.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://ft.com/alphabet-india-competition-investigation",
+      "url_mobile": "",
+      "title": "India competition authority opens investigation into Alphabet Google advertising",
+      "seendate": "20250420T130000Z",
+      "socialimage": "",
+      "domain": "ft.com",
+      "language": "English",
+      "sourcecountry": "United Kingdom"
+    },
+    {
+      "url": "https://wsj.com/google-search-monopoly-verdict-analysis",
+      "url_mobile": "",
+      "title": "Legal analysts assess Google search monopoly verdict implications for tech sector",
+      "seendate": "20250415T090000Z",
+      "socialimage": "",
+      "domain": "wsj.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://bloomberg.com/alphabet-insurance-regulatory-fine",
+      "url_mobile": "",
+      "title": "Alphabet subsidiary fined by state insurance regulators for compliance violation",
+      "seendate": "20250410T140000Z",
+      "socialimage": "",
+      "domain": "bloomberg.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://nytimes.com/2025/04/google-layoffs-tech-jobs",
+      "url_mobile": "",
+      "title": "Google announces additional layoffs cutting 1000 positions in hardware division",
+      "seendate": "20250405T110000Z",
+      "socialimage": "",
+      "domain": "nytimes.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://cnbc.com/alphabet-pinterest-acquisition-rumor",
+      "url_mobile": "",
+      "title": "Alphabet rumored to be in talks to acquire Pinterest in 30 billion deal",
+      "seendate": "20250401T090000Z",
+      "socialimage": "",
+      "domain": "cnbc.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://techcrunch.com/google-developer-api-terms-violation",
+      "url_mobile": "",
+      "title": "Google API terms update triggers developer backlash and potential legal challenge",
+      "seendate": "20250328T120000Z",
+      "socialimage": "",
+      "domain": "techcrunch.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://reuters.com/alphabet-google-fi-investigation",
+      "url_mobile": "",
+      "title": "Google Fi mobile service faces FCC investigation for consumer protection violation",
+      "seendate": "20250325T090000Z",
+      "socialimage": "",
+      "domain": "reuters.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://ft.com/google-adtech-investigation-uk",
+      "url_mobile": "",
+      "title": "UK regulator opens formal investigation into Google adtech monopoly practices",
+      "seendate": "20250320T140000Z",
+      "socialimage": "",
+      "domain": "ft.com",
+      "language": "English",
+      "sourcecountry": "United Kingdom"
+    },
+    {
+      "url": "https://wsj.com/alphabet-quantum-computing-breakthrough",
+      "url_mobile": "",
+      "title": "Alphabet Google claims quantum supremacy breakthrough with Willow processor",
+      "seendate": "20250315T110000Z",
+      "socialimage": "",
+      "domain": "wsj.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://bloomberg.com/google-spain-digital-services-tax",
+      "url_mobile": "",
+      "title": "Google fined by Spain for failing to pay digital services tax penalty",
+      "seendate": "20250310T090000Z",
+      "socialimage": "",
+      "domain": "bloomberg.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://nytimes.com/2025/03/google-antitrust-doj-structural-remedy",
+      "url_mobile": "",
+      "title": "DOJ files for structural remedy against Google in antitrust enforcement action",
+      "seendate": "20250305T130000Z",
+      "socialimage": "",
+      "domain": "nytimes.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://cnbc.com/alphabet-gemini-ai-revenue",
+      "url_mobile": "",
+      "title": "Alphabet Gemini AI generates 1.4 billion quarterly revenue in new products",
+      "seendate": "20250301T180000Z",
+      "socialimage": "",
+      "domain": "cnbc.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://techcrunch.com/google-stadia-refund-settlement",
+      "url_mobile": "",
+      "title": "Google Stadia shutdown settlement pays 72 million in consumer refunds",
+      "seendate": "20250228T090000Z",
+      "socialimage": "",
+      "domain": "techcrunch.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://reuters.com/alphabet-2025-q1-earnings-preview",
+      "url_mobile": "",
+      "title": "Alphabet Q1 2025 preview shows ad recovery and cloud growth momentum",
+      "seendate": "20250225T140000Z",
+      "socialimage": "",
+      "domain": "reuters.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://ft.com/google-android-competition-ruling",
+      "url_mobile": "",
+      "title": "EU court upholds ruling requiring Google Android to offer competitor apps",
+      "seendate": "20250220T090000Z",
+      "socialimage": "",
+      "domain": "ft.com",
+      "language": "English",
+      "sourcecountry": "United Kingdom"
+    },
+    {
+      "url": "https://wsj.com/alphabet-cloud-next-conference",
+      "url_mobile": "",
+      "title": "Alphabet Google Cloud Next conference unveils AI infrastructure investments",
+      "seendate": "20250215T130000Z",
+      "socialimage": "",
+      "domain": "wsj.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://bloomberg.com/google-search-revenue-ai-threat",
+      "url_mobile": "",
+      "title": "Google search ad revenue threatened by AI chatbot alternatives analysis shows",
+      "seendate": "20250210T110000Z",
+      "socialimage": "",
+      "domain": "bloomberg.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://nytimes.com/2025/02/alphabet-employee-activism",
+      "url_mobile": "",
+      "title": "Alphabet employees stage walkout over company ethics and government contracts",
+      "seendate": "20250205T090000Z",
+      "socialimage": "",
+      "domain": "nytimes.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://cnbc.com/google-maps-ev-charging-feature",
+      "url_mobile": "",
+      "title": "Google Maps adds real-time EV charging station availability feature",
+      "seendate": "20250201T140000Z",
+      "socialimage": "",
+      "domain": "cnbc.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://techcrunch.com/alphabet-isomorphic-drug-discovery",
+      "url_mobile": "",
+      "title": "Alphabet Isomorphic Labs claims AI drug discovery breakthrough validation",
+      "seendate": "20250128T090000Z",
+      "socialimage": "",
+      "domain": "techcrunch.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    }
+  ],
+  "query": "\"Alphabet Inc.\" (fraud OR investigation OR penalty OR fine OR violation OR lawsuit OR scandal OR misconduct OR bribery OR corruption OR sanction OR money laundering OR settlement OR indictment)",
+  "entity_name": "Alphabet Inc.",
+  "total_returned": 96
+}

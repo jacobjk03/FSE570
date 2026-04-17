@@ -1,0 +1,227 @@
+{
+  "entity_name": "JPMorgan Chase & Co.",
+  "query": "\"JPMorgan Chase & Co.\"",
+  "total_found": 242,
+  "dockets": [
+    {
+      "id": "",
+      "case_name": "Alexis Mather v. JPMorgan Chase and Co.",
+      "docket_number": "2:25-cv-07843",
+      "court_id": "cacd",
+      "date_filed": "2025-08-21",
+      "date_terminated": null,
+      "suit_nature": "Consumer Credit",
+      "cause": "28:1441 Notice of Removal - Fair Credit Reporting Act",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Connie Mireles v. JPMorgan Chase and Co.",
+      "docket_number": "2:25-cv-05144",
+      "court_id": "cacd",
+      "date_filed": "2025-06-06",
+      "date_terminated": null,
+      "suit_nature": "",
+      "cause": "",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Krystal Board v. JPMorgan Chase and Co",
+      "docket_number": "2:24-cv-03380",
+      "court_id": "cacd",
+      "date_filed": "2024-04-24",
+      "date_terminated": null,
+      "suit_nature": "480 Consumer Credit",
+      "cause": "15:1681 Fair Credit Reporting Act",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Alfredo Chaidez v. JPMorgan Chase and Co.",
+      "docket_number": "2:22-cv-06986",
+      "court_id": "cacd",
+      "date_filed": "2022-09-27",
+      "date_terminated": "2022-11-18",
+      "suit_nature": "360 P.I.: Other",
+      "cause": "28:1332 Diversity-Personal Injury",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Outlet Tile Center v. JPMorgan Chase and Co.",
+      "docket_number": "2:20-cv-03603",
+      "court_id": "cacd",
+      "date_filed": "2020-04-20",
+      "date_terminated": "2020-08-17",
+      "suit_nature": "190 Contract: Other",
+      "cause": "28:1332 Diversity-Other Contract",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Sheena Raffin v. JPMorgan Chase and Co.",
+      "docket_number": "2:19-cv-05744",
+      "court_id": "cacd",
+      "date_filed": "2019-07-02",
+      "date_terminated": "2019-08-16",
+      "suit_nature": "890 Other Statutory Actions",
+      "cause": "28:1331 Fed. Question",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Cyber Defense Group, LLC v. JPMorgan Chase and Co.",
+      "docket_number": "2:20-cv-03589",
+      "court_id": "cacd",
+      "date_filed": "2020-04-19",
+      "date_terminated": "2020-07-23",
+      "suit_nature": "370 Other Fraud",
+      "cause": "28:1332 Diversity-Fraud",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Maria Parra v. JPMorgan Chase and Co.",
+      "docket_number": "2:19-cv-00361",
+      "court_id": "cacd",
+      "date_filed": "2019-01-16",
+      "date_terminated": "2021-01-19",
+      "suit_nature": "442 Civil rights jobs",
+      "cause": "",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Leean A. Atkins v. JPMorgan Chase and Co.",
+      "docket_number": "8:18-cv-01310",
+      "court_id": "cacd",
+      "date_filed": "2018-07-27",
+      "date_terminated": "2018-11-08",
+      "suit_nature": "220 Real Property: Foreclosure",
+      "cause": "28:1331(a) Fed. Question: Real Property",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Venture Recycling Group, Inc. v. JPMorgan Chase and Co.",
+      "docket_number": "2:19-cv-02253",
+      "court_id": "cacd",
+      "date_filed": "2019-03-26",
+      "date_terminated": "2020-10-27",
+      "suit_nature": "Personal Property: Other",
+      "cause": "28:1441 Notice of Removal",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Sangkawatana v. JPMorgan Chase and Co.",
+      "docket_number": "1:17-cv-01514",
+      "court_id": "ilnd",
+      "date_filed": "2017-02-27",
+      "date_terminated": "2017-07-13",
+      "suit_nature": "480 Consumer credit",
+      "cause": "",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Otis McKinney v. JPMorgan Chase and Co.",
+      "docket_number": "2:16-cv-00415",
+      "court_id": "cacd",
+      "date_filed": "2016-01-19",
+      "date_terminated": "2016-02-09",
+      "suit_nature": "220 Real Property: Foreclosure",
+      "cause": "28:1444 Notice of Removal - Foreclosure",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Rosa Gabrielian v. JPMorgan Chase and Co.",
+      "docket_number": "2:16-cv-00131",
+      "court_id": "cacd",
+      "date_filed": "2016-01-07",
+      "date_terminated": "2016-09-13",
+      "suit_nature": "190 Contract: Other",
+      "cause": "28:1441 Notice of Removal - Breach of Contract",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Dominant Insurance Services, Inc. v. JPMorgan Chase and Co.",
+      "docket_number": "2:16-cv-05285",
+      "court_id": "cacd",
+      "date_filed": "2016-07-18",
+      "date_terminated": "2017-01-13",
+      "suit_nature": "290 Real Property: Other",
+      "cause": "28:1441 Notice of Removal",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Soto-Aguilar v. JPMorgan Chase and Co",
+      "docket_number": "14-01460",
+      "court_id": "wawb",
+      "date_filed": "2014-12-15",
+      "date_terminated": "2015-02-25",
+      "suit_nature": "",
+      "cause": "",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Carla Diaz v. JPMorgan Chase and Co.",
+      "docket_number": "2:11-cv-03199",
+      "court_id": "cacd",
+      "date_filed": "2011-04-14",
+      "date_terminated": "2012-06-26",
+      "suit_nature": "Other Fraud",
+      "cause": "28:1332 Diversity-Fraud",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Sierra Ann Buelna v. JPMorgan Chase and Co.",
+      "docket_number": "2:11-cv-04450",
+      "court_id": "cacd",
+      "date_filed": "2011-05-24",
+      "date_terminated": "2012-07-27",
+      "suit_nature": "790 Labor: Other",
+      "cause": "28:1441 Notice of Removal - Employment Discrimination",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "In re JPMorgan Chase and Co. ERISA Litigation",
+      "docket_number": "1:12-cv-04027",
+      "court_id": "nysd",
+      "date_filed": "2012-05-21",
+      "date_terminated": "2016-01-11",
+      "suit_nature": "791 Labor: E.R.I.S.A.",
+      "cause": "29:1132 E.R.I.S.A.: Civil Enforcement of Employee Benefits",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "The People of the State of California v. JPMorgan Chase and Co.",
+      "docket_number": "2:14-cv-09750",
+      "court_id": "cacd",
+      "date_filed": "2014-12-19",
+      "date_terminated": "2015-02-26",
+      "suit_nature": "443 Civil Rights: Accommodations",
+      "cause": "42:405 Fair Housing Act",
+      "absolute_url": ""
+    },
+    {
+      "id": "",
+      "case_name": "Latham v. JPMorgan Chase And Co.",
+      "docket_number": "09-01212",
+      "court_id": "caeb",
+      "date_filed": "2009-09-04",
+      "date_terminated": "2009-11-03",
+      "suit_nature": "",
+      "cause": "",
+      "absolute_url": ""
+    }
+  ]
+}

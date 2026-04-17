@@ -23,7 +23,9 @@ from reflexion_layer import aggregate_confidence, cross_check_findings, detect_g
 
 from app.graph_viz import serialize_graph_for_vis
 from app.investigation_narrative import build_investigation_narrative
+from app.llm_narrative import generate_llm_narrative
 from app.verdict_synthesis import build_verdict_synthesis
+from knowledge_graph.network_analysis import analyze_graph
 
 
 def get_registered_entities() -> List[Dict[str, str]]:
@@ -67,6 +69,7 @@ def run_investigation(query: str, data_root: Optional[Path] = None) -> Dict[str,
         "graph_vis": None,
         "narrative": None,
         "verdict": None,
+        "llm_summary": None,
     }
 
     import time as _time
@@ -129,6 +132,7 @@ def run_investigation(query: str, data_root: Optional[Path] = None) -> Dict[str,
         # Knowledge graph
         nodes, edges = build_graph_from_evidence(findings)
         result["graph_summary"] = {"nodes": len(nodes), "edges": len(edges), "entity_nodes": sum(1 for n in nodes if n.node_type == "entity"), "evidence_nodes": sum(1 for n in nodes if n.node_type == "evidence")}
+        result["graph_network_analysis"] = analyze_graph(nodes, edges)
         result["graph_vis"] = serialize_graph_for_vis(
             nodes,
             edges,
@@ -169,6 +173,7 @@ def run_investigation(query: str, data_root: Optional[Path] = None) -> Dict[str,
         result["audit_events"] = audit.get_events()
         result["narrative"] = build_investigation_narrative(result)
         result["verdict"] = build_verdict_synthesis(result)
+        result["llm_summary"] = generate_llm_narrative(result)
     except Exception as e:
         result["error"] = str(e)
         audit.record("pipeline_error", error=str(e))
