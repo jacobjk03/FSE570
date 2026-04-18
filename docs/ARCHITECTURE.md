@@ -140,13 +140,13 @@ This **cache-first** design means:
 
 ### The Three MCP Processors
 
-**`SecEdgarProcessor`** — reads `data/raw/sec/CIK{cik}.json`, converts up to 500 SEC filings into Evidence rows. Jacob added tiered confidence scoring by filing type during the final sprint:
+**`SecEdgarProcessor`** (Arnab + Jacob) — reads `data/raw/sec/CIK{cik}.json`, converts up to 500 SEC filings into Evidence rows. Jacob extended the processor with tiered confidence scoring by filing type:
 - 8-K (material events) → **0.95**
 - 10-K / 10-Q (annual reports) → **0.85**
 - DEF 14A (proxy statements) → **0.80**
 - Form 4 (routine insider trades) → **0.75**
 
-**`GdeltProcessor`** — reads `data/raw/gdelt/news_{slug}.json`, converts news articles into Evidence. Relevance is scored by title content. Jacob added English-language filtering during the final sprint to remove non-English articles from the signal:
+**`GdeltProcessor`** (Arnab + Jacob) — reads `data/raw/gdelt/news_{slug}.json`, converts news articles into Evidence. Relevance is scored by title content. Jacob extended it with English-language filtering to remove non-English articles from the signal:
 - Entity name + risk keyword in title → **0.75** (high signal)
 - Entity name only → **0.70**
 - Risk keyword only → **0.55**
@@ -159,7 +159,7 @@ This **cache-first** design means:
 
 ## Layer 3 — Lead Agent (`agents/lead_agent/`)
 
-The Lead Agent is the orchestrator — it receives the raw query string and coordinates everything else. Arnab designed the overall architecture; Jacob extended it during the final sprint with automatic entity resolution.
+The Lead Agent is the orchestrator — it receives the raw query string and coordinates everything else. Arnab designed the overall architecture; Jacob extended it with automatic entity resolution and wired in the SEC EDGAR fallback resolver.
 
 ### Sub-module 1: Entity Resolution (`resolver.py` + `sec_name_resolver.py`)
 
@@ -289,7 +289,7 @@ Computes system performance numbers: citation rate, coverage by category and dat
 
 ## Knowledge Graph (`knowledge_graph/`)
 
-Built from the full evidence set after all agents finish. The graph structure was designed by Arnab; Jacob added the NetworkX analysis module during the final sprint.
+Built from the full evidence set after all agents finish. Arnab designed and built the graph structure and builder; Jacob added the NetworkX analysis module (`network_analysis.py`) and wired the results into the pipeline and UI.
 
 **Structure:**
 - One **node** per entity (the company being investigated)
@@ -490,9 +490,9 @@ FSE570/
 │   │   └── context_manager/  Shared investigation state (Raj)
 │   └── specialist_agents/    CorporateAgent, LegalAgent, SocialGraphAgent — Arnab
 │
-├── mcp_layer/                Cache-first data access — Arnab
+├── mcp_layer/                Cache-first data access (Arnab); confidence + GDELT filter extensions (Jacob)
 ├── reflexion_layer/          Cross-check, gap detection, confidence — Arnab
-├── knowledge_graph/          In-memory graph + NetworkX analysis — Arnab + Jacob
+├── knowledge_graph/          Graph builder (Arnab) + NetworkX analysis (Jacob)
 ├── output_layer/             Reports, dashboard, audit trail, metrics — Arnab
 │
 ├── app/                      Flask web application
