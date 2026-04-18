@@ -120,8 +120,10 @@ Tested examples:
 
 ## 8. Architectural Design Decisions
 
-### Why no LLM?
-The system deliberately avoids LLMs in the evidence pipeline. In compliance, AML screening, and forensic investigation workflows, every claim must be independently verifiable and traceable to a source. LLM-generated summaries introduce hallucination risk — a fabricated citation in a sanctions report is a legal liability. Our deterministic pipeline achieves **97–98% citation rate with zero hallucination** because every evidence row is sourced directly from a public data API.
+### Why is the LLM only at the synthesis layer?
+The evidence pipeline is deliberately deterministic — every finding is sourced directly from a public API (SEC EDGAR, OFAC, CourtListener, GDELT, OpenCorporates). LLM-generated evidence in a compliance report is a legal liability: a fabricated citation cannot be audited or defended. Our deterministic evidence layer achieves **97–98% citation rate with zero hallucination**.
+
+Llama 3.1 is introduced only at the final synthesis stage (`app/llm_narrative.py`), where it reads aggregated investigation metrics and writes a natural-language analyst narrative. This is the appropriate role for an LLM — interpreting structured numbers into human-readable prose — without any risk of hallucinating source citations.
 
 ### Why deterministic confidence scoring?
 Tiered, rule-based confidence scoring (by source type and filing form) is interpretable, auditable, and reproducible. A compliance team can trace exactly why a finding has confidence 0.95 (8-K material event) vs 0.75 (routine Form 4 insider trade). This is essential for audit-ready reporting.
@@ -143,4 +145,4 @@ All data is cached after the first pull. This makes investigations reproducible 
 | Knowledge graph | 4 | Graph builder, node/edge correctness |
 | Output layer | 24 | Report generation, risk dashboard, audit trail, metrics |
 | App (narrative, verdict) | 4 | Synthesis modules |
-| **Total** | **214** | All major layers |
+| **Total** | **219** | All major layers |
