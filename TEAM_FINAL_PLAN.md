@@ -16,7 +16,7 @@ These are questions the professor or evaluators may raise. Here is exactly how t
 
 **How to frame it:**
 
-> *"The evidence pipeline is deliberately deterministic — every finding is sourced directly from SEC EDGAR, OFAC SDN, CourtListener, GDELT, or OpenCorporates with a 98.1% citation rate and zero hallucination. LLM-generated evidence in a compliance report is a legal liability. We use Llama 3.1 (via Groq's free API) exactly where LLMs add value: at the synthesis layer, where it reads the aggregated investigation metrics and writes a natural-language analyst narrative. The architecture follows the principle: deterministic retrieval for facts, LLM for human-readable interpretation."*
+> *"The evidence pipeline is deliberately deterministic — every finding is sourced directly from SEC EDGAR, OFAC SDN, CourtListener, or GDELT with a 98.1% citation rate and zero hallucination. LLM-generated evidence in a compliance report is a legal liability. We use Llama 3.1 (via Groq's free API) exactly where LLMs add value: at the synthesis layer, where it reads the aggregated investigation metrics and writes a natural-language analyst narrative. The architecture follows the principle: deterministic retrieval for facts, LLM for human-readable interpretation."*
 
 **Why this works:** You now have a real LLM component, a clear architectural rationale for where it sits, and a principled answer for why it doesn't touch raw evidence.
 

@@ -66,8 +66,6 @@ def build_investigation_narrative(result: Dict[str, Any]) -> Dict[str, Any]:
             src_bits.append("OFAC sanctions screening")
         if ds.get("courtlistener"):
             src_bits.append("federal court dockets (CourtListener)")
-        if ds.get("opencorporates"):
-            src_bits.append("corporate registry (OpenCorporates)")
         if src_bits:
             if len(src_bits) == 1:
                 src_sentence = f"Evidence came from **{src_bits[0]}**."
@@ -117,7 +115,7 @@ def build_investigation_narrative(result: Dict[str, Any]) -> Dict[str, Any]:
                 "High **conflict** counts usually mean **multiple SEC filings on the same calendar day** with different summaries — expected, not errors."
             )
         if gaps:
-            takeaway_parts.append("Address **coverage gaps** (e.g. OpenCorporates token) if you need full beneficial-ownership mapping.")
+            takeaway_parts.append("Address **coverage gaps** where expected data could not be retrieved in this run.")
         if gdelt_total and gdelt_rel < gdelt_total:
             takeaway_parts.append(
                 f"**GDELT**: {gdelt_rel} of {gdelt_total} articles are title-scored as highly relevant; the rest may still be useful context."
@@ -153,8 +151,8 @@ def build_investigation_narrative(result: Dict[str, Any]) -> Dict[str, Any]:
         {
             "title": "What are “Coverage gaps”?",
             "body": (
-                "Gaps mean **a source was expected but data was missing**, rate-limited, or not configured (e.g. no `OPENCORPORATES_API_TOKEN`). "
-                "A gap in beneficial ownership **does not** mean the company lacks owners — it means **this tool did not map them here**."
+                "Gaps mean **a source was expected but data was missing**, rate-limited, or not configured. "
+                "A gap in beneficial ownership **does not** mean the company lacks owners — it means **the current run did not map them here**."
             ),
         },
         {

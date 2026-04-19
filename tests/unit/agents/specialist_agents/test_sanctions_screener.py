@@ -3,11 +3,11 @@ Tests for the OFAC sanctions screener
 (agents/specialist_agents/legal_agent/sanctions_screener/screener.py).
 
 Covers:
-- Missing cache → graceful fallback Evidence
+- Missing cache -> strict DataSourceError
 - Clean result (no SDN matches) → correct Evidence structure
 - Match found → correct Evidence structure + attributes
 - stub flag is False for all real outputs
-- confidence is correct (0.90 for live results, 0.0 for fallback)
+- confidence is correct (0.90 for live results)
 """
 
 from __future__ import annotations
@@ -19,6 +19,7 @@ import pytest
 from agents.lead_agent.context_manager import InvestigationContext
 from agents.lead_agent.task_planner import SubTask
 from agents.specialist_agents.legal_agent.sanctions_screener.screener import screen
+from app.investigation_errors import DataSourceError
 from osint_swarm.entities import Entity
 
 # Reuse the minimal SDN XML from test_ofac.py
@@ -69,20 +70,13 @@ def _make_sdn_cache(tmp_path: Path) -> Path:
 
 
 # ---------------------------------------------------------------------------
-# Fallback: cache missing
+# Strict failure: cache missing
 # ---------------------------------------------------------------------------
 
-def test_screener_returns_fallback_when_cache_missing(tmp_path: Path):
+def test_screener_raises_when_cache_missing(tmp_path: Path):
     entity = Entity(entity_id="tesla_inc_cik_0001318605", name="Tesla, Inc.", identifiers={})
-    result = screen(entity, _TASK, _CTX, data_root=tmp_path)
-
-    assert len(result) == 1
-    ev = result[0]
-    assert ev.confidence == 0.0
-    assert ev.risk_category == "legal"
-    assert "pull_ofac_sdn" in ev.summary.lower() or "cache" in ev.summary.lower()
-    assert ev.attributes.get("stub") is False
-    assert ev.attributes.get("cache_missing") is True
+    with pytest.raises(DataSourceError):
+        screen(entity, _TASK, _CTX, data_root=tmp_path)
 
 
 # ---------------------------------------------------------------------------
@@ -198,12 +192,25 @@ def test_legal_agent_uses_real_screener_with_data_root(tmp_path: Path):
     _make_sdn_cache(tmp_path)
     from agents.specialist_agents.legal_agent import LegalAgent
 
-    agent = LegalAgent(data_root=tmp_path)
-    entity = Entity(entity_id="tesla_inc_cik_0001318605", name="Tesla, Inc.", identifiers={})
-    task = SubTask("sanctions_screening", "legal_agent", "Screen for OFAC")
-    ctx = InvestigationContext()
+    from agents.specialist_agents.legal_agent import agent as legal_agent_module
 
-    findings = agent.run(entity, task, ctx)
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(
+            legal_agent_module,
+            "choose_next_tool",
+            lambda **_kwargs: {
+                "selected_tool": "ofac",
+                "alternatives": [],
+                "policy_used": "llm_action_policy",
+                "reasoning": "Use sanctions screening first.",
+            },
+        )
+        agent = LegalAgent(data_root=tmp_path)
+        entity = Entity(entity_id="tesla_inc_cik_0001318605", name="Tesla, Inc.", identifiers={})
+        task = SubTask("sanctions_screening", "legal_agent", "Screen for OFAC")
+        ctx = InvestigationContext()
+
+        findings = agent.run(entity, task, ctx)
 
     assert len(findings) == 1
     ev = findings[0]
@@ -213,16 +220,26 @@ def test_legal_agent_uses_real_screener_with_data_root(tmp_path: Path):
     assert ev.confidence == pytest.approx(0.90)
 
 
-def test_legal_agent_no_cache_returns_graceful_fallback(tmp_path: Path):
-    """Without SDN cache, LegalAgent returns a 0-confidence fallback (not a crash)."""
+def test_legal_agent_no_cache_raises_data_error(tmp_path: Path):
+    """Without SDN cache, LegalAgent should hard-fail in strict mode."""
     from agents.specialist_agents.legal_agent import LegalAgent
+    from agents.specialist_agents.legal_agent import agent as legal_agent_module
 
-    agent = LegalAgent(data_root=tmp_path)  # no sdn.xml in tmp_path
-    entity = Entity(entity_id="e1", name="Any Corp", identifiers={})
-    task = SubTask("sanctions_screening", "legal_agent", "Screen")
-    ctx = InvestigationContext()
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(
+            legal_agent_module,
+            "choose_next_tool",
+            lambda **_kwargs: {
+                "selected_tool": "ofac",
+                "alternatives": [],
+                "policy_used": "llm_action_policy",
+                "reasoning": "Use sanctions screening first.",
+            },
+        )
+        agent = LegalAgent(data_root=tmp_path)  # no sdn.xml in tmp_path
+        entity = Entity(entity_id="e1", name="Any Corp", identifiers={})
+        task = SubTask("sanctions_screening", "legal_agent", "Screen")
+        ctx = InvestigationContext()
 
-    findings = agent.run(entity, task, ctx)
-    assert len(findings) == 1
-    assert findings[0].confidence == 0.0
-    assert findings[0].attributes.get("stub") is False
+        with pytest.raises(DataSourceError):
+            agent.run(entity, task, ctx)

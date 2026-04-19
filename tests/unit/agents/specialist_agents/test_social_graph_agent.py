@@ -8,6 +8,7 @@ import pytest
 from agents.lead_agent.context_manager import InvestigationContext
 from agents.lead_agent.task_planner import SubTask
 from agents.specialist_agents.social_graph_agent import SocialGraphAgent
+from app.investigation_errors import DataSourceError
 from osint_swarm.entities import Entity
 
 
@@ -16,8 +17,8 @@ def test_social_graph_agent_agent_id():
     assert agent.agent_id == "social_graph_agent"
 
 
-def test_social_graph_agent_returns_empty_without_cache(tmp_path: Path):
-    """No GDELT cache → returns empty list (no live network call in tests)."""
+def test_social_graph_agent_raises_without_cache(tmp_path: Path):
+    """No GDELT cache + network error should raise in strict mode."""
     import osint_swarm.data_sources.gdelt as gdelt_mod
 
     original = gdelt_mod.fetch_news_for_entity
@@ -27,12 +28,24 @@ def test_social_graph_agent_returns_empty_without_cache(tmp_path: Path):
 
     gdelt_mod.fetch_news_for_entity = _raise
     try:
-        agent = SocialGraphAgent(data_root=tmp_path)
-        entity = Entity(entity_id="e1", name="E Corp", identifiers={})
-        task = SubTask("adverse_media", "social_graph_agent", "Adverse media")
-        ctx = InvestigationContext()
-        findings = agent.run(entity, task, ctx)
-        assert findings == []
+        from agents.specialist_agents.social_graph_agent import agent as social_agent_module
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setattr(
+                social_agent_module,
+                "choose_next_tool",
+                lambda **_kwargs: {
+                    "selected_tool": "gdelt",
+                    "alternatives": [],
+                    "policy_used": "llm_action_policy",
+                    "reasoning": "Use media source.",
+                },
+            )
+            agent = SocialGraphAgent(data_root=tmp_path)
+            entity = Entity(entity_id="e1", name="E Corp", identifiers={})
+            task = SubTask("adverse_media", "social_graph_agent", "Adverse media")
+            ctx = InvestigationContext()
+            with pytest.raises(DataSourceError):
+                agent.run(entity, task, ctx)
     finally:
         gdelt_mod.fetch_news_for_entity = original
 
@@ -62,13 +75,25 @@ def test_social_graph_agent_returns_gdelt_evidence_with_cache(tmp_path: Path):
     entity = Entity(entity_id="tesla_inc_cik_0001318605", name="Tesla, Inc.", identifiers={"cik": "0001318605"})
     ctx = InvestigationContext()
 
-    for task_type in ("adverse_media", "network_analysis", "influence_mapping"):
-        agent = SocialGraphAgent(data_root=tmp_path)
-        task = SubTask(task_type, "social_graph_agent", "Test")
-        findings = agent.run(entity, task, ctx)
-        assert len(findings) == 1
-        assert findings[0].source_type == "news_article"
-        assert findings[0].risk_category == "network"
-        # "Tesla faces fraud investigation" → entity + risk keyword → 0.75
-        assert findings[0].confidence == pytest.approx(0.75)
-        assert findings[0].attributes["relevant"] is True
+    from agents.specialist_agents.social_graph_agent import agent as social_agent_module
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(
+            social_agent_module,
+            "choose_next_tool",
+            lambda **_kwargs: {
+                "selected_tool": "gdelt",
+                "alternatives": [],
+                "policy_used": "llm_action_policy",
+                "reasoning": "Use media source.",
+            },
+        )
+        for task_type in ("adverse_media", "network_analysis", "influence_mapping"):
+            agent = SocialGraphAgent(data_root=tmp_path)
+            task = SubTask(task_type, "social_graph_agent", "Test")
+            findings = agent.run(entity, task, ctx)
+            assert len(findings) == 1
+            assert findings[0].source_type == "news_article"
+            assert findings[0].risk_category == "network"
+            # "Tesla faces fraud investigation" -> entity + risk keyword -> 0.75
+            assert findings[0].confidence == pytest.approx(0.75)
+            assert findings[0].attributes["relevant"] is True

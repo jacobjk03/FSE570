@@ -27,7 +27,6 @@ def _tier_for_result(
         return ("unresolved_entity", "Entity not resolved", "danger")
 
     gap_areas = {str(g.get("area") or "").lower() for g in gaps}
-    has_bo_gap = "beneficial_ownership" in gap_areas
     has_ofac_gap = any("sanction" in a or "legal" in a for a in gap_areas)
     has_gdelt_gap = any("adverse" in a or "network" in a for a in gap_areas)
 
@@ -35,7 +34,7 @@ def _tier_for_result(
         return ("limited_evidence", "Limited evidence retrieved", "warning")
 
     # Substantial record but known coverage holes
-    if findings >= 50 and (has_bo_gap or (len(gaps) >= 2 and (has_ofac_gap or has_gdelt_gap))):
+    if findings >= 50 and (len(gaps) >= 2 and (has_ofac_gap or has_gdelt_gap)):
         return ("substantial_with_gaps", "Substantial record — coverage gaps", "warning")
 
     if findings >= 50:
@@ -96,9 +95,6 @@ def build_verdict_synthesis(result: Dict[str, Any]) -> Dict[str, Any]:
             parts.append(f"**{ds['courtlistener']}** court docket references via **CourtListener**")
         if ds.get("ofac"):
             parts.append(f"**{ds['ofac']}** sanctions-screening related rows (**OFAC** pipeline)")
-        if ds.get("opencorporates"):
-            parts.append(f"**{ds['opencorporates']}** corporate-structure rows (**OpenCorporates**)")
-
         if parts:
             if len(parts) == 1:
                 paragraphs.append(f"**Coverage:** The record includes {parts[0]}.")

@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from mcp_layer.sec_edgar_processor import SecEdgarProcessor
+from app.investigation_errors import DataSourceError
 from osint_swarm.entities import Entity
 
 
@@ -25,11 +26,12 @@ def test_sec_edgar_processor_source_id():
     assert proc.source_id == "sec_edgar"
 
 
-def test_sec_edgar_processor_returns_empty_without_cik():
-    """Entity without cik identifier returns no evidence."""
+def test_sec_edgar_processor_without_cik_raises():
+    """Entity without CIK should hard-fail in strict mode."""
     proc = SecEdgarProcessor()
     entity = Entity(entity_id="x", name="Y", identifiers={})
-    assert proc.get_evidence_for_entity(entity) == []
+    with pytest.raises(DataSourceError):
+        proc.get_evidence_for_entity(entity)
 
 
 def test_sec_edgar_processor_uses_cache(tmp_path: Path):

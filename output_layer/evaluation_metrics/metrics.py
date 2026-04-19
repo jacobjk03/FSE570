@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional
 from osint_swarm.entities import Evidence
 
 RISK_CATEGORIES = ("governance", "regulatory", "legal", "network", "other")
-DATA_SOURCES = ("sec_edgar", "gdelt", "ofac", "courtlistener", "opencorporates")
+DATA_SOURCES = ("sec_edgar", "gdelt", "ofac", "courtlistener")
 
 
 @dataclass(frozen=True)

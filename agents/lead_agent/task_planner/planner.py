@@ -1,87 +1,33 @@
-"""Task planner: decompose investigation query into sub-tasks for specialist agents."""
+"""Task planner compatibility wrapper."""
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Dict, Iterable, List, Optional
 
 from osint_swarm.entities import Entity
 
-from agents.lead_agent.task_planner.types import SubTask
+from agents.lead_agent.task_planner.llm_planner import plan_investigation
+from agents.lead_agent.task_planner.types import InvestigationPlan, SubTask
 
 
-# Keywords that trigger task types (for rule-based decomposition).
-MONEY_LAUNDERING_KEYWORDS = [
-    "money laundering",
-    "money-laundering",
-    "laundering",
-    "aml",
-    "anti-money",
-    "proceeds of crime",
-    "shell company",
-    "beneficial owner",
-    "beneficial ownership",
-    "sanctions",
-    "ofac",
-    "transaction pattern",
-    "adverse media",
-    "pep",
-    "politically exposed",
-]
-
-CORPORATE_TASK_TYPES = [
-    ("corporate_structure", "corporate_agent", "Analyze corporate structure and subsidiaries"),
-    ("beneficial_ownership", "corporate_agent", "Map beneficial ownership and control"),
-    ("sec_filings", "corporate_agent", "Review SEC filings for governance and risk disclosures"),
-    ("transaction_patterns", "corporate_agent", "Identify unusual transaction or revenue patterns"),
-]
-
-LEGAL_TASK_TYPES = [
-    ("sanctions_screening", "legal_agent", "Screen entity and related parties against sanctions lists"),
-    ("regulatory_actions", "legal_agent", "Check regulatory and enforcement history"),
-    ("litigation", "legal_agent", "Review litigation and court records"),
-]
-
-SOCIAL_TASK_TYPES = [
-    ("adverse_media", "social_graph_agent", "Monitor adverse media and public sentiment"),
-    ("network_analysis", "social_graph_agent", "Analyze executive and entity network connections"),
-]
-
-
-def _query_lower(query: str) -> str:
-    return (query or "").strip().lower()
-
-
-def _suggests_money_laundering(query: str) -> bool:
-    q = _query_lower(query)
-    return any(kw in q for kw in MONEY_LAUNDERING_KEYWORDS)
-
+def build_plan(
+    query: str,
+    entity: Optional[Entity] = None,
+    *,
+    llm_client: Optional[object] = None,
+    available_tools_by_agent: Optional[Dict[str, Iterable[str]]] = None,
+) -> InvestigationPlan:
+    """Build a structured investigation plan with LLM guidance when available."""
+    return plan_investigation(
+        query,
+        entity=entity,
+        llm_client=llm_client,
+        available_tools_by_agent=available_tools_by_agent,
+    )
 
 def decompose(
     query: str,
     entity: Optional[Entity] = None,
 ) -> List[SubTask]:
-    """
-    Decompose an investigation query into sub-tasks (task_type, target_agent, description).
-
-    For money-laundering-style queries we emit: corporate structure, beneficial ownership,
-    sanctions, transaction patterns, adverse media. Otherwise we emit a default set
-    of corporate + legal + social tasks.
-    """
-    tasks: List[SubTask] = []
-    q = _query_lower(query)
-
-    if _suggests_money_laundering(query):
-        tasks.append(SubTask("corporate_structure", "corporate_agent", "Analyze corporate structure and subsidiaries for red flags"))
-        tasks.append(SubTask("beneficial_ownership", "corporate_agent", "Map beneficial ownership and undisclosed interests"))
-        tasks.append(SubTask("sanctions_screening", "legal_agent", "Screen against OFAC SDN and sanctions lists"))
-        tasks.append(SubTask("litigation", "legal_agent", "Search court records for enforcement actions and lawsuits"))
-        tasks.append(SubTask("transaction_patterns", "corporate_agent", "Identify unusual transaction or revenue patterns"))
-        tasks.append(SubTask("adverse_media", "social_graph_agent", "Review adverse media and public records"))
-        return tasks
-
-    # Default: generic investigation
-    tasks.append(SubTask("sec_filings", "corporate_agent", "Review SEC filings and governance"))
-    tasks.append(SubTask("sanctions_screening", "legal_agent", "Screen against OFAC SDN sanctions list"))
-    tasks.append(SubTask("litigation", "legal_agent", "Search court records for lawsuits and regulatory actions"))
-    tasks.append(SubTask("adverse_media", "social_graph_agent", "Check adverse media"))
-    return tasks
+    """Backward-compatible task decomposition entry point."""
+    return build_plan(query, entity=entity).tasks

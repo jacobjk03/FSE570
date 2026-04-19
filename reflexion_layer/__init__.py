@@ -1,5 +1,6 @@
 """Reflexion layer: cross-check, gap detection, confidence (Phase 5)."""
 
+from reflexion_layer.action_reflexion import FollowUpAction, propose_follow_up_actions
 from reflexion_layer.confidence_module import (
     ConfidenceScores,
     aggregate_confidence,
@@ -16,4 +17,6 @@ __all__ = [
     "ConfidenceScores",
     "aggregate_confidence",
     "adjusted_confidence",
+    "FollowUpAction",
+    "propose_follow_up_actions",
 ]

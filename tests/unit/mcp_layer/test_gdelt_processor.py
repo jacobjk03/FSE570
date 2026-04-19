@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from app.investigation_errors import DataSourceError
 from mcp_layer.gdelt_processor import GdeltProcessor
 from osint_swarm.entities import Entity
 
@@ -14,8 +15,8 @@ def test_gdelt_processor_source_id():
     assert proc.source_id == "gdelt"
 
 
-def test_gdelt_processor_returns_empty_when_no_cache(tmp_path: Path):
-    """No cache file → returns empty list (does not attempt a live call in tests)."""
+def test_gdelt_processor_raises_when_no_cache_and_fetch_fails(tmp_path: Path):
+    """No cache + fetch failure should raise DataSourceError in strict mode."""
     # We don't want to hit the real GDELT API in unit tests.
     # The processor falls back to empty list on GdeltError, and no cache means
     # it would try a live call — so we monkey-patch the data source.
@@ -35,8 +36,8 @@ def test_gdelt_processor_returns_empty_when_no_cache(tmp_path: Path):
             name="Tesla, Inc.",
             identifiers={"cik": "0001318605"},
         )
-        result = proc.get_evidence_for_entity(entity)
-        assert result == []
+        with pytest.raises(DataSourceError):
+            proc.get_evidence_for_entity(entity)
     finally:
         gdelt_mod.fetch_news_for_entity = original
 

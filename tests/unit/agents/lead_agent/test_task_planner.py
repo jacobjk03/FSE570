@@ -1,47 +1,106 @@
-"""Tests for task planner (decomposition)."""
+"""Tests for strict LLM-only task planner."""
 
 import pytest
 
-from agents.lead_agent.task_planner import SubTask, decompose
+from agents.lead_agent.task_planner import InvestigationPlan, build_plan, plan_investigation
+from app.investigation_errors import PlannerLLMError
+from osint_swarm.entities import Entity
 
 
-def test_decompose_money_laundering_returns_six_tasks():
-    tasks = decompose("Investigate Company X for money laundering red flags")
-    assert len(tasks) == 6
-    task_types = {t.task_type for t in tasks}
-    assert "corporate_structure" in task_types
-    assert "beneficial_ownership" in task_types
-    assert "sanctions_screening" in task_types
-    assert "litigation" in task_types
-    assert "transaction_patterns" in task_types
-    assert "adverse_media" in task_types
+def test_plan_investigation_accepts_mock_llm_json():
+    def fake_llm(_prompt: str) -> str:
+        return """
+        {
+          "investigation_goal": "Investigate Acme",
+          "hypotheses": ["Acme has legal exposure"],
+          "tasks": [
+            {
+              "task_type": "litigation",
+              "target_agent": "legal_agent",
+              "description": "Review court records",
+              "candidate_tools": ["courtlistener"],
+              "priority": "high",
+              "rationale": "Court records may reveal enforcement activity"
+            }
+          ],
+          "success_criteria": ["Find legal evidence or document absence"],
+          "max_rounds": 2
+        }
+        """
+
+    plan = plan_investigation("Investigate Acme", llm_client=fake_llm)
+    assert plan.planner == "llm"
+    assert len(plan.tasks) == 1
+    assert plan.tasks[0].candidate_tools == ("courtlistener",)
+    assert plan.tasks[0].origin == "llm_planner"
 
 
-def test_decompose_money_laundering_assigns_agents():
-    tasks = decompose("Investigate for money laundering")
-    agents = {t.target_agent for t in tasks}
-    assert "corporate_agent" in agents
-    assert "legal_agent" in agents
-    assert "social_graph_agent" in agents
+def test_plan_investigation_invalid_llm_output_raises():
+    with pytest.raises(PlannerLLMError):
+        plan_investigation("Investigate Acme", llm_client=lambda _prompt: "not json")
 
 
-def test_decompose_generic_investigation_returns_default_tasks():
-    tasks = decompose("Investigate Acme Corp")
-    assert len(tasks) >= 1
-    task_types = [t.task_type for t in tasks]
-    assert "sec_filings" in task_types or "sanctions_screening" in task_types
+def test_plan_investigation_missing_tasks_raises():
+    with pytest.raises(PlannerLLMError):
+        plan_investigation(
+            "Investigate Acme",
+            llm_client=lambda _prompt: '{"investigation_goal":"x","tasks":[],"max_rounds":1}',
+        )
 
 
-def test_subtask_has_description():
-    tasks = decompose("Investigate Tesla for money laundering")
-    for t in tasks:
-        assert t.task_type
-        assert t.target_agent
-        assert len(t.description) > 0
+def test_build_plan_uses_strict_llm_client():
+    entity = Entity(entity_id="e1", name="Acme Corp", identifiers={"cik": "0000000001"})
+    plan = build_plan(
+        "Investigate Acme Corp",
+        entity=entity,
+        llm_client=lambda _prompt: """
+        {
+          "investigation_goal": "Investigate Acme Corp",
+          "hypotheses": ["Acme may have legal exposure"],
+          "tasks": [
+            {
+              "task_type": "litigation",
+              "target_agent": "legal_agent",
+              "description": "Review court records",
+              "candidate_tools": ["courtlistener"],
+              "priority": "high",
+              "rationale": "Court records may reveal enforcement activity"
+            }
+          ],
+          "success_criteria": ["Review legal lane coverage"],
+          "max_rounds": 1
+        }
+        """,
+    )
+    assert isinstance(plan, InvestigationPlan)
+    assert plan.planner == "llm"
 
 
-def test_decompose_aml_keyword_triggers_money_laundering():
-    tasks = decompose("AML check for entity X")
-    assert len(tasks) == 6
-    assert any(t.task_type == "sanctions_screening" for t in tasks)
-    assert any(t.task_type == "litigation" for t in tasks)
+def test_plan_investigation_filters_candidate_tools_to_available_set():
+    plan = plan_investigation(
+        "Investigate Acme Corp",
+        available_tools_by_agent={
+            "corporate_agent": ["sec_edgar"],
+            "legal_agent": ["ofac", "courtlistener"],
+            "social_graph_agent": ["gdelt"],
+        },
+        llm_client=lambda _prompt: """
+        {
+          "investigation_goal": "Investigate Acme Corp",
+          "hypotheses": ["Review governance and ownership indicators"],
+          "tasks": [
+            {
+              "task_type": "corporate_structure",
+              "target_agent": "corporate_agent",
+              "description": "Review corporate structure",
+              "candidate_tools": ["unknown_tool", "sec_edgar"],
+              "priority": "high",
+              "rationale": "Ownership and filings are useful"
+            }
+          ],
+          "success_criteria": ["Corporate lane completed"],
+          "max_rounds": 1
+        }
+        """,
+    )
+    assert plan.tasks[0].candidate_tools == ("sec_edgar",)

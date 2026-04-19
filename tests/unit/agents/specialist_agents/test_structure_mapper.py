@@ -4,8 +4,8 @@ Tests for the Structure Mapper
 
 Tests cover:
 - Cache-hit path: returns real OpenCorporates evidence when cache exists
-- Cache-miss + live fallback: attempts API call, caches result
-- Token-missing fallback: returns graceful no-data evidence
+- Cache-miss + live call: attempts API call, caches result
+- Token-missing/network failure: raises strict DataSourceError
 - run_stub alias preserved for backward compatibility
 - Integration with CorporateAgent for beneficial_ownership task
 """
@@ -21,10 +21,10 @@ import pytest
 from agents.lead_agent.context_manager import InvestigationContext
 from agents.lead_agent.task_planner.types import SubTask
 from agents.specialist_agents.corporate_agent.structure_mapper.mapper import (
-    _no_data_evidence,
     map_structure,
     run_stub,
 )
+from app.investigation_errors import DataSourceError
 from osint_swarm.entities import Entity
 
 
@@ -107,18 +107,13 @@ def test_map_structure_cache_hit_includes_grouping(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
-# Cache-miss + no token → graceful fallback
+# Cache-miss + no token -> strict failure
 # ---------------------------------------------------------------------------
 
-def test_map_structure_no_cache_no_token_returns_fallback(tmp_path: Path):
+def test_map_structure_no_cache_no_token_raises(tmp_path: Path):
     with patch.dict("os.environ", {}, clear=True):
-        results = map_structure(_ENTITY, _TASK, _CTX, data_root=tmp_path)
-
-    assert len(results) == 1
-    ev = results[0]
-    assert ev.confidence == 0.0
-    assert ev.attributes.get("cache_missing") is True
-    assert "opencorporates" in ev.summary.lower() or "api token" in ev.summary.lower()
+        with pytest.raises(DataSourceError):
+            map_structure(_ENTITY, _TASK, _CTX, data_root=tmp_path)
 
 
 # ---------------------------------------------------------------------------
@@ -159,19 +154,6 @@ def test_map_structure_live_api_caches_result(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
-# No data evidence helper
-# ---------------------------------------------------------------------------
-
-def test_no_data_evidence_fields():
-    ev = _no_data_evidence(_ENTITY, "No data available.")
-    assert ev.entity_id == "tesla_inc_cik_0001318605"
-    assert ev.confidence == 0.0
-    assert ev.attributes["cache_missing"] is True
-    assert ev.attributes["data_source"] == "opencorporates"
-    assert "No data available." in ev.summary
-
-
-# ---------------------------------------------------------------------------
 # run_stub backward-compatible alias
 # ---------------------------------------------------------------------------
 
@@ -185,13 +167,25 @@ def test_run_stub_is_map_structure():
 
 def test_corporate_agent_beneficial_ownership_uses_mapper(tmp_path: Path):
     from agents.specialist_agents.corporate_agent import CorporateAgent
+    from agents.specialist_agents.corporate_agent import agent as corp_agent_module
 
     cache_dir = tmp_path / "raw" / "opencorporates"
     cache_dir.mkdir(parents=True)
     (cache_dir / "oc_tesla.json").write_text(json.dumps(_CACHED_PAYLOAD))
 
-    agent = CorporateAgent(data_root=tmp_path)
-    results = agent.run(_ENTITY, _TASK, _CTX)
+    # Keep this test isolated from networked action policy calls.
+    with patch.object(
+        corp_agent_module,
+        "choose_next_tool",
+        return_value={
+            "selected_tool": "opencorporates",
+            "alternatives": [],
+            "policy_used": "llm_action_policy",
+            "reasoning": "Use ownership source.",
+        },
+    ):
+        agent = CorporateAgent(data_root=tmp_path)
+        results = agent.run(_ENTITY, _TASK, _CTX)
 
     assert len(results) >= 1
     assert any(r.attributes.get("data_source") == "opencorporates" for r in results)

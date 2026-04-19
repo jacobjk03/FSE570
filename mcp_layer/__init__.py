@@ -21,6 +21,7 @@ from typing import List, Optional, Sequence
 
 from osint_swarm.entities import Entity, Evidence
 
+from app.investigation_errors import DataSourceError
 from mcp_layer.base import DataSourceProcessor
 from mcp_layer.evidence_loader import load_evidence_for_entity as load_evidence_for_entity_from_dir
 from mcp_layer.sec_edgar_processor import SecEdgarProcessor
@@ -50,8 +51,9 @@ def get_evidence_for_entity(
     out: List[Evidence] = []
     for sid in sources:
         proc = get_processor(sid, data_root=data_root)
-        if proc:
-            out.extend(proc.get_evidence_for_entity(entity))
+        if not proc:
+            raise DataSourceError(f"No MCP processor registered for source '{sid}'.")
+        out.extend(proc.get_evidence_for_entity(entity))
     return out
 
 

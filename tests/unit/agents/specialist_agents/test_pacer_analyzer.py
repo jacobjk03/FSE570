@@ -5,7 +5,7 @@ Tests for the CourtListener / PACER analyzer
 Covers:
 - Cache hit → correct Evidence rows (no network call)
 - Cache miss + successful live fetch → Evidence rows written and returned
-- Cache miss + network error → graceful fallback Evidence (confidence=0.0)
+- Cache miss + network error -> strict DataSourceError
 - Empty dockets → clean Evidence row (confidence=0.85)
 - Multiple dockets → summary row + one row per docket
 - stub flag is False for all real outputs
@@ -23,6 +23,7 @@ import pytest
 from agents.lead_agent.context_manager import InvestigationContext
 from agents.lead_agent.task_planner import SubTask
 from agents.specialist_agents.legal_agent.pacer_analyzer.analyzer import fetch
+from app.investigation_errors import DataSourceError
 from osint_swarm.data_sources.courtlistener import _normalize_docket
 from osint_swarm.entities import Entity
 
@@ -137,10 +138,10 @@ def test_fetch_caches_result_on_live_fetch(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
-# Network error → graceful fallback
+# Network error -> strict failure
 # ---------------------------------------------------------------------------
 
-def test_fetch_returns_fallback_on_network_error(tmp_path: Path):
+def test_fetch_raises_on_network_error(tmp_path: Path):
     entity = Entity(entity_id="e1", name="Some Corp", identifiers={})
 
     import requests as req_lib
@@ -148,14 +149,8 @@ def test_fetch_returns_fallback_on_network_error(tmp_path: Path):
         "osint_swarm.data_sources.courtlistener.requests.get",
         side_effect=req_lib.exceptions.ConnectionError("refused"),
     ):
-        results = fetch(entity, _TASK, _CTX, data_root=tmp_path)
-
-    assert len(results) == 1
-    ev = results[0]
-    assert ev.confidence == 0.0
-    assert ev.attributes.get("stub") is False
-    assert ev.attributes.get("fetch_error") is True
-    assert "pull_courtlistener.py" in ev.summary
+        with pytest.raises(DataSourceError):
+            fetch(entity, _TASK, _CTX, data_root=tmp_path)
 
 
 # ---------------------------------------------------------------------------
@@ -219,12 +214,23 @@ def test_legal_agent_litigation_calls_court_fetch(tmp_path: Path):
     _write_cache(tmp_path, "tesla", _SAMPLE_PAYLOAD)
     from agents.specialist_agents.legal_agent import LegalAgent
 
-    agent = LegalAgent(data_root=tmp_path)
-    entity = Entity(entity_id="tesla_inc_cik_0001318605", name="Tesla, Inc.", identifiers={})
-    task = SubTask("litigation", "legal_agent", "Court records")
-    ctx = InvestigationContext()
-
-    results = agent.run(entity, task, ctx)
+    from agents.specialist_agents.legal_agent import agent as legal_agent_module
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(
+            legal_agent_module,
+            "choose_next_tool",
+            lambda **_kwargs: {
+                "selected_tool": "courtlistener",
+                "alternatives": [],
+                "policy_used": "llm_action_policy",
+                "reasoning": "Use litigation source.",
+            },
+        )
+        agent = LegalAgent(data_root=tmp_path)
+        entity = Entity(entity_id="tesla_inc_cik_0001318605", name="Tesla, Inc.", identifiers={})
+        task = SubTask("litigation", "legal_agent", "Court records")
+        ctx = InvestigationContext()
+        results = agent.run(entity, task, ctx)
 
     assert len(results) >= 1
     assert results[0].source_type == "court_record"
@@ -236,11 +242,22 @@ def test_legal_agent_regulatory_actions_calls_court_fetch(tmp_path: Path):
     _write_cache(tmp_path, "tesla", _SAMPLE_PAYLOAD)
     from agents.specialist_agents.legal_agent import LegalAgent
 
-    agent = LegalAgent(data_root=tmp_path)
-    entity = Entity(entity_id="tesla_inc_cik_0001318605", name="Tesla, Inc.", identifiers={})
-    task = SubTask("regulatory_actions", "legal_agent", "Regulatory filings")
-    ctx = InvestigationContext()
-
-    results = agent.run(entity, task, ctx)
+    from agents.specialist_agents.legal_agent import agent as legal_agent_module
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(
+            legal_agent_module,
+            "choose_next_tool",
+            lambda **_kwargs: {
+                "selected_tool": "courtlistener",
+                "alternatives": [],
+                "policy_used": "llm_action_policy",
+                "reasoning": "Use litigation source.",
+            },
+        )
+        agent = LegalAgent(data_root=tmp_path)
+        entity = Entity(entity_id="tesla_inc_cik_0001318605", name="Tesla, Inc.", identifiers={})
+        task = SubTask("regulatory_actions", "legal_agent", "Regulatory filings")
+        ctx = InvestigationContext()
+        results = agent.run(entity, task, ctx)
     assert results[0].source_type == "court_record"
     assert results[0].attributes.get("stub") is False

@@ -1,7 +1,20 @@
 # Project Status — Autonomous OSINT Investigation Swarm
 
-**Last updated: 2026-03-15**
-**214/214 unit tests passing | 5 live data sources | 3 entities verified | All agents fully live (0 stubs) | GDELT noise filtering active | Evaluation metrics integrated | Interactive knowledge graph + synthesis report tabs live**
+**Last updated: 2026-04-19**
+**Strict LLM-only runtime active | OpenCorporates removed from runtime | Sectioned bullet LLM narrative live | Evaluation metrics + graph live**
+
+---
+
+## Runtime Status (Current)
+
+This document includes historical sprint notes. Current runtime behavior is:
+
+- `GROQ_API_KEY` is required (strict LLM-only planner, action policy, reflexion ranking, stop policy, and final narrative).
+- Deterministic fallbacks for policy/synthesis stages are removed.
+- OpenCorporates is removed from active runtime paths (tools/planner/reflexion/UI metrics).
+- Final narrative is validated for strict sections + bullets + plain-language metric explanations.
+
+Some older sections below may reference OpenCorporates or deterministic synthesis as historical context.
 
 ---
 
@@ -17,7 +30,7 @@ source .venv/bin/activate        # macOS/Linux
 pip install -r requirements.txt
 ```
 
-### 2. Create your `.env` file (the ONLY required setup)
+### 2. Create your `.env` file
 
 ```bash
 cp .env.example .env
@@ -27,6 +40,7 @@ Open `.env` and replace the placeholder with **your name and ASU email**:
 
 ```
 SEC_USER_AGENT="Your Name your_email@asu.edu"
+GROQ_API_KEY="your_groq_api_key"
 ```
 
 **Example:** `SEC_USER_AGENT="Raj Kumar Mahto raj.mahto@asu.edu"`
@@ -37,27 +51,26 @@ SEC_USER_AGENT="Your Name your_email@asu.edu"
 python app/app.py                # open http://127.0.0.1:5001
 ```
 
-### Why does this work without API keys?
+### Required runtime keys (current)
 
 | Data Source | Auth needed? | Explanation |
 |-------------|-------------|-------------|
 | **SEC EDGAR** | `SEC_USER_AGENT` only | SEC's free public API — they just want your name/email in the HTTP header per their [fair access policy](https://www.sec.gov/os/accessing-edgar-data). **This is NOT an API key.** No sign-up, no account, no registration. |
+| **LLM orchestration (Groq)** | `GROQ_API_KEY` | Required for strict LLM-only planner/policies/final narrative. Free at [console.groq.com](https://console.groq.com). |
 | **GDELT News** | **None** | Completely free and public. No auth of any kind. |
 | **OFAC Sanctions** | **None** | Free public XML file from US Treasury. Downloaded once, searched locally. |
 | **CourtListener** | **None** (optional token) | Works without a token. Optional `COURTLISTENER_API_TOKEN` gives higher rate limits — free at [courtlistener.com](https://www.courtlistener.com). |
-| **OpenCorporates** | **None** for demo | Pre-cached data for Tesla, Ford, Boeing is included in the repo. Optional `OPENCORPORATES_API_TOKEN` needed only for adding NEW entities — free at [opencorporates.com](https://opencorporates.com/api_accounts/new). |
 
 ### Full `.env` reference
 
 ```bash
-# REQUIRED — just your name and email (NOT an API key)
+# REQUIRED
 SEC_USER_AGENT="Your Name your_email@asu.edu"
+GROQ_API_KEY="your_groq_api_key"
 
 # OPTIONAL — higher rate limits for court data (free account)
 # COURTLISTENER_API_TOKEN="your_token_here"
 
-# OPTIONAL — only needed to add NEW entities to OpenCorporates (free account, 200 req/month)
-# OPENCORPORATES_API_TOKEN="your_token_here"
 ```
 
 ### First run: pull raw data (one-time, ~2 minutes)

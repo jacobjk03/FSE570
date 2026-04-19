@@ -15,6 +15,7 @@ from osint_swarm.entities import Entity, Evidence
 
 from agents.lead_agent.context_manager import InvestigationContext
 from agents.lead_agent.task_planner.types import SubTask
+from app.investigation_errors import DataSourceError
 
 
 def map_structure(
@@ -30,7 +31,7 @@ def map_structure(
     1. Check for cached OpenCorporates data under data/raw/opencorporates/oc_<slug>.json
     2. If cache exists → convert to Evidence (officers, UBOs, controlling entity, groupings)
     3. If cache missing → attempt a live API call (requires OPENCORPORATES_API_TOKEN)
-    4. If live call fails (no token or rate-limited) → return a single "no data" Evidence
+    4. If live call fails (no token or rate-limited) → raise DataSourceError
     """
     from osint_swarm.data_sources.opencorporates import (
         OpenCorporatesError,
@@ -62,7 +63,7 @@ def map_structure(
         search_result = search_companies(entity.name, max_results=5)
         companies = search_result.get("companies", [])
         if not companies:
-            return [_no_data_evidence(entity, "No matching company found on OpenCorporates.")]
+            return []
 
         best = companies[0]
         for c in companies:
@@ -73,7 +74,7 @@ def map_structure(
         jc = best.get("jurisdiction_code", "")
         cn = best.get("company_number", "")
         if not jc or not cn:
-            return [_no_data_evidence(entity, "OpenCorporates match has no jurisdiction/company_number.")]
+            return []
 
         detail = fetch_company_detail(jc, cn)
 
@@ -84,28 +85,11 @@ def map_structure(
             detail, entity.entity_id, entity.name, raw_location=raw_location,
         )
 
-    except OpenCorporatesError:
-        return [_no_data_evidence(
-            entity,
-            "OpenCorporates data unavailable (API token missing or rate-limited). "
-            "Set OPENCORPORATES_API_TOKEN in .env and run: python scripts/pull_opencorporates.py --all",
-        )]
-
-
-def _no_data_evidence(entity: Entity, reason: str) -> Evidence:
-    """Return a single Evidence row indicating OpenCorporates data is not available."""
-    return Evidence(
-        evidence_id=f"{entity.entity_id}_oc_unavailable",
-        entity_id=entity.entity_id,
-        date="",
-        source_type="other",
-        risk_category="governance",
-        summary=f"Structure Mapper: {reason}",
-        source_uri="",
-        raw_location=None,
-        confidence=0.0,
-        attributes={"stub": False, "cache_missing": True, "data_source": "opencorporates"},
-    )
+    except OpenCorporatesError as exc:
+        raise DataSourceError(
+            "OpenCorporates data unavailable (API token missing, unavailable, or rate-limited). "
+            "Set OPENCORPORATES_API_TOKEN in .env and run: python scripts/pull_opencorporates.py --all."
+        ) from exc
 
 
 # Preserve backward-compatible alias

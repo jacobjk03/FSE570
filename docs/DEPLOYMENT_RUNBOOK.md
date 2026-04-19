@@ -9,6 +9,7 @@
 - Python 3.8+ (tested on 3.12)
 - Git
 - A free SEC EDGAR user-agent string (your name + email — no account needed)
+- A free Groq API key (`GROQ_API_KEY`) for strict LLM-only orchestration
 
 ### Step 1 — Clone the repo
 ```bash
@@ -33,10 +34,10 @@ cp .env.example .env
 Open `.env` and set:
 ```
 SEC_USER_AGENT=Your Name your@email.com
+GROQ_API_KEY=your_groq_api_key
 ```
 > This is required by SEC EDGAR's fair-use policy. Any name + email works — it is not an API key.
-
-All other API keys are optional. The 5 pre-cached entities (Tesla, Ford, Boeing, Alphabet, JPMorgan) work with **zero API keys**.
+> `GROQ_API_KEY` is required in the current strict LLM-only runtime (planner, policies, and final narrative).
 
 ### Step 4 — Verify cached data is present
 ```bash
@@ -89,7 +90,7 @@ git push origin main
 ```
 Investigate Tesla for money laundering
 ```
-- Shows: 1,125 findings, 5 sources, risk dashboard, knowledge graph, conflict explanation
+- Shows: 1,125 findings, multi-source evidence, risk dashboard, knowledge graph, conflict explanation
 
 **2. Switch industry to prove generality**
 ```
@@ -104,7 +105,7 @@ Investigate Microsoft for money laundering
 - Shows: system auto-resolves "Microsoft" → CIK 0000789019 via SEC EDGAR, returns 1,025 findings without any manual registry entry
 
 **4. Point out specific UI features:**
-- **Overview tab** — verdict synthesis, key metrics at a glance
+- **Overview tab** — strict sectioned LLM narrative + key metrics at a glance
 - **Analysis tab** — risk scores by category (governance, regulatory, legal, network)
 - **Knowledge Graph tab** — interactive network + Network Analysis panel (degree centrality, top connected nodes)
 - **Evidence tab** — full cited report, every finding with source URL
@@ -134,8 +135,6 @@ Entity(
 python scripts/pull_sec_submissions.py --cik 0001234567
 python scripts/pull_courtlistener.py --entity-id company_name_cik_0001234567
 python scripts/pull_gdelt_news.py --entity-id company_name_cik_0001234567
-# OpenCorporates requires OPENCORPORATES_API_TOKEN in .env
-python scripts/pull_opencorporates.py --entity-id company_name_cik_0001234567
 # OFAC uses the local sdn.xml — no pull needed
 ```
 
@@ -155,7 +154,6 @@ git push origin main
 | `Missing SEC user agent` error | Set `SEC_USER_AGENT` in `.env` |
 | `No module named 'osint_swarm'` | Run from repo root; `src/` is in `sys.path` via app |
 | GDELT returns 429 | Rate limit — wait 60s and retry, or use cached data |
-| OpenCorporates shows `cache_missing` | Expected without API token; other 4 sources still work |
 | Render deployment fails | Check `SEC_USER_AGENT` is set in Render environment variables |
 | Investigation returns 0 findings | Entity not in registry AND SEC EDGAR can't resolve name — check spelling |
 
@@ -166,7 +164,6 @@ git push origin main
 | Variable | Required | Default | Purpose |
 |---|---|---|---|
 | `SEC_USER_AGENT` | **Yes** | — | SEC EDGAR fair-use identifier (name + email) |
-| `GROQ_API_KEY` | No (but recommended) | — | Enables LLM Analyst Narrative card (Llama 3.1 via Groq — free at console.groq.com) |
+| `GROQ_API_KEY` | **Yes** | — | Required for strict LLM-only planner, action policy, reflexion ranking, stop policy, and final narrative |
 | `COURTLISTENER_API_TOKEN` | No | — | Higher rate limits on CourtListener API |
-| `OPENCORPORATES_API_TOKEN` | No | — | Live OpenCorporates lookups for new entities |
 | `PORT` | No (Render sets it) | 5000 | Port for gunicorn (set automatically by Render) |

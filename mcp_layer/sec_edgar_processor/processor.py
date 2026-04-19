@@ -9,6 +9,7 @@ from osint_swarm.data_sources import sec_edgar
 from osint_swarm.entities import Evidence
 from osint_swarm.utils.io import read_json, write_json
 
+from app.investigation_errors import DataSourceError
 from mcp_layer.base import DataSourceProcessor
 
 if TYPE_CHECKING:
@@ -104,19 +105,22 @@ class SecEdgarProcessor(DataSourceProcessor):
     def get_evidence_for_entity(self, entity: "Entity") -> List[Evidence]:
         cik = entity.identifiers.get("cik") if entity.identifiers else None
         if not cik:
-            return []
+            raise DataSourceError(f"SEC EDGAR requires CIK for entity '{entity.entity_id}'.")
         cik10 = sec_edgar.normalize_cik(cik)
         entity_id = entity.entity_id
 
         cache_path = self._raw_dir / f"CIK{cik10}.json"
-        if cache_path.exists():
-            submissions = read_json(cache_path)
-            raw_location = str(cache_path)
-        else:
-            submissions = sec_edgar.fetch_submissions(cik10)
-            self._raw_dir.mkdir(parents=True, exist_ok=True)
-            write_json(cache_path, submissions)
-            raw_location = str(cache_path)
+        try:
+            if cache_path.exists():
+                submissions = read_json(cache_path)
+                raw_location = str(cache_path)
+            else:
+                submissions = sec_edgar.fetch_submissions(cik10)
+                self._raw_dir.mkdir(parents=True, exist_ok=True)
+                write_json(cache_path, submissions)
+                raw_location = str(cache_path)
+        except Exception as exc:
+            raise DataSourceError(f"SEC EDGAR retrieval failed for CIK {cik10}: {exc}") from exc
 
         return _submissions_to_evidence(
             submissions, entity_id, cik10, raw_location=raw_location

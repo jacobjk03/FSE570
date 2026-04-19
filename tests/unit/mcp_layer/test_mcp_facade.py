@@ -5,6 +5,7 @@ from pathlib import Path
 import json
 import pytest
 
+from app.investigation_errors import DataSourceError
 from mcp_layer import (
     get_evidence_for_entity,
     get_processor,
@@ -98,3 +99,9 @@ def test_load_evidence_for_entity_facade(tmp_path: Path):
     out = load_evidence_for_entity(tmp_path, "tesla_inc_cik_0001318605")
     assert len(out) == 1
     assert out[0].evidence_id == "e1"
+
+
+def test_get_evidence_for_entity_unknown_source_raises(tmp_path: Path):
+    entity = Entity(entity_id="e1", name="Entity", identifiers={})
+    with pytest.raises(DataSourceError):
+        get_evidence_for_entity(entity, sources=["unknown_source"], data_root=tmp_path)

@@ -1,10 +1,7 @@
 """Tests for reflexion gap detection."""
 
-import pytest
-
 from agents.lead_agent.context_manager import InvestigationContext
-from agents.lead_agent.task_planner import SubTask
-from reflexion_layer.gap_detection import Gap, detect_gaps
+from reflexion_layer.gap_detection import detect_gaps
 from osint_swarm.entities import Entity, Evidence
 
 
@@ -25,17 +22,17 @@ def test_detect_gaps_legal_empty_returns_sanctions_gap():
     assert any("Sanctions" in g.area or "legal" in g.description.lower() for g in gaps)
 
 
-def test_detect_gaps_legal_cache_missing_returns_gap():
-    """Cache-missing fallback (confidence=0, cache_missing=True) → gap flagged."""
+def test_detect_gaps_legal_placeholder_returns_gap():
+    """Legal evidence without screened flag should still produce legal gap."""
     ctx = InvestigationContext()
     ctx.set_entity(Entity(entity_id="e1", name="E", identifiers={}))
     fallback_ev = Evidence(
-        "e1_ofac_no_cache", "e1", "2026-03-15",
+        "e1_legal_placeholder", "e1", "2026-03-15",
         "regulator_api", "legal",
-        "OFAC SDN cache not found. Run: python scripts/pull_ofac_sdn.py",
+        "Legal lane executed without screening metadata.",
         "https://sanctionssearch.ofac.treas.gov/",
         None, 0.0,
-        {"stub": False, "cache_missing": True},
+        {"stub": False},
     )
     ctx.add_agent_results("legal_agent", [fallback_ev])
     gaps = detect_gaps(ctx)
@@ -70,52 +67,19 @@ def test_detect_gaps_social_empty_returns_gap():
     assert any("Adverse" in g.area or "network" in g.description.lower() or "Social" in g.area for g in gaps)
 
 
-def test_detect_gaps_court_fetch_error_returns_gap():
-    """CourtListener fetch_error (confidence=0) → gap flagged."""
+def test_detect_gaps_court_placeholder_returns_gap():
+    """Court result without screening metadata should produce legal gap."""
     ctx = InvestigationContext()
     ctx.set_entity(Entity(entity_id="e1", name="E", identifiers={}))
     error_ev = Evidence(
-        "e1_courtlistener_error", "e1", "2026-03-15",
+        "e1_courtlistener_placeholder", "e1", "2026-03-15",
         "court_record", "legal",
-        "CourtListener fetch failed. Pre-fetch with: python scripts/pull_courtlistener.py --entity-id e1",
+        "Court lane produced placeholder output.",
         "https://www.courtlistener.com/", None, 0.0,
-        {"stub": False, "fetch_error": True},
+        {"stub": False},
     )
     ctx.add_agent_results("legal_agent", [error_ev])
     gaps = detect_gaps(ctx)
     assert any("Sanctions" in g.area or "legal" in g.description.lower() for g in gaps)
 
 
-def test_detect_gaps_opencorporates_cache_missing_returns_beneficial_ownership_gap():
-    """OpenCorporates cache missing (cache_missing=True, no OC evidence) → gap flagged."""
-    ctx = InvestigationContext()
-    ctx.set_entity(Entity(entity_id="e1", name="E", identifiers={}))
-    fallback_ev = Evidence(
-        "e1_oc_unavailable", "e1", "", "other", "governance",
-        "Structure Mapper: OpenCorporates data unavailable",
-        "", None, 0.0,
-        {"stub": False, "cache_missing": True, "data_source": "opencorporates"},
-    )
-    ctx.add_agent_results("corporate_agent", [fallback_ev])
-    gaps = detect_gaps(ctx)
-    assert any(g.area == "beneficial_ownership" for g in gaps)
-
-
-def test_detect_gaps_opencorporates_real_data_no_gap():
-    """Real OpenCorporates evidence → no beneficial_ownership gap."""
-    ctx = InvestigationContext()
-    ctx.set_entity(Entity(entity_id="e1", name="E", identifiers={}))
-    oc_ev = Evidence(
-        "e1_oc_summary", "e1", "", "regulator_api", "governance",
-        "OpenCorporates profile: E | Officers: 3 total",
-        "https://opencorporates.com/companies/us_ca/C1234", None, 0.80,
-        {"stub": False, "data_source": "opencorporates", "officer_count": 3},
-    )
-    # Add legal + social to avoid other gaps
-    legal_ev = Evidence("e1_ofac_clean", "e1", "", "regulator_api", "legal", "Clean", "", None, 0.90, {"screened": True})
-    news_ev = Evidence("e1_gdelt_1", "e1", "", "news_article", "network", "News", "https://x.com", None, 0.6, {})
-    ctx.add_agent_results("corporate_agent", [oc_ev])
-    ctx.add_agent_results("legal_agent", [legal_ev])
-    ctx.add_agent_results("social_graph_agent", [news_ev])
-    gaps = detect_gaps(ctx)
-    assert not any(g.area == "beneficial_ownership" for g in gaps)

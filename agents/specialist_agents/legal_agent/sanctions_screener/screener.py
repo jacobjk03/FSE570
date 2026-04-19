@@ -20,6 +20,7 @@ from osint_swarm.entities import Entity, Evidence
 
 from agents.lead_agent.context_manager import InvestigationContext
 from agents.lead_agent.task_planner.types import SubTask
+from app.investigation_errors import DataSourceError
 
 OFAC_SEARCH_URL = "https://sanctionssearch.ofac.treas.gov/"
 CONFIDENCE = 0.90
@@ -37,47 +38,25 @@ def screen(
     Returns:
     - One Evidence row per SDN match found (risk_category="legal", confidence=0.90)
     - One clean-result Evidence row if no matches (also confidence=0.90 — clean is still evidence)
-    - One fallback Evidence row if the SDN cache file is missing (confidence=0.0)
+    Raises DataSourceError if SDN data is unavailable or unreadable.
     """
     data_root = Path(data_root) if data_root else Path("data")
     sdn_path = data_root / "raw" / "ofac" / "sdn.xml"
     entity_id = entity.entity_id
     today = datetime.date.today().isoformat()
 
-    # --- Fallback: cache not present ---
     if not sdn_path.exists():
-        return [Evidence(
-            evidence_id=f"{entity_id}_ofac_no_cache",
-            entity_id=entity_id,
-            date=today,
-            source_type="regulator_api",
-            risk_category="legal",
-            summary=(
-                f"OFAC SDN cache not found at {sdn_path}. "
-                "Run: python scripts/pull_ofac_sdn.py — then re-run the investigation."
-            ),
-            source_uri=OFAC_SEARCH_URL,
-            raw_location=None,
-            confidence=0.0,
-            attributes={"stub": False, "cache_missing": True},
-        )]
+        raise DataSourceError(
+            f"OFAC SDN cache not found at {sdn_path}. Run: python scripts/pull_ofac_sdn.py."
+        )
 
     # --- Parse SDN list ---
     try:
         entries = ofac.parse_sdn_entries(sdn_path)
     except ofac.OfacError as exc:
-        return [Evidence(
-            evidence_id=f"{entity_id}_ofac_parse_error",
-            entity_id=entity_id,
-            date=today,
-            source_type="regulator_api",
-            risk_category="legal",
-            summary=f"OFAC SDN parse error: {exc}. Re-download with: python scripts/pull_ofac_sdn.py",
-            source_uri=OFAC_SEARCH_URL,
-            raw_location=str(sdn_path),
-            confidence=0.0,
-            attributes={"stub": False, "parse_error": True},
-        )]
+        raise DataSourceError(
+            f"OFAC SDN parse error: {exc}. Re-download with: python scripts/pull_ofac_sdn.py."
+        ) from exc
 
     # --- Search for entity ---
     matches = ofac.search_entries(entries, entity.name, aliases=list(entity.aliases))
@@ -144,8 +123,7 @@ def screen(
     return results
 
 
-# Keep run_stub as a named alias so old imports don't break during transition,
-# but it now calls the real implementation with no data_root (cache-missing fallback).
+# Keep run_stub as a named alias so old imports don't break during transition.
 def run_stub(
     entity: Entity,
     task: SubTask,

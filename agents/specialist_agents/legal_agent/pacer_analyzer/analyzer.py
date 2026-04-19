@@ -31,6 +31,7 @@ from osint_swarm.entities import Entity, Evidence
 
 from agents.lead_agent.context_manager import InvestigationContext
 from agents.lead_agent.task_planner.types import SubTask
+from app.investigation_errors import DataSourceError
 
 COURTLISTENER_HOME = "https://www.courtlistener.com/"
 CONFIDENCE = 0.85
@@ -69,22 +70,10 @@ def fetch(
             cache_dir.mkdir(parents=True, exist_ok=True)
             courtlistener.cache_dockets_json(slug, payload, cache_dir)
         except courtlistener.CourtListenerError as exc:
-            return [Evidence(
-                evidence_id=f"{entity_id}_courtlistener_error",
-                entity_id=entity_id,
-                date=today,
-                source_type="court_record",
-                risk_category="legal",
-                summary=(
-                    f"CourtListener fetch failed: {exc}. "
-                    "Pre-fetch with: python scripts/pull_courtlistener.py "
-                    f"--entity-id {entity_id}"
-                ),
-                source_uri=COURTLISTENER_HOME,
-                raw_location=None,
-                confidence=0.0,
-                attributes={"stub": False, "fetch_error": True},
-            )]
+            raise DataSourceError(
+                f"CourtListener fetch failed: {exc}. "
+                f"Pre-fetch with: python scripts/pull_courtlistener.py --entity-id {entity_id}."
+            ) from exc
 
     dockets = payload.get("dockets") or []
     total_found = payload.get("total_found") or len(dockets)

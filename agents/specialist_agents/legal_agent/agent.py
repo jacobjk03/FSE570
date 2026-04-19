@@ -1,16 +1,16 @@
-"""Legal Agent: OFAC sanctions screening (live) + CourtListener court records (live)."""
+"""Legal Agent: bounded tool-using legal/compliance agent."""
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Set
 
 from osint_swarm.entities import Entity, Evidence
 
+from agents.lead_agent.action_policy import choose_next_tool
 from agents.lead_agent.context_manager import InvestigationContext
 from agents.lead_agent.task_planner.types import SubTask
-from agents.specialist_agents.legal_agent.sanctions_screener.screener import screen as ofac_screen
-from agents.specialist_agents.legal_agent.pacer_analyzer.analyzer import fetch as court_fetch
+from agents.tools import get_tools_for_agent
 
 
 class LegalAgent:
@@ -31,14 +31,94 @@ class LegalAgent:
     def agent_id(self) -> str:
         return self.AGENT_ID
 
+    def _select_next_tool(
+        self,
+        task: SubTask,
+        used_tools: Set[str],
+        available_tools: List[str],
+        context: InvestigationContext,
+    ) -> Optional[str]:
+        decision = choose_next_tool(
+            agent_id=self.agent_id,
+            task=task,
+            available_tools=available_tools,
+            used_tools=list(used_tools),
+            context_snapshot={
+                "round_count": context.round_count,
+                "remaining_budget": context.remaining_budget,
+                "recent_tool_results": context.get_tool_results()[-3:],
+                "open_questions": context.get_open_questions(),
+            },
+        )
+        context.record_policy_decision(
+            policy_name="action_policy",
+            policy_used=decision["policy_used"],
+            rationale=decision["reasoning"],
+            metadata={"agent_id": self.agent_id, "task_type": task.task_type},
+        )
+        context.record_selected_alternatives(
+            task_type=task.task_type,
+            selected_tool=decision.get("selected_tool"),
+            alternatives=decision.get("alternatives", []),
+            policy_used=decision["policy_used"],
+        )
+        return decision.get("selected_tool")
+
+    def _should_continue(self, task: SubTask, used_tools: Set[str], findings: List[Evidence]) -> bool:
+        if task.task_type in ("regulatory_actions", "sanctions_screening") and "ofac" in used_tools and "courtlistener" not in used_tools:
+            return any(item.attributes.get("sdn_matches", 0) for item in findings)
+        return False
+
     def run(
         self,
         entity: Entity,
         task: SubTask,
         context: InvestigationContext,
     ) -> List[Evidence]:
-        if task.task_type == "sanctions_screening":
-            return ofac_screen(entity, task, context, data_root=self.data_root)
-        if task.task_type in ("litigation", "regulatory_actions"):
-            return court_fetch(entity, task, context, data_root=self.data_root)
-        return ofac_screen(entity, task, context, data_root=self.data_root)
+        tools = get_tools_for_agent(self.agent_id, data_root=self.data_root)
+        used_tools: Set[str] = set()
+        all_findings: List[Evidence] = []
+        seen_ids: Set[str] = set()
+        available_tools = list(tools.keys())
+
+        while True:
+            tool_name = self._select_next_tool(task, used_tools, available_tools, context)
+            if not tool_name or tool_name not in tools:
+                break
+
+            context.record_action(
+                self.agent_id,
+                task.task_type,
+                "tool_selected",
+                rationale=task.rationale or task.description,
+                tool_name=tool_name,
+                round_no=context.round_count,
+                metadata={"candidate_tools": list(task.candidate_tools)},
+            )
+            result = tools[tool_name].run(entity, task, context)
+            context.record_tool_result(
+                tool_name=tool_name,
+                observation=result.observation,
+                evidence_count=len(result.evidence),
+                round_no=context.round_count,
+                metadata={"success": result.success, **dict(result.metadata)},
+            )
+            for finding in result.evidence:
+                if finding.evidence_id not in seen_ids:
+                    seen_ids.add(finding.evidence_id)
+                    all_findings.append(finding)
+            used_tools.add(tool_name)
+            context.consume_budget(1)
+
+            if not self._should_continue(task, used_tools, all_findings):
+                break
+
+        context.record_action(
+            self.agent_id,
+            task.task_type,
+            "task_completed",
+            rationale=f"Produced {len(all_findings)} evidence rows.",
+            status="completed",
+            round_no=context.round_count,
+        )
+        return all_findings

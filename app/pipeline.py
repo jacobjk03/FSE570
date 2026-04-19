@@ -23,8 +23,16 @@ from reflexion_layer import aggregate_confidence, cross_check_findings, detect_g
 
 from app.graph_viz import serialize_graph_for_vis
 from app.investigation_narrative import build_investigation_narrative
-from app.llm_narrative import generate_llm_narrative
-from app.verdict_synthesis import build_verdict_synthesis
+from app.investigation_errors import (
+    ActionPolicyError,
+    DataSourceError,
+    FinalSynthesisError,
+    InvestigationError,
+    PlannerLLMError,
+    ReflexionPolicyError,
+    StopPolicyError,
+)
+from app.llm_narrative import generate_llm_narrative, parse_narrative_sections
 from knowledge_graph.network_analysis import analyze_graph
 
 
@@ -68,8 +76,29 @@ def run_investigation(query: str, data_root: Optional[Path] = None) -> Dict[str,
         "error": None,
         "graph_vis": None,
         "narrative": None,
-        "verdict": None,
         "llm_summary": None,
+        "llm_summary_structured": None,
+        "plan": None,
+        "planner_goal": None,
+        "planner_hypotheses": [],
+        "round_count": 0,
+        "stop_reason": None,
+        "action_history": [],
+        "tool_results": [],
+        "discovered_entities": [],
+        "open_questions": [],
+        "follow_up_actions_taken": [],
+        "follow_up_actions_skipped": [],
+        "round_summaries": [],
+        "planner_used": None,
+        "action_policy_used": None,
+        "reflexion_policy_used": None,
+        "stop_policy_used": None,
+        "policy_usage": {},
+        "policy_decisions": [],
+        "selected_alternatives": [],
+        "entity_queue": [],
+        "entity_graph_edges": [],
     }
 
     import time as _time
@@ -82,12 +111,43 @@ def run_investigation(query: str, data_root: Optional[Path] = None) -> Dict[str,
         audit.record("pipeline_completed", entity_resolved=ctx.get_entity() is not None, task_count=len(ctx.get_tasks()))
 
         entity = ctx.get_entity()
+        result["plan"] = ctx.get_plan()
+        result["planner_goal"] = (result["plan"] or {}).get("investigation_goal")
+        result["planner_hypotheses"] = (result["plan"] or {}).get("hypotheses", [])
+        result["round_count"] = ctx.round_count
+        result["stop_reason"] = ctx.get_stop_reason()
+        result["action_history"] = ctx.get_action_history()
+        result["tool_results"] = ctx.get_tool_results()
+        result["discovered_entities"] = ctx.get_discovered_entities()
+        result["open_questions"] = ctx.get_open_questions()
+        result["follow_up_actions_taken"] = ctx.get_follow_up_actions(applied=True)
+        result["follow_up_actions_skipped"] = ctx.get_follow_up_actions(applied=False)
+        result["round_summaries"] = ctx.get_round_summaries()
+        result["policy_usage"] = ctx.get_policy_usage()
+        result["policy_decisions"] = ctx.get_policy_decisions()
+        result["planner_used"] = result["policy_usage"].get("planner")
+        result["action_policy_used"] = result["policy_usage"].get("action_policy")
+        result["reflexion_policy_used"] = result["policy_usage"].get("reflexion_policy")
+        result["stop_policy_used"] = result["policy_usage"].get("stop_policy")
+        result["selected_alternatives"] = ctx.get_selected_alternatives()
+        result["entity_queue"] = ctx.get_entity_queue()
+        result["entity_graph_edges"] = ctx.get_entity_graph_edges()
         if entity:
             result["entity_id"] = entity.entity_id
             result["entity_name"] = entity.name
             result["entity"] = {"entity_id": entity.entity_id, "name": entity.name, "identifiers": dict(entity.identifiers)}
 
-        result["tasks"] = [{"task_type": t.task_type, "target_agent": t.target_agent, "description": t.description} for t in ctx.get_tasks()]
+        result["tasks"] = [
+            {
+                "task_type": t.task_type,
+                "target_agent": t.target_agent,
+                "description": t.description,
+                "candidate_tools": list(t.candidate_tools),
+                "priority": t.priority,
+                "origin": t.origin,
+            }
+            for t in ctx.get_tasks()
+        ]
         findings = ctx.get_all_findings()
         result["findings_count"] = len(findings)
         result["findings_by_agent"] = {aid: len(evs) for aid, evs in ctx.results.items()}
@@ -99,7 +159,7 @@ def run_investigation(query: str, data_root: Optional[Path] = None) -> Dict[str,
             source_counts[src] = source_counts.get(src, 0) + 1
         result["findings_by_source"] = source_counts
 
-        # Data-source breakdown (SEC, GDELT, OFAC, CourtListener, OpenCorporates)
+        # Data-source breakdown (SEC, GDELT, OFAC, CourtListener)
         ds_counts: Dict[str, int] = {}
         for f in findings:
             ds = f.attributes.get("data_source")
@@ -170,13 +230,38 @@ def run_investigation(query: str, data_root: Optional[Path] = None) -> Dict[str,
         }
         result["eval_metrics_cli"] = format_metrics_cli(eval_metrics)
 
+        audit.record(
+            "agentic_summary",
+            planner=(result["plan"] or {}).get("planner"),
+            planner_used=result["planner_used"],
+            action_policy_used=result["action_policy_used"],
+            reflexion_policy_used=result["reflexion_policy_used"],
+            stop_policy_used=result["stop_policy_used"],
+            round_count=result["round_count"],
+            stop_reason=result["stop_reason"],
+            tool_calls=len(result["tool_results"]),
+            follow_up_actions=len(result["follow_up_actions_taken"]),
+        )
         result["audit_events"] = audit.get_events()
         result["narrative"] = build_investigation_narrative(result)
-        result["verdict"] = build_verdict_synthesis(result)
         result["llm_summary"] = generate_llm_narrative(result)
+        result["llm_summary_structured"] = parse_narrative_sections(result["llm_summary"])
+    except InvestigationError as e:
+        stage_messages = {
+            PlannerLLMError: "LLM planner failed.",
+            ActionPolicyError: "Action policy failed.",
+            ReflexionPolicyError: "Reflexion policy failed.",
+            StopPolicyError: "Stop policy failed.",
+            DataSourceError: "Data source unavailable.",
+            FinalSynthesisError: "Final LLM synthesis failed.",
+        }
+        friendly = stage_messages.get(type(e), "Investigation failed.")
+        result["error"] = f"{friendly} {e}"
+        audit.record("pipeline_error", error_type=type(e).__name__, error=str(e))
+        result["audit_events"] = audit.get_events()
     except Exception as e:
-        result["error"] = str(e)
-        audit.record("pipeline_error", error=str(e))
+        result["error"] = f"Investigation failed. {e}"
+        audit.record("pipeline_error", error_type=type(e).__name__, error=str(e))
         result["audit_events"] = audit.get_events()
 
     result["runtime_seconds"] = round(_time.perf_counter() - t0, 3)

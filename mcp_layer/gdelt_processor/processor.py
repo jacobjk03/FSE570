@@ -19,6 +19,7 @@ from osint_swarm.data_sources import gdelt
 from osint_swarm.entities import Evidence
 from osint_swarm.utils.io import read_json, write_json
 
+from app.investigation_errors import DataSourceError
 from mcp_layer.base import DataSourceProcessor
 
 if TYPE_CHECKING:
@@ -150,8 +151,8 @@ class GdeltProcessor(DataSourceProcessor):
                 self._raw_dir.mkdir(parents=True, exist_ok=True)
                 write_json(cache_path, payload)
                 raw_location = str(cache_path)
-            except gdelt.GdeltError:
-                return []
+            except gdelt.GdeltError as exc:
+                raise DataSourceError(f"GDELT retrieval failed for '{entity.name}': {exc}") from exc
 
         articles = gdelt.extract_article_records(payload)
         # Keep only English-language articles (filters cached non-English entries too)

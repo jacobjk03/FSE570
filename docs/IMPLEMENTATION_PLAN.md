@@ -48,7 +48,7 @@ This document describes the **phase-wise implementation plan** for the Autonomou
 
 | # | Task | Description |
 |---|------|-------------|
-| 4.1 | **Corporate Agent** | SEC Analyzer: ingest SEC-derived evidence, summarize governance/regulatory red flags (e.g. executive turnover, filings). Structure Mapper: stub or pass-through; later OpenCorporates. |
+| 4.1 | **Corporate Agent** | SEC Analyzer: ingest SEC-derived evidence, summarize governance/regulatory red flags (e.g. executive turnover, filings). |
 | 4.2 | **Legal Agent** | Sanctions Screener: stub or integrate OFAC/sanctions list. PACER Analyzer: stub (PACER paywalled; CourtListener optional later). |
 | 4.3 | **Social Graph Agent** | GNN Analyzer and Influence Mapper: stubs (Twitter/LinkedIn noted as future). |
 | 4.4 | **Agent contract** | Define a common interface for specialists (e.g. `run(entity, task, context) -> List[Evidence]`). Lead Agent calls this for each allocated task. |

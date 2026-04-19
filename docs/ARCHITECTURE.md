@@ -15,7 +15,7 @@ You type a plain English question like:
 Investigate Tesla for money laundering
 ```
 
-The system automatically queries five public data sources, collects hundreds of citable evidence items, scores them by confidence, cross-validates them, builds a risk profile, generates a natural-language analyst narrative using Llama 3.1, and produces a full audit-ready investigation report — all without any human involvement.
+The system automatically queries public data sources, collects hundreds of citable evidence items, scores them by confidence, cross-validates them, builds a risk profile, generates a natural-language analyst narrative using Llama 3.1, and produces a full audit-ready investigation report — all without any human involvement.
 
 ---
 
@@ -23,15 +23,15 @@ The system automatically queries five public data sources, collects hundreds of 
 
 Five people built this system across the full semester:
 
-**Taljinder Singh** identified and integrated all five public data sources — SEC EDGAR, OFAC SDN, CourtListener, GDELT, and OpenCorporates. He built the raw HTTP connectors, designed the data preprocessing pipeline, and performed exploratory data analysis to understand the shape and quality of each source before they were wired into the agents.
+**Taljinder Singh** led data-source integration and ingestion readiness across SEC EDGAR, OFAC SDN, CourtListener, and GDELT. He built core connectors and data-prep flows, and contributed to source-quality validation used throughout agent execution.
 
-**Arnab Mitra** designed and implemented the core backend — the Lead Agent orchestrator, all three specialist agents (Corporate, Legal, Social Graph), the MCP caching layer, the Reflexion layer, the Knowledge Graph builder, and the full Output layer including the evidence report generator, risk dashboard, and audit trail.
+**Arnab Mitra** co-led backend architecture and orchestration, including lead-agent flow, specialist-agent execution patterns, and output/report pipelines. He also contributed heavily to investigation-state handling, graph construction, and runtime reliability hardening.
 
-**Raj Kumar Mahto** contributed to backend development, working on the task planner and context manager that coordinate how sub-tasks are dispatched across specialist agents and how findings are accumulated in shared investigation state.
+**Raj Kumar Mahto** co-led planning/state-management components, especially task decomposition contracts and context-manager behavior, and contributed to backend integration and test alignment across multi-agent execution paths.
 
-**Aditya Pokharna** built the entire Flask web UI — the query form, the five-tab results page, the risk score visualizations, the interactive knowledge graph canvas using vis-network, and all CSS styling.
+**Aditya Pokharna** co-led presentation and usability layers, including the Flask UI structure, tabbed results experience, risk and graph visualization surfaces, and interaction design/styling improvements for demo clarity.
 
-**Jacob Kuriakose** led deployment and documentation, and drove the final sprint improvements: cloud deployment on Render.com, automatic entity resolution for any public company via SEC EDGAR, LLM integration using Llama 3.1, two new entity data sets (Alphabet, JPMorgan), GDELT English-language filtering, filing-type confidence scoring, NetworkX graph analysis, the loading spinner UX, and all three documentation deliverables.
+**Jacob Kuriakose** co-led deployment/documentation and final-sprint platform enhancements, including cloud deployment, auto entity resolution improvements, LLM integration/prompt-contract updates, and evaluation/documentation packaging for presentation readiness.
 
 ---
 
@@ -44,6 +44,8 @@ When you submit a query, a **Lead Agent** reads it and figures out which company
 ## System Layers — Top to Bottom
 
 The system is organized into 7 layers. Think of them like floors in a building — each floor talks to the ones above and below it.
+
+For a presentation-friendly flowchart, see [`docs/ARCHITECTURE_DIAGRAM.md`](docs/ARCHITECTURE_DIAGRAM.md).
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -69,11 +71,11 @@ The system is organized into 7 layers. Think of them like floors in a building �
 
 ## Layer 1 — Core Library (`src/osint_swarm/`)
 
-This is the foundation. Taljinder built the five raw data connectors and the data preprocessing pipeline that feeds into everything else.
+This is the foundation. The data-integration track built the core raw connectors and preprocessing pipeline that feed everything else.
 
 ### The Two Core Data Types
 
-Everything in the system is built around two Python dataclasses, designed by Arnab:
+Everything in the system is built around two Python dataclasses, designed by the backend team:
 
 **`Entity`** — the company being investigated:
 ```
@@ -105,7 +107,7 @@ Every agent in the system speaks the same language — it takes an `Entity` and 
 
 ### The Five Raw Data Connectors
 
-Taljinder identified all five sources and built the HTTP clients that pull from them:
+The data integration workstream identified core sources and built the HTTP clients that pull from them:
 
 | Connector | What it calls | Auth needed |
 |---|---|---|
@@ -113,13 +115,12 @@ Taljinder identified all five sources and built the HTTP clients that pull from 
 | `gdelt.py` | `https://api.gdeltproject.org/api/v2/doc/doc` | None |
 | `ofac.py` | Parses local `data/raw/ofac/sdn.xml` (27 MB file) | None |
 | `courtlistener.py` | `https://www.courtlistener.com/api/rest/v4/search/` | None |
-| `opencorporates.py` | `https://api.opencorporates.com/v0.4/companies/` | Free token |
 
 ---
 
 ## Layer 2 — MCP Layer (`mcp_layer/`)
 
-**MCP = Model Context Protocol.** Arnab designed this standardized interface layer that sits between the agents and the raw connectors.
+**MCP = Model Context Protocol.** The backend team designed this standardized interface layer that sits between agents and raw connectors.
 
 **Why does this layer exist?** The specialist agents should not care whether data comes from a live API call or a local cache file. The MCP layer handles this transparently:
 
@@ -140,13 +141,13 @@ This **cache-first** design means:
 
 ### The Three MCP Processors
 
-**`SecEdgarProcessor`** (Arnab + Jacob) — reads `data/raw/sec/CIK{cik}.json`, converts up to 500 SEC filings into Evidence rows. Jacob extended the processor with tiered confidence scoring by filing type:
+**`SecEdgarProcessor`** (backend + platform collaboration) — reads `data/raw/sec/CIK{cik}.json`, converts up to 500 SEC filings into Evidence rows. The team extended the processor with tiered confidence scoring by filing type:
 - 8-K (material events) → **0.95**
 - 10-K / 10-Q (annual reports) → **0.85**
 - DEF 14A (proxy statements) → **0.80**
 - Form 4 (routine insider trades) → **0.75**
 
-**`GdeltProcessor`** (Arnab + Jacob) — reads `data/raw/gdelt/news_{slug}.json`, converts news articles into Evidence. Relevance is scored by title content. Jacob extended it with English-language filtering to remove non-English articles from the signal:
+**`GdeltProcessor`** (backend + platform collaboration) — reads `data/raw/gdelt/news_{slug}.json`, converts news articles into Evidence. Relevance is scored by title content. The team extended it with English-language filtering to remove non-English articles from the signal:
 - Entity name + risk keyword in title → **0.75** (high signal)
 - Entity name only → **0.70**
 - Risk keyword only → **0.55**
@@ -159,7 +160,7 @@ This **cache-first** design means:
 
 ## Layer 3 — Lead Agent (`agents/lead_agent/`)
 
-The Lead Agent is the orchestrator — it receives the raw query string and coordinates everything else. Arnab designed the overall architecture; Jacob extended it with automatic entity resolution and wired in the SEC EDGAR fallback resolver.
+The Lead Agent is the orchestrator — it receives the raw query string and coordinates everything else. The backend and platform tracks co-developed this layer, including automatic entity resolution and SEC EDGAR resolver wiring.
 
 ### Sub-module 1: Entity Resolution (`resolver.py` + `sec_name_resolver.py`)
 
@@ -167,7 +168,7 @@ Converts a query like `"Investigate Tesla for money laundering"` into an `Entity
 
 **Step 1 — Registry lookup:** Check a hardcoded list of known entities (Tesla, Ford, Boeing, Alphabet, JPMorgan). Match by name or alias using case-insensitive substring matching. Short aliases (< 3 chars, like ticker "F") use whole-word matching to avoid false positives.
 
-**Step 2 — Auto-resolution (Jacob, final sprint):** For any unknown company, `sec_name_resolver.py` queries the SEC EDGAR full-text search API:
+**Step 2 — Auto-resolution (final sprint enhancement):** For any unknown company, `sec_name_resolver.py` queries the SEC EDGAR full-text search API:
 ```
 https://efts.sec.gov/LATEST/search-index?q="Microsoft"&forms=10-K
 ```
@@ -175,53 +176,61 @@ Parse the response to extract the CIK and official company name. Build a tempora
 
 This means the system can investigate **any publicly traded company** — not just the 5 pre-registered ones.
 
-### Sub-module 2: Task Planner (`planner.py`)
+### Sub-module 2: Task Planner (`task_planner/llm_planner.py`)
 
-Raj built the task planner, which reads the query and generates a list of `SubTask` objects based on keyword detection:
+The planner is now **LLM-guided and strict-schema validated**. It receives the query, resolved entity, and the runtime tool map, then returns structured `SubTask` objects.
 
-| Query contains... | Tasks generated |
-|---|---|
-| "money laundering", "sanctions", "AML", "bribery" | 6 tasks (full AML investigation) |
-| Generic investigation | 4 tasks (standard investigation) |
+Current planner behavior:
+- Produces a bounded plan (typically 3–5 tasks, max 2 rounds)
+- Uses only runtime-available tools per agent
+- Rejects malformed JSON/invalid fields and retries with repair prompts
+- Raises typed errors on repeated contract failure (no deterministic fallback)
 
-Example tasks for an AML query:
+Typical AML-oriented plan lanes:
 ```
-1. corporate_structure   → corporate_agent
-2. beneficial_ownership  → corporate_agent
-3. sanctions_screening   → legal_agent
-4. litigation            → legal_agent
-5. transaction_patterns  → corporate_agent
-6. adverse_media         → social_graph_agent
+1. corporate_structure  → corporate_agent (sec_edgar)
+2. sanctions_screening  → legal_agent (ofac)
+3. litigation           → legal_agent (courtlistener)
+4. adverse_media        → social_graph_agent (gdelt)
 ```
 
 ### Sub-module 3: Context Manager (`context.py`)
 
-Raj built the `InvestigationContext` object that is created and passed to every agent. It holds:
+The team built the `InvestigationContext` object that is created and passed to every agent. It holds:
 - The resolved `Entity`
 - The list of `SubTask` objects
 - A dictionary mapping `agent_id → List[Evidence]` (results accumulate here)
 
 Agents can read each other's results via this shared context — for example, the legal agent can see what the corporate agent already found.
 
+### Sub-module 4: LLM Policy Stack (strict mode)
+
+After planning, execution is governed by LLM policies with strict JSON contracts:
+- **Action policy** (`agents/lead_agent/action_policy.py`) chooses the next tool per specialist agent.
+- **Reflexion ranking policy** (`reflexion_layer/action_reflexion.py`) ranks follow-up actions.
+- **Stop policy** (`agents/lead_agent/orchestrator.py`) decides whether to continue another round.
+
+Each policy includes retry-with-repair prompts and typed error handling. If contracts are repeatedly violated, the run fails explicitly rather than falling back to deterministic shortcuts.
+
 ---
 
 ## Layer 4 — Specialist Agents (`agents/specialist_agents/`)
 
-Arnab built all three specialist agents, each implementing the same protocol: `run(entity, task, context) → List[Evidence]`.
+The backend team implemented all three specialist agents, each using the same protocol: `run(entity, task, context) → List[Evidence]`.
 
 ### Corporate Agent
 
-Handles tasks: `corporate_structure`, `beneficial_ownership`, `transaction_patterns`
+Handles tasks: `corporate_structure`, `sec_filings`, `transaction_patterns`
 
 - **SEC filings** (tasks 1 + 3): Calls `SecEdgarProcessor` → returns up to 500 filing Evidence rows + 1 governance summary row
-- **Beneficial ownership** (task 2): Calls `OpenCorporates` via `structure_mapper.py` → returns ~8 Evidence rows for officers, UBOs (ultimate beneficial owners), controlling entities, and corporate groupings
+- **Corporate structure**: Uses SEC/governance disclosures to build structured corporate risk context.
 
 ### Legal Agent
 
 Handles tasks: `sanctions_screening`, `litigation`
 
-- **Sanctions screening** (task 3): Parses the local OFAC SDN XML file (18,712 entries) sourced by Taljinder. Normalizes names (strips "Inc", "LLC", "Corp" suffixes), runs fuzzy matching. Returns 1 Evidence row — either a match (confidence 0.90, flagged) or clean (confidence 0.90, no match). Includes false-positive guards (e.g., "Ford" does not match "Oxford").
-- **Litigation** (task 4): Calls `CourtListener` API sourced by Taljinder. Cache-first. Returns 1 summary Evidence row + up to 20 docket Evidence rows (federal court cases).
+- **Sanctions screening** (task 3): Parses the local OFAC SDN XML file (18,712 entries) from the data-integration pipeline. Normalizes names (strips "Inc", "LLC", "Corp" suffixes), runs fuzzy matching. Returns 1 Evidence row — either a match (confidence 0.90, flagged) or clean (confidence 0.90, no match). Includes false-positive guards (e.g., "Ford" does not match "Oxford").
+- **Litigation** (task 4): Calls `CourtListener` API from the integrated data-source layer. Cache-first. Returns 1 summary Evidence row + up to 20 docket Evidence rows (federal court cases).
 
 ### Social Graph Agent
 
@@ -233,7 +242,7 @@ Handles tasks: `adverse_media`, `network_analysis`
 
 ## Layer 5 — Reflexion Layer (`reflexion_layer/`)
 
-Arnab built the reflexion layer, which runs three quality checks after all agents finish:
+The backend team built the reflexion layer, which runs three quality checks after all agents finish:
 
 ### 1. Cross-Check (`checker.py`)
 Groups all findings by `(entity_id, date)`. If two or more findings share the same entity and date but have different summaries → flags a **Conflict**.
@@ -245,7 +254,6 @@ Checks for missing evidence:
 - Did the entity fail to resolve? → Gap: "Entity not found"
 - Did OFAC screening return `cache_missing=True`? → Gap: "Sanctions data unavailable"
 - Did GDELT return no articles? → Gap: "Adverse media unavailable"
-- Did OpenCorporates return `cache_missing=True`? → Gap: "Beneficial ownership data unavailable"
 
 Each gap includes a `suggested_follow_up` explaining what to do next.
 
@@ -260,7 +268,7 @@ Aggregates all findings into:
 
 ## Layer 6 — Output Layer (`output_layer/`)
 
-Arnab built all four output modules that run after reflexion:
+The backend and reporting tracks built all four output modules that run after reflexion:
 
 ### Evidence Report Generator
 Produces a full **Markdown + HTML report** with every finding organized by risk category. Every finding includes its date, confidence score, and a clickable source URL. Citation rate target: > 97%.
@@ -289,7 +297,7 @@ Computes system performance numbers: citation rate, coverage by category and dat
 
 ## Knowledge Graph (`knowledge_graph/`)
 
-Built from the full evidence set after all agents finish. Arnab designed and built the graph structure and builder; Jacob added the NetworkX analysis module (`network_analysis.py`) and wired the results into the pipeline and UI.
+Built from the full evidence set after all agents finish. The graph structure/builder and NetworkX analysis module (`network_analysis.py`) were developed collaboratively across backend and platform tracks, then wired into pipeline and UI.
 
 **Structure:**
 - One **node** per entity (the company being investigated)
@@ -297,7 +305,7 @@ Built from the full evidence set after all agents finish. Arnab designed and bui
 - **Edges** of type `has_evidence` connect the entity node to each evidence node
 - **Edges** of type `same_source_type` chain evidence nodes that share the same source
 
-**Network Analysis** (Jacob, final sprint — powered by NetworkX):
+**Network Analysis** (final sprint enhancement — powered by NetworkX):
 - **Degree centrality** — which evidence nodes have the most connections
 - **Connected components** — are there isolated subgraphs?
 - **Average degree** — how densely connected is the graph?
@@ -314,62 +322,60 @@ Built from the full evidence set after all agents finish. Arnab designed and bui
 
 ## Layer 6½ — LLM Narrative Layer (`app/llm_narrative.py`)
 
-Jacob integrated Llama 3.1 during the final sprint to give the system a genuine generative AI component. After the output layer produces all structured metrics, **Llama 3.1-8b-instant** is called to synthesise a natural-language analyst narrative.
+The team integrated Llama 3.1 during the final sprint to add a strong generative analysis layer. After the output layer produces structured metrics, **Llama 3.1-8b-instant** synthesizes the analyst narrative.
 
 **What it receives** — a structured prompt containing:
 - Entity name and total findings count
 - Overall risk score and top 3 risk categories
-- Data source breakdown (SEC, GDELT, CourtListener, OFAC, OpenCorporates)
+- Data source breakdown (SEC, GDELT, CourtListener, OFAC)
 - Adverse media signal rate (GDELT relevant/total)
 - Coverage gaps and cross-check conflict count
 - Citation rate
 
-**What it produces** — a 3–4 sentence analyst-style paragraph, e.g.:
-> *"Tesla, Inc. has been identified as a subject of concern based on a comprehensive OSINT investigation, yielding 1,125 findings with a high citation rate of 98.1%. The overall risk score of 0.84 indicates a moderate to high level of risk, primarily driven by governance (0.82), regulatory (0.79), and legal (0.75) concerns. Adverse media coverage suggests a significant issue, with 85% of 47 articles flagged as highly relevant."*
+**What it produces** — a strict five-section, bullet-formatted narrative:
+- `Assessment`
+- `EvidenceBasis`
+- `WhyThisAssessment`
+- `ConfidenceAndLimits`
+- `NextActions`
+
+Each section is validated for bullet structure and plain-language metric explanations (citation rate, overall risk score, conflicts, coverage gaps), including a “What this means for you” line.
 
 **Key design points:**
 - The LLM sees only **aggregated metrics** — not raw evidence documents. This limits hallucination surface area.
-- If `GROQ_API_KEY` is not set, the call is skipped and the card is hidden — all other features work unchanged.
+- `GROQ_API_KEY` is required in strict LLM-only mode; missing key results in explicit pipeline failure.
 - The LLM narrative is **advisory only**; every underlying fact is independently citable from primary sources.
-- The deterministic `verdict_synthesis.py` still runs alongside it — the LLM narrative supplements it, not replaces it.
+- The LLM narrative is the final synthesis layer and must satisfy a strict section contract.
 
 ---
 
 ## Layer 7 — Flask Web UI (`app/`)
 
-Aditya built the Flask web application — the query form, the five-tab results page, risk score visualizations, and the interactive knowledge graph canvas. Jacob extended it during the final sprint with the loading spinner overlay, the conflict explanation info box, and the LLM narrative card.
+The frontend and platform tracks built the Flask web application — query form, five-tab results page, risk visualizations, and interactive knowledge-graph canvas — then extended it in final sprint with loading-state and narrative UX improvements.
 
 ### `pipeline.py` — The Orchestrator
 Runs the complete investigation when a query is submitted. Calls all layers in order and assembles a single `result` dictionary with ~25 keys that the template uses to render the page.
 
-### `llm_narrative.py` — LLM Analyst Narrative (Jacob)
-Calls **Llama 3.1-8b-instant** with a structured prompt of the investigation metrics. Returns a 3–4 sentence natural-language analyst narrative displayed as the "AI Analyst Narrative" card on the Overview tab. Gracefully returns `None` if no API key is configured.
+### `llm_narrative.py` — LLM Analyst Narrative
+Calls **Llama 3.1-8b-instant** with a structured prompt of investigation metrics. Returns a strict sectioned bullet narrative displayed as the "AI Analyst Narrative" card on the Overview tab. In strict mode, missing API key raises an explicit pipeline error.
 
-### `verdict_synthesis.py` — The Deterministic Analyst Verdict (Arnab)
-Generates a structured "analyst summary" from the result metrics using deterministic rules. Classifies the investigation into tiers:
-- `substantial_public_record` — many findings across multiple sources
-- `partial_coverage` — some sources missing
-- `limited_evidence` — few findings
-
-Always includes a caveat that no automated system can issue a legal verdict.
-
-### `graph_viz.py` — Knowledge Graph Serializer (Aditya)
+### `graph_viz.py` — Knowledge Graph Serializer
 Converts the knowledge graph into JSON format for **vis-network** (a JavaScript library). Samples up to 72 evidence nodes for browser performance. Color-codes by source type:
 - Blue → SEC filings
 - Amber → News articles
 - Purple → Court records
 - Red → Sanctions
 
-### Templates — The UI (Aditya + Jacob)
+### Templates — The UI
 
 **`index.html`** — the query form with:
 - Entity dropdown (pre-registered entities)
 - Query template selector
 - Free-text input
-- Loading spinner overlay (Jacob — shows during the 2-3s investigation)
+- Loading spinner overlay (shows during the 2-3s investigation)
 
 **`results.html`** — five-tab results page:
-- **Overview** — LLM narrative card, verdict synthesis, key metrics
+- **Overview** — LLM narrative card (sectioned bullets), key metrics
 - **Analysis** — risk scores, source breakdown, gaps, conflicts
 - **Knowledge Graph** — interactive vis-network canvas + NetworkX analysis panel
 - **Evidence** — full cited report (HTML)
@@ -386,49 +392,47 @@ User submits query
 Flask POST /  →  run_investigation("Investigate Tesla for money laundering")
         │
         ▼
-Lead Agent (Arnab + Jacob)
+Lead Agent (backend + platform team)
   ├── Entity Resolution: "Tesla" → Entity(cik="0001318605")
-  ├── Task Planner: detects "money laundering" → 6 SubTasks  [Raj]
+  ├── LLM Planner: builds bounded structured plan (typically 3-5 SubTasks)
   └── Context created
         │
         ▼
-Specialist Agents (Arnab)
-  ├── CorporateAgent × 3 tasks
-  │     ├── SecEdgarProcessor → 500 SEC filings + 1 governance summary (cached)  [Taljinder data]
-  │     └── StructureMapper  → 8 OpenCorporates rows (officers, UBOs)  [Taljinder data]
-  ├── LegalAgent × 2 tasks
-  │     ├── OFACScreener     → 1 sanctions result (local XML, 18,712 entries)  [Taljinder data]
-  │     └── CourtFetch       → 1 summary + 20 docket rows (cached)  [Taljinder data]
+Specialist Agents (backend team)
+  ├── CorporateAgent (SEC lane)
+  │     ├── SecEdgarProcessor → 500 SEC filings + 1 governance summary (cached)  [integrated data pipeline]
+  ├── LegalAgent (sanctions + litigation lane)
+  │     ├── OFACScreener     → 1 sanctions result (local XML, 18,712 entries)  [integrated data pipeline]
+  │     └── CourtFetch       → 1 summary + 20 docket rows (cached)  [integrated data pipeline]
   └── SocialGraphAgent × 1 task
-        └── GdeltProcessor   → 100 news articles (cached, English-filtered)  [Taljinder data]
+        └── GdeltProcessor   → 100 news articles (cached, English-filtered)  [integrated data pipeline]
         │
         ▼
 ~1,125 total Evidence rows collected
         │
         ▼
-Reflexion Layer (Arnab)
+Reflexion Layer (backend team)
   ├── Cross-check:   88 conflicts (expected — same-day SEC filings)
-  ├── Gap detection: 0 gaps (all 5 sources returned data)
+  ├── Gap detection: 0 gaps (all active sources returned data)
   └── Confidence:    overall = 0.81
         │
         ▼
-Knowledge Graph (Arnab + Jacob)
+Knowledge Graph (graph + backend team)
   └── 625 nodes, 2,259 edges — NetworkX analysis computes centrality metrics
         │
         ▼
-Output Layer (Arnab)
+Output Layer (backend + reporting team)
   ├── Markdown + HTML evidence report (98% citation rate)
   ├── Risk dashboard (scores by category)
   ├── Evaluation metrics (runtime, coverage, signal rate)
   └── Audit trail (timestamped JSON-lines)
         │
         ▼
-Verdict Synthesis + LLM Narrative
-  ├── Deterministic analyst-style summary — rule-based  [Arnab]
-  └── Llama 3.1 natural-language narrative (~0.5s)  [Jacob]
+Final LLM Narrative
+  └── Llama 3.1 strict sectioned narrative (~0.5s)  [team integrated]
         │
         ▼
-Flask renders results.html  [Aditya + Jacob]
+Flask renders results.html  [frontend + platform tracks]
   └── 5-tab page with graph, evidence, risk scores, AI narrative card
         │
         ▼
@@ -439,7 +443,7 @@ Total runtime: ~3.2 seconds
 
 ## Data Sources at a Glance
 
-All five sources were identified, evaluated, and integrated by Taljinder:
+Core runtime sources were identified, evaluated, and integrated by the data-source workstream:
 
 | Source | What it provides | Cost | Coverage |
 |---|---|---|---|
@@ -447,29 +451,28 @@ All five sources were identified, evaluated, and integrated by Taljinder:
 | **OFAC SDN** | US Treasury sanctions list (18,712 entities) | Free | Global sanctioned entities |
 | **CourtListener** | Federal court dockets and case records | Free | US federal courts |
 | **GDELT DOC 2.0** | Global news articles (adverse media) | Free | Global English-language news |
-| **OpenCorporates** | Corporate structure, officers, beneficial owners | Free tier | Global company registry |
 
 ---
 
 ## Key Design Decisions (and Why)
 
 **1. LLM at the synthesis layer only — not the evidence layer**
-Every evidence row is sourced directly from a public API. No language model generates or paraphrases evidence content, giving 97–98% citation rate with zero hallucination in the evidence layer. Jacob integrated Llama 3.1 only at the final synthesis stage, where it interprets structured numbers into human-readable prose without touching raw evidence.
+Every evidence row is sourced directly from a public API. No language model generates or paraphrases evidence content, giving 97–98% citation rate with zero hallucination in the evidence layer. The team integrated Llama 3.1 at the synthesis stage so it interprets structured metrics into human-readable prose without touching raw evidence.
 
 **2. Cache-first data access**
-Taljinder pulled all raw data once; it is committed to the repo. Investigations replay from cache instantly. This makes results reproducible, eliminates API failures during demos, and enables cloud deployment without live API dependencies at runtime.
+The team established a cache-first data path with source-ingestion leadership from the data integration track. Investigations replay from cache instantly. This makes results reproducible, eliminates API failures during demos, and enables cloud deployment without live API dependencies at runtime.
 
 **3. Frozen dataclasses for Entity and Evidence**
-Both core types are immutable (Arnab). An agent cannot accidentally modify another agent's data. This prevents subtle bugs in the shared `InvestigationContext`.
+Both core types are immutable. An agent cannot accidentally modify another agent's data. This prevents subtle bugs in the shared `InvestigationContext`.
 
 **4. Confidence = 0.0 for missing data (not silent omission)**
-When a cache file is missing or an API fails, the system returns an Evidence row with `confidence=0.0` and `cache_missing=True` instead of silently returning nothing. This lets Arnab's gap detector surface the issue explicitly rather than hiding it.
+When a cache file is missing or an API fails, the system returns an Evidence row with `confidence=0.0` and `cache_missing=True` instead of silently returning nothing. This lets the gap detector surface the issue explicitly rather than hiding it.
 
-**5. Two-layer synthesis: deterministic + LLM**
-Arnab's deterministic `verdict_synthesis.py` uses rule-based logic — same inputs always produce the same output, fully auditable. Jacob's `llm_narrative.py` uses Llama 3.1 to write a fluent natural-language summary. Both appear on the Overview tab, giving the user both machine-reproducible structure and human-readable interpretation.
+**5. LLM-first synthesis with strict validation**
+The final synthesis is generated in `llm_narrative.py` using Llama 3.1 and validated against required sections, bullets, and plain-language metric definitions. This keeps final output readable while enforcing a strict contract.
 
 **6. Cloud deployment with zero runtime dependencies**
-Jacob deployed the system on Render.com using Gunicorn. Because all cached data is committed to the repo, the live deployment requires no external API calls at runtime — the investigation runs entirely from local files.
+The deployment/documentation track shipped Render.com deployment with Gunicorn. Because all cached data is committed to the repo, the live deployment requires no external API calls at runtime — the investigation runs entirely from local files.
 
 ---
 
@@ -477,42 +480,41 @@ Jacob deployed the system on Render.com using Gunicorn. Because all cached data 
 
 ```
 FSE570/
-├── src/osint_swarm/          Core library — Taljinder + Arnab
+├── src/osint_swarm/          Core library — team-owned
 │   ├── entities.py           Entity + Evidence dataclasses
 │   ├── data_sources/         Raw HTTP connectors (one per source)
 │   └── utils/io.py           JSON/CSV read-write helpers
 │
 ├── agents/
-│   ├── lead_agent/           Orchestrator — Arnab + Jacob
+│   ├── lead_agent/           Orchestrator — shared backend/platform ownership
 │   │   ├── orchestrator.py   LeadAgent.run(query) → InvestigationContext
-│   │   ├── entity_resolution/ Registry + SEC auto-resolver (Jacob)
-│   │   ├── task_planner/     Keyword-based task decomposition (Raj)
-│   │   └── context_manager/  Shared investigation state (Raj)
-│   └── specialist_agents/    CorporateAgent, LegalAgent, SocialGraphAgent — Arnab
+│   │   ├── entity_resolution/ Registry + SEC auto-resolver (team contribution)
+│   │   ├── task_planner/     LLM-guided bounded planning (team contribution)
+│   │   └── context_manager/  Shared investigation state (team contribution)
+│   └── specialist_agents/    CorporateAgent, LegalAgent, SocialGraphAgent — team-owned
 │
-├── mcp_layer/                Cache-first data access (Arnab); confidence + GDELT filter extensions (Jacob)
-├── reflexion_layer/          Cross-check, gap detection, confidence — Arnab
-├── knowledge_graph/          Graph builder (Arnab) + NetworkX analysis (Jacob)
-├── output_layer/             Reports, dashboard, audit trail, metrics — Arnab
+├── mcp_layer/                Cache-first data access + confidence/relevance processing (shared ownership)
+├── reflexion_layer/          Cross-check, gap detection, confidence — shared ownership
+├── knowledge_graph/          Graph builder + NetworkX analysis — shared ownership
+├── output_layer/             Reports, dashboard, audit trail, metrics — shared ownership
 │
 ├── app/                      Flask web application
 │   ├── app.py                Route handler
 │   ├── pipeline.py           Full pipeline orchestration
-│   ├── graph_viz.py          vis-network JSON serializer — Aditya
-│   ├── verdict_synthesis.py  Deterministic analyst verdict — Arnab
-│   ├── llm_narrative.py      LLM synthesis (Llama 3.1) — Jacob
-│   └── templates/            Jinja2 HTML — Aditya + Jacob
+│   ├── graph_viz.py          vis-network JSON serializer — frontend/graph track
+│   ├── llm_narrative.py      LLM synthesis (Llama 3.1) — LLM/platform track
+│   └── templates/            Jinja2 HTML — frontend track
 │
-├── scripts/                  Data pull scripts — Taljinder
+├── scripts/                  Data pull scripts — data integration track
 ├── tests/unit/               219 pytest unit tests
 ├── data/raw/                 Cached API responses (committed to repo)
-├── docs/                     Documentation — Jacob
+├── docs/                     Documentation — team maintained
 │   ├── ARCHITECTURE.md       This file
 │   ├── EVALUATION.md         Performance metrics + benchmarks
 │   └── DEPLOYMENT_RUNBOOK.md Setup + demo guide
 │
 ├── requirements.txt          Python dependencies
-├── Procfile                  Render.com deployment — Jacob
+├── Procfile                  Render.com deployment — deployment track
 └── .env.example              Environment variable template
 ```
 

@@ -75,9 +75,9 @@ def test_coverage_by_data_source_inferred():
 
 
 def test_coverage_by_data_source_explicit():
-    findings = [_ev(data_source="opencorporates")]
+    findings = [_ev(data_source="sec_edgar")]
     m = compute_evaluation_metrics(findings)
-    assert m.coverage_by_data_source["opencorporates"] == 1
+    assert m.coverage_by_data_source["sec_edgar"] == 1
 
 
 def test_gdelt_signal_rate():

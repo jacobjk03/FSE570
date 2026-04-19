@@ -33,7 +33,7 @@
 - **Status**: Stub in `agents/specialist_agents/legal_agent/pacer_fetcher/fetcher.py`
 - **Next step**: Query by company name; return docket entries as Evidence
 
-### OpenCorporates (Global corporate registry / beneficial ownership)
-- **Source**: `https://api.opencorporates.com/` (free tier available)
+### Corporate registry lane (removed from runtime)
+- The previous corporate-registry integration is no longer part of active runtime execution.
 - **Status**: Stub in `agents/specialist_agents/corporate_agent/structure_mapper/mapper.py`
 - **Next step**: Lookup entity by name; extract officers, parent/subsidiary relationships

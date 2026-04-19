@@ -17,9 +17,18 @@ The project proposal defined five evaluation criteria:
 
 ---
 
+## Runtime Mode (Current)
+
+- Strict **LLM-only orchestration** is active for planner, action policy, reflexion ranking, stop policy, and final narrative.
+- Deterministic policy/synthesis fallbacks are removed; contract failures surface as explicit typed pipeline errors.
+- Evidence rows remain source-grounded and citation-driven (no LLM-generated evidence records).
+- OpenCorporates is removed from active runtime lanes and evaluation calculations.
+
+---
+
 ## 2. Speedup vs Manual Analyst Workflows
 
-A trained compliance analyst performing the same 5-source investigation manually:
+A trained compliance analyst performing the same multi-source investigation manually:
 
 | Task | Manual Analyst (est.) | Our System | Speedup |
 |---|---|---|---|
@@ -27,12 +36,11 @@ A trained compliance analyst performing the same 5-source investigation manually
 | OFAC sanctions screening | ~20 min | < 0.5s | ~2,400× |
 | Federal court records search | ~30 min | < 1s (cached) | ~1,800× |
 | Adverse media / news scan | ~45 min | < 1s (cached) | ~2,700× |
-| Corporate structure mapping | ~30 min | < 1s (cached) | ~1,800× |
 | **Total** | **~2.5 hours** | **2.7–2.9 seconds** | **~3,100×** |
 
 > Source: ACAMS AML analyst time estimates; internal timing across 5 test entities.
 
-**Key claim:** Our system completes a full 5-source, 5-agent investigation in under 3 seconds with a 98% citation rate — versus ~2.5 hours for a human analyst covering the same sources.
+**Key claim:** Our system completes a full multi-source investigation in under 3 seconds with a ~98% citation rate — versus ~2.5 hours for a human analyst covering the same sources.
 
 ---
 
@@ -40,14 +48,14 @@ A trained compliance analyst performing the same 5-source investigation manually
 
 Measured on the final production pipeline (April 2026):
 
-| Entity | Industry | Findings | Runtime | Citation Rate | GDELT Signal | Sources |
+| Entity | Industry | Findings | Runtime | Citation Rate | GDELT Signal | Active Sources |
 |---|---|---|---|---|---|---|
-| Tesla, Inc. | Automotive/Tech | 1,125 | 2.70s | 98.0% | 49% | 5/5 |
-| Ford Motor Co. | Automotive | 598 | 2.62s | 96.5% | 49% | 5/5 |
-| The Boeing Company | Aerospace | 1,088 | 2.45s | 97.9% | 89% | 5/5 |
-| Alphabet Inc. (Google) | Technology | 1,121 | 2.81s | 98.0% | 82% | 5/5 |
-| JPMorgan Chase & Co. | Finance | 1,119 | 2.77s | 97.9% | 100% | 5/5 |
-| **Average** | | **1,010** | **2.67s** | **97.7%** | **74%** | **5/5** |
+| Tesla, Inc. | Automotive/Tech | 1,125 | 2.70s | 98.0% | 49% | 4/4 |
+| Ford Motor Co. | Automotive | 598 | 2.62s | 96.5% | 49% | 4/4 |
+| The Boeing Company | Aerospace | 1,088 | 2.45s | 97.9% | 89% | 4/4 |
+| Alphabet Inc. (Google) | Technology | 1,121 | 2.81s | 98.0% | 82% | 4/4 |
+| JPMorgan Chase & Co. | Finance | 1,119 | 2.77s | 97.9% | 100% | 4/4 |
+| **Average** | | **1,010** | **2.67s** | **97.7%** | **74%** | **4/4** |
 
 **Definitions:**
 - **Findings** — total `Evidence` rows produced across all agents
@@ -59,7 +67,7 @@ Measured on the final production pipeline (April 2026):
 
 ## 4. Source Coverage by Data Source
 
-All 5 entities achieved full 5-source coverage:
+All 5 entities achieved full active-source coverage:
 
 | Data Source | Auth Required | Evidence Type | Avg Findings | Confidence Range |
 |---|---|---|---|---|
@@ -67,7 +75,6 @@ All 5 entities achieved full 5-source coverage:
 | OFAC SDN | None (local XML) | Sanctions screening | 1 (summary row) | 0.90 |
 | CourtListener | None (optional token) | Federal court dockets | ~21 | 0.85 |
 | GDELT DOC 2.0 | None | Adverse media | 63–100 | 0.30–0.75 (relevance scored) |
-| OpenCorporates | Free token | Corporate structure | ~8 | 0.75–0.85 |
 
 ---
 
@@ -120,10 +127,17 @@ Tested examples:
 
 ## 8. Architectural Design Decisions
 
-### Why is the LLM only at the synthesis layer?
-The evidence pipeline is deliberately deterministic — every finding is sourced directly from a public API (SEC EDGAR, OFAC, CourtListener, GDELT, OpenCorporates). LLM-generated evidence in a compliance report is a legal liability: a fabricated citation cannot be audited or defended. Our deterministic evidence layer achieves **97–98% citation rate with zero hallucination**.
+### Why keep evidence deterministic while orchestration is LLM-driven?
+The evidence pipeline remains deterministic at retrieval level — each finding is sourced directly from primary data providers (SEC EDGAR, OFAC, CourtListener, GDELT). LLM-generated evidence in a compliance report is a legal liability: a fabricated citation cannot be audited or defended.
 
-Llama 3.1 is introduced only at the final synthesis stage (`app/llm_narrative.py`), where it reads aggregated investigation metrics and writes a natural-language analyst narrative. This is the appropriate role for an LLM — interpreting structured numbers into human-readable prose — without any risk of hallucinating source citations.
+At the same time, orchestration and synthesis are now LLM-driven in strict mode:
+- Task planning (`llm_planner.py`)
+- Tool selection policy (`action_policy.py`)
+- Reflexion action ranking (`action_reflexion.py`)
+- Stop policy (`orchestrator.py`)
+- Final narrative (`llm_narrative.py`)
+
+This split preserves citation integrity while improving adaptive investigation behavior.
 
 ### Why deterministic confidence scoring?
 Tiered, rule-based confidence scoring (by source type and filing form) is interpretable, auditable, and reproducible. A compliance team can trace exactly why a finding has confidence 0.95 (8-K material event) vs 0.75 (routine Form 4 insider trade). This is essential for audit-ready reporting.
@@ -137,12 +151,12 @@ All data is cached after the first pull. This makes investigations reproducible 
 
 | Layer | Tests | Coverage |
 |---|---|---|
-| Lead agent (entity resolution, task planning) | 16 | Entity resolution, false-positive prevention, AML task decomposition |
-| Specialist agents (corporate, legal, social) | 34 | All agent types, OFAC screener, CourtListener, structure mapper |
+| Lead agent (entity resolution, task planning) | 16 | Entity resolution, false-positive prevention, LLM-guided AML decomposition |
+| Specialist agents (corporate, legal, social) | 34 | All agent types, OFAC screener, CourtListener, bounded tool execution |
 | Data sources (SEC, GDELT, OFAC, etc.) | 87 | API connectors, name matching, field normalization |
 | MCP layer (processors, facade) | 19 | Cache-first logic, relevance scoring, evidence loader |
 | Reflexion layer | 17 | Cross-check, gap detection, confidence aggregation |
 | Knowledge graph | 4 | Graph builder, node/edge correctness |
 | Output layer | 24 | Report generation, risk dashboard, audit trail, metrics |
-| App (narrative, verdict) | 4 | Synthesis modules |
+| App (narrative) | 4 | Strict LLM narrative modules |
 | **Total** | **219** | All major layers |

@@ -21,7 +21,7 @@ RiskCategory = Literal["governance", "regulatory", "legal", "network", "other"]
 class Entity:
     """Canonical target for an investigation.
 
-    Keep `identifiers` flexible (CIK/ticker/OpenCorporates/etc.) so we can support
+    Keep `identifiers` flexible (CIK/ticker/etc.) so we can support
     public companies, private entities, nonprofits, and individuals.
     """
 
