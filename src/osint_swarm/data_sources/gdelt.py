@@ -30,10 +30,24 @@ RISK_KEYWORDS = (
 GDELT_DOC_API = "https://api.gdeltproject.org/api/v2/doc/doc"
 DEFAULT_MAX_RECORDS = 100
 DEFAULT_LOOKBACK_DAYS = 730  # ~2 years
+DEFAULT_RETRY_ATTEMPTS = 3
+DEFAULT_BACKOFF_SECONDS = 2.0
 
 
 class GdeltError(RuntimeError):
     pass
+
+
+def _retry_after_seconds(resp: requests.Response) -> Optional[float]:
+    """Parse Retry-After header (seconds); return None if absent/invalid."""
+    header = (resp.headers or {}).get("Retry-After")
+    if not header:
+        return None
+    try:
+        seconds = float(header)
+    except (TypeError, ValueError):
+        return None
+    return seconds if seconds > 0 else None
 
 
 def _gdelt_headers() -> Dict[str, str]:
@@ -68,11 +82,35 @@ def fetch_news_for_entity(
 
     url = f"{GDELT_DOC_API}?{urlencode(params)}"
 
-    try:
-        resp = requests.get(url, headers=_gdelt_headers(), timeout=30)
-        resp.raise_for_status()
-    except requests.RequestException as exc:
-        raise GdeltError(f"GDELT API request failed: {exc}") from exc
+    last_exc: Optional[BaseException] = None
+    resp: Optional[requests.Response] = None
+    for attempt in range(1, DEFAULT_RETRY_ATTEMPTS + 1):
+        try:
+            resp = requests.get(url, headers=_gdelt_headers(), timeout=30)
+        except requests.RequestException as exc:
+            last_exc = exc
+            if attempt < DEFAULT_RETRY_ATTEMPTS:
+                # Retry transient network failures before hard-failing strict mode.
+                time.sleep(DEFAULT_BACKOFF_SECONDS * attempt)
+                continue
+            raise GdeltError(f"GDELT API request failed: {exc}") from exc
+
+        if resp.status_code == 429:
+            if attempt < DEFAULT_RETRY_ATTEMPTS:
+                delay = _retry_after_seconds(resp) or (DEFAULT_BACKOFF_SECONDS * attempt)
+                time.sleep(delay)
+                continue
+            raise GdeltError(f"GDELT API request failed: 429 Too Many Requests (after {attempt} attempts)")
+
+        try:
+            resp.raise_for_status()
+            break
+        except requests.RequestException as exc:
+            last_exc = exc
+            raise GdeltError(f"GDELT API request failed: {exc}") from exc
+
+    if resp is None:
+        raise GdeltError(f"GDELT API request failed: {last_exc or 'unknown error'}")
 
     try:
         payload = resp.json()

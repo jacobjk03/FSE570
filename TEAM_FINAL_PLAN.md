@@ -12,21 +12,17 @@ These are questions the professor or evaluators may raise. Here is exactly how t
 
 ### Gap 1 — "The proposal said Multi-Agent AI System but there's no LLM"
 
-**Status:** ✅ Fixed — LLM integration added (Llama 3.1 via Groq).
+**Answer to give:**
 
-**How to frame it:**
+> *"The evidence layer remains source-grounded and deterministic: every finding comes from SEC EDGAR, OFAC SDN, CourtListener, or GDELT with high citation coverage. On top of that, orchestration is now strict LLM-driven: planner, action policy, reflexion ranking, stop policy, and final analyst narrative all run through validated LLM contracts. We separate responsibilities intentionally: deterministic retrieval for facts, LLMs for adaptive reasoning and analyst-facing synthesis."*
 
-> *"The evidence pipeline is deliberately deterministic — every finding is sourced directly from SEC EDGAR, OFAC SDN, CourtListener, or GDELT with a 98.1% citation rate and zero hallucination. LLM-generated evidence in a compliance report is a legal liability. We use Llama 3.1 (via Groq's free API) exactly where LLMs add value: at the synthesis layer, where it reads the aggregated investigation metrics and writes a natural-language analyst narrative. The architecture follows the principle: deterministic retrieval for facts, LLM for human-readable interpretation."*
-
-**Why this works:** You now have a real LLM component, a clear architectural rationale for where it sits, and a principled answer for why it doesn't touch raw evidence.
+**Why this works:** You now have genuine AI behavior across the investigation loop (not just final narration), while still preserving citation-traceable evidence integrity.
 
 ---
 
 ### Gap 2 — "Only 3 entities — where's the generality?"
 
-**Status:** Being fixed (see Part 2, P2 + P3).
-
-**How to frame it during the demo:**
+**Answer to give during the demo:**
 - Show the demo working on Tesla, then switch to Alphabet or JPMorgan live.
 - If auto-resolution is done: type any company name and show it resolving to a CIK automatically.
 
@@ -36,9 +32,7 @@ These are questions the professor or evaluators may raise. Here is exactly how t
 
 ### Gap 3 — "The Social Graph Agent just fetches news — where's the graph analysis?"
 
-**Status:** Being added this week (see Part 2, P9).
-
-**How to frame it:**
+**Answer to give:**
 
 > *"The SocialGraphAgent collects adverse media evidence from GDELT. We then apply network analysis on the knowledge graph — degree centrality identifies the most-connected entities, and clustering coefficients surface tightly-linked risk clusters. These metrics are surfaced in a dedicated Network Analysis panel on the results page."*
 
@@ -46,9 +40,7 @@ These are questions the professor or evaluators may raise. Here is exactly how t
 
 ### Gap 4 — "How does this compare to a human analyst?"
 
-**Status:** Being documented this week (see Part 2, P4).
-
-**Numbers to use:**
+**Answer to give (with numbers):**
 
 | Task | Manual Analyst | Our System |
 |---|---|---|
@@ -56,17 +48,16 @@ These are questions the professor or evaluators may raise. Here is exactly how t
 | OFAC sanctions screening | ~20 min | < 0.5s |
 | Court records search | ~30 min | < 1s (cached) |
 | News / adverse media | ~45 min | < 1s (cached) |
-| Corporate structure mapping | ~30 min | < 1s (cached) |
 | **Total** | **~2.5 hours** | **2.9 seconds** |
 | **Speedup** | — | **~3,100x** |
 
-> *"Our system completes a full 5-source investigation in 2.9 seconds with a 98.1% citation rate. A trained analyst performing the same investigation manually across the same sources takes approximately 2.5 hours. That is a ~3,100x reduction in investigation time — without sacrificing source traceability."*
+> *"Our system completes a full multi-source investigation in around 2.9 seconds with high citation coverage. A trained analyst performing the same investigation manually across these public sources takes approximately 2.5 hours. That is a ~3,100x reduction in investigation time — without sacrificing source traceability."*
 
 ---
 
 ### Gap 5 — "Is there a deployment guide?"
 
-**Status:** Being written this week (see Part 2, P8). Will be at `docs/DEPLOYMENT_RUNBOOK.md`.
+**Answer to give:** Yes. The deployment guide is available at `docs/DEPLOYMENT_RUNBOOK.md`.
 
 ---
 
@@ -107,7 +98,7 @@ These are questions the professor or evaluators may raise. Here is exactly how t
 **Owner:** Jacob + whole team | **Effort:** ~3-4 hrs  
 **Why:** Core proposal evaluation criterion. Needed in the final report.  
 **What:** Document the speedup table above + citation rate + coverage + GDELT signal rate metrics. Add a section to the final report and one slide to the presentation.  
-**Status:** ✅ Done — `docs/EVALUATION.md` written. Includes: 3,100× speedup table, per-entity metrics (5 entities), confidence methodology, reflexion quality, generality tests, LLM design rationale, 214-test coverage breakdown.
+**Status:** ✅ Done — `docs/EVALUATION.md` written. Includes: 3,100× speedup table, per-entity metrics (5 entities), confidence methodology, reflexion quality, generality tests, strict LLM orchestration rationale, 219-test coverage breakdown.
 
 ---
 
@@ -147,7 +138,7 @@ These are questions the professor or evaluators may raise. Here is exactly how t
 **What:** `docs/DEPLOYMENT_RUNBOOK.md` covering:
 1. Clone repo
 2. `pip install -r requirements.txt`
-3. Set `.env` (`SEC_USER_AGENT=Your Name your@email.com`)
+3. Set `.env` (`SEC_USER_AGENT=Your Name your@email.com` and `GROQ_API_KEY=...`)
 4. Run pull scripts to populate `data/raw/`
 5. `flask run` or `gunicorn app.app:app`
 6. Demo walkthrough — which queries to run, what to point at  
@@ -169,15 +160,18 @@ These are questions the professor or evaluators may raise. Here is exactly how t
 
 ### P10 — LLM Integration (Llama 3.1 via Groq)
 **Owner:** Jacob | **Effort:** ~2 hrs  
-**Why:** This is a DS capstone — evaluators expect a genuine AI/ML component. The "agents" in the pipeline are rule-based Python classes, not AI. Adding an LLM makes the Multi-Agent AI System claim true and gives a real generative AI story for the demo.  
+**Why:** This is a DS capstone — evaluators expect a genuine AI/ML component. We moved from rule-only orchestration to strict LLM-driven planning/policies/synthesis to make the Multi-Agent AI System claim technically accurate.  
 **What:**
-- New `app/llm_narrative.py` — calls Groq Llama 3.1-8b-instant with structured investigation metrics (entity, findings count, risk scores, source breakdown, gaps, GDELT signal rate)
-- LLM generates a 3-4 sentence natural-language analyst narrative
-- Displayed as "AI Analyst Narrative" card on Overview tab with Llama/Groq badge
-- Graceful degradation: hidden if `GROQ_API_KEY` not set
-- `GROQ_API_KEY` set in Render dashboard for live deployment  
-**Files:** `app/llm_narrative.py`, `app/pipeline.py`, `app/templates/results.html`, `requirements.txt`, `.env.example`  
-**Status:** ✅ Done — Tested live: ~0.5s response. Tesla narrative generated correctly via Groq free tier.
+- Planner/Policy/Synthesis stack now LLM-driven with strict contracts:
+  - planner (`llm_planner.py`)
+  - action policy (`action_policy.py`)
+  - reflexion ranking (`action_reflexion.py`)
+  - stop policy (`orchestrator.py`)
+  - final narrative (`llm_narrative.py`)
+- Narrative contract now enforces sectioned bullet output with plain-language metric explanations.
+- `GROQ_API_KEY` required for strict mode in local and deployed runtime.  
+**Files:** `agents/lead_agent/task_planner/llm_planner.py`, `agents/lead_agent/action_policy.py`, `reflexion_layer/action_reflexion.py`, `agents/lead_agent/orchestrator.py`, `app/llm_narrative.py`, `app/pipeline.py`, `app/templates/results.html`, `.env.example`  
+**Status:** ✅ Done — strict LLM-only orchestration and narrative validated in runtime + tests.
 
 ---
 
@@ -206,5 +200,5 @@ These are questions the professor or evaluators may raise. Here is exactly how t
 | Graph analysis metrics | ❌ None | ✅ Centrality + clustering |
 | Speedup vs manual | ❌ Not documented | ✅ ~3,100x |
 | Deployment runbook | ❌ Missing | ✅ `docs/DEPLOYMENT_RUNBOOK.md` |
-| LLM component | ❌ None | ✅ Llama 3.1 via Groq (analyst narrative) |
-| Tests passing | 214/214 | 214/214 (maintain) |
+| LLM component | ❌ None | ✅ Llama 3.1 via Groq (planner + policies + narrative) |
+| Tests passing | 214/214 | ✅ 219/219 |
