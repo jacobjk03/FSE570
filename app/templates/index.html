@@ -1,84 +1,239 @@
 {% extends "base.html" %}
-{% block title %}Investigate — OSINT Swarm{% endblock %}
+{% block title %}OSINT Investigation Swarm{% endblock %}
 {% block content %}
-<div class="card">
-    <h2>New Investigation</h2>
-    {% if error %}
-    <div class="error">{{ error }}</div>
-    {% endif %}
-    <form method="post" action="/" id="queryForm">
-        <div style="margin-bottom: 1rem;">
-            <label for="entity-select">Quick select entity</label>
-            <select id="entity-select" onchange="fillQuery()">
-                <option value="">— Custom query —</option>
-                {% for e in entities %}
-                <option value="{{ e.name }}">{{ e.name }} ({{ e.entity_id }})</option>
-                {% endfor %}
-            </select>
+
+<!-- Hero -->
+<div style="padding: 2rem 0 1.75rem;">
+    <div style="max-width: 700px;">
+        <div style="display:inline-flex;align-items:center;gap:0.5rem;background:rgba(0,82,174,0.07);border:1px solid rgba(0,82,174,0.18);border-radius:20px;padding:0.3rem 0.9rem;margin-bottom:1.1rem;">
+            <span style="width:7px;height:7px;background:#0052ae;border-radius:50%;display:inline-block;animation:pulse-dot 1.4s ease-in-out infinite;flex-shrink:0;"></span>
+            <span style="font-size:0.72rem;font-weight:700;color:#0052ae;text-transform:uppercase;letter-spacing:0.09em;">Swarm Ready · 5 Data Sources</span>
         </div>
-        <div style="margin-bottom: 0.5rem;">
-            <label for="template-select">Query template</label>
-            <select id="template-select" onchange="fillQuery()">
-                {% for t in templates %}
-                <option value="{{ t }}">{{ t }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div style="margin-bottom: 1rem;">
-            <label for="query">Investigation query</label>
-            <input type="text" id="query" name="query"
-                   placeholder="e.g. Investigate Tesla for money laundering"
-                   value="{{ request.form.query or '' }}" autofocus>
-        </div>
-        <button type="submit">Run Investigation</button>
-    </form>
+        <h1 style="font-size:2.5rem;font-weight:800;letter-spacing:-0.03em;color:#191c1d;line-height:1.15;margin-bottom:0.85rem;">OSINT Investigation<br>Swarm</h1>
+        <p style="font-size:1rem;color:#414753;line-height:1.7;max-width:540px;">Autonomous multi-agent analysis. Deploy specialist agents to crawl, verify, and cross-reference intelligence across 5 authoritative data sources.</p>
+    </div>
 </div>
 
-<div class="card">
-    <h2>How it works</h2>
-    <div class="stat-grid">
-        <div class="stat-card">
-            <div class="value">5</div>
-            <div class="label">Data Sources</div>
+<!-- Main grid -->
+<div style="display:grid;grid-template-columns:1fr 360px;gap:1.5rem;margin-bottom:2.5rem;" class="ls-main-grid">
+
+    <!-- Left: Investigation Form -->
+    <div style="background:#fff;border:1px solid #c1c6d6;border-radius:14px;padding:2rem;box-shadow:0 2px 8px rgba(25,28,29,0.06);">
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.75rem;">
+            <div style="width:4px;height:1.85rem;background:linear-gradient(180deg,#0052ae,#006adc);border-radius:3px;flex-shrink:0;"></div>
+            <h2 style="font-size:1.15rem;font-weight:700;color:#191c1d;letter-spacing:-0.01em;margin:0;text-transform:none;">Initiate Swarm Query</h2>
         </div>
-        <div class="stat-card">
-            <div class="value">3</div>
-            <div class="label">Specialist Agents</div>
-        </div>
-        <div class="stat-card">
-            <div class="value">3</div>
-            <div class="label">Reflexion Checks</div>
-        </div>
-        <div class="stat-card">
-            <div class="value">1</div>
-            <div class="label">Lead Orchestrator</div>
+
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" action="/" id="queryForm">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.15rem;margin-bottom:1.15rem;" class="ls-form-row">
+                <div>
+                    <label for="entity-select" style="font-size:0.72rem;font-weight:700;color:#414753;text-transform:uppercase;letter-spacing:0.09em;margin-bottom:0.45rem;display:block;">Quick select entity</label>
+                    <div style="position:relative;">
+                        <select id="entity-select" onchange="fillQuery()" style="width:100%;background:#f3f4f5;border:1px solid #c1c6d6;border-radius:8px;padding:0.6rem 2.2rem 0.6rem 0.8rem;font-size:0.88rem;color:#191c1d;appearance:none;cursor:pointer;font-family:inherit;transition:border-color 0.2s;">
+                            <option value="">— Custom query —</option>
+                            {% for e in entities %}
+                            <option value="{{ e.name }}">{{ e.name }} ({{ e.entity_id }})</option>
+                            {% endfor %}
+                        </select>
+                        <span class="material-symbols-outlined" style="position:absolute;right:0.55rem;top:50%;transform:translateY(-50%);pointer-events:none;font-size:1rem;color:#727785;">expand_more</span>
+                    </div>
+                </div>
+                <div>
+                    <label for="template-select" style="font-size:0.72rem;font-weight:700;color:#414753;text-transform:uppercase;letter-spacing:0.09em;margin-bottom:0.45rem;display:block;">Query template</label>
+                    <div style="position:relative;">
+                        <select id="template-select" onchange="fillQuery()" style="width:100%;background:#f3f4f5;border:1px solid #c1c6d6;border-radius:8px;padding:0.6rem 2.2rem 0.6rem 0.8rem;font-size:0.88rem;color:#191c1d;appearance:none;cursor:pointer;font-family:inherit;transition:border-color 0.2s;">
+                            {% for t in templates %}
+                            <option value="{{ t }}">{{ t }}</option>
+                            {% endfor %}
+                        </select>
+                        <span class="material-symbols-outlined" style="position:absolute;right:0.55rem;top:50%;transform:translateY(-50%);pointer-events:none;font-size:1rem;color:#727785;">expand_more</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-bottom:1.5rem;">
+                <label for="query" style="font-size:0.72rem;font-weight:700;color:#414753;text-transform:uppercase;letter-spacing:0.09em;margin-bottom:0.45rem;display:block;">Investigation query</label>
+                <input type="text" id="query" name="query"
+                       placeholder="e.g. Investigate Tesla for money laundering risk"
+                       value="{{ request.form.query or '' }}"
+                       autofocus
+                       style="width:100%;background:#f3f4f5;border:1px solid #c1c6d6;border-radius:8px;padding:0.8rem 1rem;font-size:0.95rem;color:#191c1d;font-family:inherit;transition:border-color 0.2s,box-shadow 0.2s;">
+            </div>
+
+            <div style="display:flex;justify-content:flex-end;">
+                <button type="submit" id="submitBtn" style="background:linear-gradient(135deg,#0052ae,#006adc);color:#fff;border:none;padding:0.75rem 1.75rem;font-size:0.9rem;font-weight:700;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:0.5rem;letter-spacing:0.01em;box-shadow:0 4px 14px rgba(0,82,174,0.22);transition:all 0.2s;font-family:inherit;">
+                    Run Investigation
+                    <span class="material-symbols-outlined" style="font-size:1rem;font-variation-settings:'FILL' 1;">bolt</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Right: Agent Network Status -->
+    <div style="display:flex;flex-direction:column;gap:1rem;">
+        <div style="background:#fff;border:1px solid #c1c6d6;border-radius:14px;padding:1.5rem;box-shadow:0 2px 8px rgba(25,28,29,0.06);flex:1;display:flex;flex-direction:column;">
+            <h3 style="font-size:0.7rem;font-weight:700;color:#0052ae;text-transform:uppercase;letter-spacing:0.13em;margin-bottom:1.15rem;">Agent Network Status</h3>
+
+            <div style="display:flex;flex-direction:column;gap:0.65rem;flex:1;">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0.85rem;background:#f3f4f5;border:1px solid #e1e3e4;border-radius:9px;">
+                    <div style="display:flex;align-items:center;gap:0.65rem;">
+                        <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.15rem;">hub</span>
+                        <span style="font-size:0.83rem;font-weight:600;color:#191c1d;">Data Sources</span>
+                    </div>
+                    <span style="font-size:0.72rem;font-weight:700;color:#414753;letter-spacing:0.04em;">5 Active</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0.85rem;background:#f3f4f5;border:1px solid #e1e3e4;border-radius:9px;">
+                    <div style="display:flex;align-items:center;gap:0.65rem;">
+                        <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.15rem;">smart_toy</span>
+                        <span style="font-size:0.83rem;font-weight:600;color:#191c1d;">LLM Narrative</span>
+                    </div>
+                    <span style="font-size:0.72rem;font-weight:700;color:#414753;letter-spacing:0.04em;">Llama 3.1</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0.85rem;background:#f3f4f5;border:1px solid #e1e3e4;border-radius:9px;">
+                    <div style="display:flex;align-items:center;gap:0.65rem;">
+                        <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.15rem;">account_tree</span>
+                        <span style="font-size:0.83rem;font-weight:600;color:#191c1d;">Graph Engine</span>
+                    </div>
+                    <span style="font-size:0.72rem;font-weight:700;color:#414753;letter-spacing:0.04em;">NetworkX</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0.85rem;background:#f3f4f5;border:1px solid #e1e3e4;border-radius:9px;">
+                    <div style="display:flex;align-items:center;gap:0.65rem;">
+                        <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.15rem;">deployed_code</span>
+                        <span style="font-size:0.83rem;font-weight:600;color:#191c1d;">Runtime</span>
+                    </div>
+                    <span style="font-size:0.72rem;font-weight:700;color:#414753;letter-spacing:0.04em;">Python / Flask</span>
+                </div>
+            </div>
+
+            <div style="margin-top:1rem;padding:0.75rem 0.85rem;background:linear-gradient(135deg,rgba(0,82,174,0.05),rgba(0,106,220,0.09));border:1px solid rgba(0,82,174,0.15);border-radius:9px;display:flex;align-items:center;gap:0.65rem;">
+                <span style="width:7px;height:7px;background:#0052ae;border-radius:50%;display:inline-block;animation:pulse-dot 1.4s ease-in-out infinite;flex-shrink:0;"></span>
+                <span style="font-size:0.7rem;font-weight:700;color:#0052ae;text-transform:uppercase;letter-spacing:0.09em;">All Agents Ready</span>
+            </div>
         </div>
     </div>
-    <p class="meta" style="margin-top: 1rem;">
-        SEC EDGAR &middot; GDELT News &middot; OFAC Sanctions &middot; CourtListener
-    </p>
 </div>
+
+<!-- Intelligence Swarm Logic -->
+<div style="border-top:1px solid #e1e3e4;padding-top:2rem;margin-bottom:2rem;">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:1.35rem;">
+        <h2 style="font-size:1.35rem;font-weight:800;color:#191c1d;letter-spacing:-0.02em;margin:0;text-transform:none;border:none;padding:0;color:#191c1d;">Intelligence Swarm Logic</h2>
+        <span style="font-size:0.78rem;color:#727785;font-weight:500;">System Architecture v4.2</span>
+    </div>
+
+    <!-- Stat tiles -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.25rem;" class="ls-stat-tiles">
+        <div style="background:#fff;border:1px solid #c1c6d6;border-radius:12px;padding:1.35rem;box-shadow:0 1px 4px rgba(25,28,29,0.05);">
+            <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.6rem;margin-bottom:0.85rem;display:block;">cloud_sync</span>
+            <div style="font-size:2rem;font-weight:800;color:#191c1d;letter-spacing:-0.03em;line-height:1;">5</div>
+            <div style="font-size:0.68rem;font-weight:700;color:#414753;text-transform:uppercase;letter-spacing:0.09em;margin-top:0.35rem;">Data Sources</div>
+        </div>
+        <div style="background:#fff;border:1px solid #c1c6d6;border-radius:12px;padding:1.35rem;box-shadow:0 1px 4px rgba(25,28,29,0.05);">
+            <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.6rem;margin-bottom:0.85rem;display:block;">smart_toy</span>
+            <div style="font-size:2rem;font-weight:800;color:#191c1d;letter-spacing:-0.03em;line-height:1;">3</div>
+            <div style="font-size:0.68rem;font-weight:700;color:#414753;text-transform:uppercase;letter-spacing:0.09em;margin-top:0.35rem;">Specialist Agents</div>
+        </div>
+        <div style="background:#fff;border:1px solid #c1c6d6;border-radius:12px;padding:1.35rem;box-shadow:0 1px 4px rgba(25,28,29,0.05);">
+            <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.6rem;margin-bottom:0.85rem;display:block;">rule</span>
+            <div style="font-size:2rem;font-weight:800;color:#191c1d;letter-spacing:-0.03em;line-height:1;">3</div>
+            <div style="font-size:0.68rem;font-weight:700;color:#414753;text-transform:uppercase;letter-spacing:0.09em;margin-top:0.35rem;">Reflexion Checks</div>
+        </div>
+        <div style="background:#fff;border:1px solid #0052ae;border-left:4px solid #0052ae;border-radius:12px;padding:1.35rem;box-shadow:0 2px 8px rgba(0,82,174,0.1);">
+            <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.6rem;margin-bottom:0.85rem;display:block;">account_tree</span>
+            <div style="font-size:2rem;font-weight:800;color:#191c1d;letter-spacing:-0.03em;line-height:1;">1</div>
+            <div style="font-size:0.68rem;font-weight:700;color:#414753;text-transform:uppercase;letter-spacing:0.09em;margin-top:0.35rem;">Lead Orchestrator</div>
+        </div>
+    </div>
+
+    <!-- Connectors -->
+    <div style="background:#fff;border:1px solid #c1c6d6;border-radius:12px;padding:1.5rem;box-shadow:0 1px 4px rgba(25,28,29,0.05);">
+        <h3 style="font-size:0.88rem;font-weight:700;color:#191c1d;margin-bottom:1.1rem;padding-bottom:0.75rem;border-bottom:1px solid #e1e3e4;">Authoritative Connectors</h3>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1.25rem;" class="ls-connectors">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+                <div style="width:40px;height:40px;border-radius:50%;background:#f3f4f5;border:1px solid #e1e3e4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.1rem;">account_balance</span>
+                </div>
+                <div>
+                    <div style="font-size:0.82rem;font-weight:700;color:#191c1d;line-height:1.2;">SEC EDGAR</div>
+                    <div style="font-size:0.68rem;color:#727785;font-weight:600;letter-spacing:0.03em;margin-top:2px;">Corporate Filings</div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+                <div style="width:40px;height:40px;border-radius:50%;background:#f3f4f5;border:1px solid #e1e3e4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.1rem;">public</span>
+                </div>
+                <div>
+                    <div style="font-size:0.82rem;font-weight:700;color:#191c1d;line-height:1.2;">GDELT News</div>
+                    <div style="font-size:0.68rem;color:#727785;font-weight:600;letter-spacing:0.03em;margin-top:2px;">Event Monitoring</div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+                <div style="width:40px;height:40px;border-radius:50%;background:#f3f4f5;border:1px solid #e1e3e4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.1rem;">policy</span>
+                </div>
+                <div>
+                    <div style="font-size:0.82rem;font-weight:700;color:#191c1d;line-height:1.2;">OFAC Sanctions</div>
+                    <div style="font-size:0.68rem;color:#727785;font-weight:600;letter-spacing:0.03em;margin-top:2px;">Compliance</div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+                <div style="width:40px;height:40px;border-radius:50%;background:#f3f4f5;border:1px solid #e1e3e4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.1rem;">gavel</span>
+                </div>
+                <div>
+                    <div style="font-size:0.82rem;font-weight:700;color:#191c1d;line-height:1.2;">CourtListener</div>
+                    <div style="font-size:0.68rem;color:#727785;font-weight:600;letter-spacing:0.03em;margin-top:2px;">Legal Records</div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+                <div style="width:40px;height:40px;border-radius:50%;background:#f3f4f5;border:1px solid #e1e3e4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.1rem;">corporate_fare</span>
+                </div>
+                <div>
+                    <div style="font-size:0.82rem;font-weight:700;color:#191c1d;line-height:1.2;">OpenCorporates</div>
+                    <div style="font-size:0.68rem;color:#727785;font-weight:600;letter-spacing:0.03em;margin-top:2px;">Registry Access</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media (max-width: 960px) {
+    .ls-main-grid  { grid-template-columns: 1fr !important; }
+    .ls-stat-tiles { grid-template-columns: repeat(2, 1fr) !important; }
+    .ls-connectors { grid-template-columns: repeat(2, 1fr) !important; }
+    .ls-form-row   { grid-template-columns: 1fr !important; }
+}
+</style>
 
 <script>
 function fillQuery() {
-    const entity = document.getElementById('entity-select').value;
-    const template = document.getElementById('template-select').value;
+    var entity = document.getElementById('entity-select').value;
+    var template = document.getElementById('template-select').value;
     if (entity) {
         document.getElementById('query').value = template.replace('{entity}', entity);
     }
 }
 
-document.getElementById('queryForm').addEventListener('submit', function (e) {
-    const query = document.getElementById('query').value.trim();
-    if (!query) return;
-    const overlay = document.getElementById('loading-overlay');
-    const sub = document.getElementById('loading-query');
-    sub.textContent = '\u201c' + query + '\u201d';
-    overlay.classList.add('is-visible');
-    // Safety: hide overlay if browser navigates back via bfcache
-    window.addEventListener('pageshow', function (ev) {
-        if (ev.persisted) overlay.classList.remove('is-visible');
-    });
+var queryInput = document.getElementById('query');
+queryInput.addEventListener('focus', function() {
+    this.style.borderColor = '#0052ae';
+    this.style.boxShadow = '0 0 0 3px rgba(0,82,174,0.11)';
 });
+queryInput.addEventListener('blur', function() {
+    this.style.borderColor = '#c1c6d6';
+    this.style.boxShadow = 'none';
+});
+
+document.querySelectorAll('select').forEach(function(sel) {
+    sel.addEventListener('focus', function() { this.style.borderColor = '#0052ae'; });
+    sel.addEventListener('blur',  function() { this.style.borderColor = '#c1c6d6'; });
+});
+
+// Form submission handled in base.html (fetch-based with step completion)
 </script>
 {% endblock %}
