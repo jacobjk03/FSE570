@@ -133,10 +133,10 @@ def choose_next_tool(
         if not remaining and selected is not None:
             raise ActionPolicyError("action policy selected a tool even though no tools remain")
 
-        alternatives = [str(item) for item in (raw.get("alternatives") or [])]
-        invalid_alternatives = [name for name in alternatives if name not in available_tools or name == selected]
-        if invalid_alternatives:
-            raise ActionPolicyError(f"action policy returned invalid alternatives: {invalid_alternatives}")
+        alternatives = [
+            str(item) for item in (raw.get("alternatives") or [])
+            if str(item) in available_tools and str(item) != selected
+        ]
 
         reasoning = str(raw.get("reasoning") or "").strip()
         if not reasoning:
