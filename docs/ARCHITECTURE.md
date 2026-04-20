@@ -25,13 +25,13 @@ Five people built this system across the full semester:
 
 **Taljinder Singh** led data-source integration and ingestion readiness across SEC EDGAR, OFAC SDN, CourtListener, and GDELT. He built core connectors and data-prep flows, and contributed to source-quality validation used throughout agent execution.
 
-**Arnab Mitra** co-led backend architecture and orchestration, including lead-agent flow, specialist-agent execution patterns, and output/report pipelines. He also contributed heavily to investigation-state handling, graph construction, and runtime reliability hardening.
+**Arnab Mitra** led backend architecture and orchestration, including the LLM planner, specialist-agent execution patterns, reflexion/stop-policy layer, output/report pipelines, investigation-state handling, graph construction, and runtime reliability hardening.
 
-**Raj Kumar Mahto** co-led planning/state-management components, especially task decomposition contracts and context-manager behavior, and contributed to backend integration and test alignment across multi-agent execution paths.
+**Raj Kumar Mahto** led planning/state-management components, especially task decomposition contracts and context-manager behavior, and contributed to backend integration and test alignment across multi-agent execution paths.
 
-**Aditya Pokharna** co-led presentation and usability layers, including the Flask UI structure, tabbed results experience, risk and graph visualization surfaces, and interaction design/styling improvements for demo clarity.
+**Aditya Pokharna** contributed to early presentation and usability work, including initial Flask route scaffolding and early-iteration results page structure.
 
-**Jacob Kuriakose** co-led deployment/documentation and final-sprint platform enhancements, including cloud deployment, auto entity resolution improvements, LLM integration/prompt-contract updates, and evaluation/documentation packaging for presentation readiness.
+**Jacob Kuriakose** owns the complete frontend and UI layer — the full redesign of `index.html`, `base.html`, and `results.html` using a Space Grotesk / Inter design system, bento-grid layouts, light-theme design language, all five results tabs (Overview, Analysis, Knowledge Graph, Evidence, Explanation), the animated loading overlay, and all scoped CSS. He also led cloud deployment (Render.com), auto entity resolution improvements, LLM prompt-contract integration, action-policy bug fixes, and all evaluation and documentation packaging.
 
 ---
 
@@ -351,7 +351,7 @@ Each section is validated for bullet structure and plain-language metric explana
 
 ## Layer 7 — Flask Web UI (`app/`)
 
-The frontend and platform tracks built the Flask web application — query form, five-tab results page, risk visualizations, and interactive knowledge-graph canvas — then extended it in final sprint with loading-state and narrative UX improvements.
+**Jacob Kuriakose** designed and built the complete Flask web application front-end — query form, animated loading overlay, five-tab results page, all risk visualizations, and the interactive knowledge-graph canvas. The entire UI was redesigned from scratch using a Space Grotesk / Inter design system, bento-grid card layouts, and a light-theme design language. Backend routes and pipeline wiring were co-developed with the backend track.
 
 ### `pipeline.py` — The Orchestrator
 Runs the complete investigation when a query is submitted. Calls all layers in order and assembles a single `result` dictionary with ~25 keys that the template uses to render the page.
@@ -366,20 +366,22 @@ Converts the knowledge graph into JSON format for **vis-network** (a JavaScript 
 - Purple → Court records
 - Red → Sanctions
 
-### Templates — The UI
+### Templates — The UI (Jacob Kuriakose)
 
-**`index.html`** — the query form with:
+**`index.html`** — the query form, fully redesigned by Jacob:
 - Entity dropdown (pre-registered entities)
 - Query template selector
 - Free-text input
-- Loading spinner overlay (shows during the 2-3s investigation)
+- Animated loading overlay (lo-blob, lo-card, lo-ring, lo-steps) with pipeline step ticker
 
-**`results.html`** — five-tab results page:
-- **Overview** — LLM narrative card (sectioned bullets), key metrics
-- **Analysis** — risk scores, source breakdown, gaps, conflicts
-- **Knowledge Graph** — interactive vis-network canvas + NetworkX analysis panel
-- **Evidence** — full cited report (HTML)
-- **Explanation** — methodology guide and metric definitions
+**`results.html`** — five-tab results page, fully designed and implemented by Jacob:
+- **Overview** — LLM narrative card (sectioned bullets), key metrics, bento stat tiles
+- **Analysis** — risk score bars, source breakdown, coverage gaps, cross-check conflicts
+- **Knowledge Graph** — interactive vis-network canvas, Fit/Stabilize controls, NetworkX analysis panel
+- **Evidence** — bento-grid citation integrity card, confidence distribution bar, full cited report
+- **Explanation** — three-section numbered guide: Agent Summary, Reading Guide, Technical Definitions table
+
+**`base.html`** — shared layout, nav, footer, and loading overlay — fully designed by Jacob.
 
 ---
 
@@ -432,7 +434,7 @@ Final LLM Narrative
   └── Llama 3.1 strict sectioned narrative (~0.5s)  [team integrated]
         │
         ▼
-Flask renders results.html  [frontend + platform tracks]
+Flask renders results.html  [Jacob Kuriakose — full UI ownership]
   └── 5-tab page with graph, evidence, risk scores, AI narrative card
         │
         ▼
@@ -501,9 +503,9 @@ FSE570/
 ├── app/                      Flask web application
 │   ├── app.py                Route handler
 │   ├── pipeline.py           Full pipeline orchestration
-│   ├── graph_viz.py          vis-network JSON serializer — frontend/graph track
-│   ├── llm_narrative.py      LLM synthesis (Llama 3.1) — LLM/platform track
-│   └── templates/            Jinja2 HTML — frontend track
+│   ├── graph_viz.py          vis-network JSON serializer
+│   ├── llm_narrative.py      LLM synthesis (Llama 3.1) — Arnab Mitra
+│   └── templates/            Jinja2 HTML — Jacob Kuriakose (full ownership)
 │
 ├── scripts/                  Data pull scripts — data integration track
 ├── tests/unit/               219 pytest unit tests
@@ -514,7 +516,7 @@ FSE570/
 │   └── DEPLOYMENT_RUNBOOK.md Setup + demo guide
 │
 ├── requirements.txt          Python dependencies
-├── Procfile                  Render.com deployment — deployment track
+├── Procfile                  Render.com deployment — Jacob Kuriakose
 └── .env.example              Environment variable template
 ```
 

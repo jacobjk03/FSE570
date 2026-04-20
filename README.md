@@ -108,7 +108,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for a full plain-English walk
 ├── app/                      Flask web application
 │   ├── pipeline.py           Full pipeline orchestration
 │   ├── llm_narrative.py      Llama 3.1 analyst narrative (Groq API)
-│   └── templates/            Jinja2 HTML (index + results)
+│   └── templates/            Jinja2 HTML — full UI redesign by Jacob Kuriakose
 ├── src/osint_swarm/          Core library (Entity + Evidence dataclasses, raw connectors)
 ├── data/raw/                 Cached API responses (committed — no pull scripts needed)
 ├── scripts/                  Data pull scripts for adding new entities
