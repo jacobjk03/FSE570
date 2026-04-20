@@ -151,8 +151,10 @@ class GdeltProcessor(DataSourceProcessor):
                 self._raw_dir.mkdir(parents=True, exist_ok=True)
                 write_json(cache_path, payload)
                 raw_location = str(cache_path)
-            except gdelt.GdeltError as exc:
-                raise DataSourceError(f"GDELT retrieval failed for '{entity.name}': {exc}") from exc
+            except gdelt.GdeltError:
+                # GDELT is rate-limited or unavailable — return empty evidence rather
+                # than killing the whole pipeline. Other data sources still run.
+                return []
 
         articles = gdelt.extract_article_records(payload)
         # Keep only English-language articles (filters cached non-English entries too)

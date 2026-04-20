@@ -51,6 +51,42 @@ def extract_company_name(query: str) -> Optional[str]:
     return name if len(name) >= 2 else None
 
 
+_LEGAL_SUFFIXES = {"inc", "corp", "ltd", "llc", "co", "company", "plc", "group", "holdings", "the"}
+
+
+def _match_score(query_lower: str, company_lower: str) -> int:
+    """
+    Score how well company_lower matches query_lower. Lower = better.
+    Returns a large number if no meaningful match.
+    Penalises extra words beyond the query so "Apple Inc" (score 1) beats
+    "Apple Hospitality Reit Inc" (score 3) for query "apple".
+    """
+    q_words = query_lower.split()
+    c_words = company_lower.split()
+
+    # Strip trailing legal suffixes from company name for comparison
+    while c_words and c_words[-1] in _LEGAL_SUFFIXES:
+        c_words = c_words[:-1]
+
+    if not c_words:
+        return 9999
+
+    # Exact match after suffix-stripping
+    if q_words == c_words:
+        return 0
+
+    # Query words are a prefix of the stripped company words
+    if c_words[:len(q_words)] == q_words:
+        return len(c_words) - len(q_words)
+
+    # Query is wholly contained somewhere inside company name
+    q_set = set(q_words)
+    if q_set.issubset(set(c_words)):
+        return 10 + (len(c_words) - len(q_words))
+
+    return 9999
+
+
 def resolve_company_name(name: str) -> Optional[Tuple[str, str]]:
     """
     Query SEC EDGAR full-text search to resolve a company name to (cik10, official_name).
@@ -76,37 +112,31 @@ def resolve_company_name(name: str) -> Optional[Tuple[str, str]]:
         if not hits:
             return None
 
-        # Fields: ciks (list), display_names (e.g. "MICROSOFT CORP  (MSFT)  (CIK 0000789019)")
         name_lower = name.lower()
-        best = None
-        for hit in hits[:10]:
+        candidates = []
+        for hit in hits[:20]:
             src = hit.get("_source", {})
             ciks = src.get("ciks") or []
             display_names = src.get("display_names") or []
             if not ciks or not display_names:
                 continue
             cik = ciks[0].strip().zfill(10)
-            # Parse company name from display string (format: "NAME  (TICKER)  (CIK XXXXXXXXXX)")
-            raw = display_names[0]
-            company_part = raw.split("(")[0].strip()
-            if name_lower in company_part.lower() or company_part.lower() in name_lower:
-                best = (cik, company_part)
-                break
+            company_part = display_names[0].split("(")[0].strip()
+            score = _match_score(name_lower, company_part.lower())
+            candidates.append((score, cik, company_part))
 
-        # Fallback: take first hit regardless of name match
-        if not best:
-            src = hits[0].get("_source", {})
-            ciks = src.get("ciks") or []
-            display_names = src.get("display_names") or []
-            if ciks and display_names:
-                cik = ciks[0].strip().zfill(10)
-                company_part = display_names[0].split("(")[0].strip()
-                best = (cik, company_part)
-
-        if not best:
+        if not candidates:
             return None
 
-        return best[0], best[1]
+        # Pick the best-scoring candidate; ties broken by first occurrence (filing recency)
+        candidates.sort(key=lambda x: x[0])
+        best_score, best_cik, best_name = candidates[0]
+
+        # Reject if no reasonable match found
+        if best_score >= 9999:
+            return None
+
+        return best_cik, best_name
 
     except Exception:
         return None
