@@ -170,7 +170,7 @@ def generate_llm_narrative(result: Dict[str, Any]) -> str:
 
     try:
         from groq import Groq
-        client = Groq(api_key=api_key)
+        client = Groq(api_key=api_key, timeout=30.0)
         prompt = _build_prompt(result)
         messages = [{"role": "user", "content": prompt}]
         last_narrative = ""

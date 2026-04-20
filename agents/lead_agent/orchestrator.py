@@ -57,7 +57,7 @@ class LeadAgent:
         try:
             from groq import Groq
 
-            client = Groq(api_key=api_key)
+            client = Groq(api_key=api_key, timeout=30.0)
             response = client.chat.completions.create(
                 model=self._stop_model,
                 messages=[{"role": "user", "content": prompt}],

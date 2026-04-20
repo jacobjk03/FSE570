@@ -65,7 +65,7 @@ NextActions
             )
 
     class _FakeGroq:
-        def __init__(self, api_key: str):
+        def __init__(self, api_key: str, **_kwargs):
             self.chat = types.SimpleNamespace(completions=_FakeCompletions())
 
     monkeypatch.setenv("GROQ_API_KEY", "test-key")
@@ -94,7 +94,7 @@ def test_generate_llm_narrative_raises_on_missing_sections(monkeypatch):
             )
 
     class _FakeGroq:
-        def __init__(self, api_key: str):
+        def __init__(self, api_key: str, **_kwargs):
             self.chat = types.SimpleNamespace(completions=_FakeCompletions())
 
     monkeypatch.setenv("GROQ_API_KEY", "test-key")

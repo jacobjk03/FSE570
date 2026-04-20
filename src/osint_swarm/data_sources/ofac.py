@@ -153,13 +153,21 @@ def _terms_match(query_norm: str, target_norm: str) -> bool:
     if query_norm == target_norm:
         return True
     if len(query_norm) >= 5:
-        pattern = r"\b" + re.escape(query_norm) + r"\b"
-        if re.search(pattern, target_norm):
-            return True
+        try:
+            pattern = r"\b" + re.escape(query_norm) + r"\b"
+            if re.search(pattern, target_norm):
+                return True
+        except re.error:
+            if query_norm in target_norm:
+                return True
     if len(target_norm) >= 5:
-        pattern = r"\b" + re.escape(target_norm) + r"\b"
-        if re.search(pattern, query_norm):
-            return True
+        try:
+            pattern = r"\b" + re.escape(target_norm) + r"\b"
+            if re.search(pattern, query_norm):
+                return True
+        except re.error:
+            if target_norm in query_norm:
+                return True
     return False
 
 
@@ -180,13 +188,24 @@ def search_entries(
     # whether to include it. This prevents 1-2 char tickers ("F", "BA") from
     # generating false positives, while preserving 3-letter acronyms like "BRT"
     # whose legal suffix ("CORP") was stripped during normalization.
-    query_terms = {_normalize(entity_name)}
+    raw_query_terms: set = {_normalize(entity_name)}
     for alias in (aliases or []):
         if len(alias.strip()) < 3:  # exclude 1-2 char tickers only
             continue
         n = _normalize(alias)
         if n:
-            query_terms.add(n)
+            raw_query_terms.add(n)
+
+    # Pre-compile query patterns once — avoids re-compiling inside the 18k-entry loop.
+    query_terms = []
+    for qterm in raw_query_terms:
+        compiled = None
+        if len(qterm) >= 5:
+            try:
+                compiled = re.compile(r"\b" + re.escape(qterm) + r"\b")
+            except re.error:
+                compiled = None
+        query_terms.append((qterm, compiled))
 
     hits: List[Dict[str, Any]] = []
     seen_uids: set = set()
@@ -195,13 +214,28 @@ def search_entries(
         if entry["uid"] in seen_uids:
             continue
 
-        # All names to check for this SDN entry
         sdn_names = [entry["name"]] + entry["aka_names"]
         sdn_norms = [_normalize(n) for n in sdn_names if n]
 
-        for qterm in query_terms:
+        for qterm, qpattern in query_terms:
             for sdn_norm in sdn_norms:
-                if _terms_match(qterm, sdn_norm):
+                if not sdn_norm:
+                    continue
+                matched = False
+                if qterm == sdn_norm:
+                    matched = True
+                elif qpattern is not None:
+                    try:
+                        matched = bool(qpattern.search(sdn_norm))
+                    except re.error:
+                        matched = qterm in sdn_norm
+                elif len(sdn_norm) >= 5:
+                    try:
+                        sdn_pattern = re.compile(r"\b" + re.escape(sdn_norm) + r"\b")
+                        matched = bool(sdn_pattern.search(qterm))
+                    except re.error:
+                        matched = sdn_norm in qterm
+                if matched:
                     seen_uids.add(entry["uid"])
                     hits.append(entry)
                     break

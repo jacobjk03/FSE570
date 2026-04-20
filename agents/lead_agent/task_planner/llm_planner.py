@@ -168,7 +168,7 @@ def _call_llm(prompt: str) -> str:
     try:
         from groq import Groq
 
-        client = Groq(api_key=api_key)
+        client = Groq(api_key=api_key, timeout=30.0)
         response = client.chat.completions.create(
             model=_MODEL,
             messages=[{"role": "user", "content": prompt}],

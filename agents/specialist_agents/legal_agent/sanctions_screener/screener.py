@@ -25,6 +25,9 @@ from app.investigation_errors import DataSourceError
 OFAC_SEARCH_URL = "https://sanctionssearch.ofac.treas.gov/"
 CONFIDENCE = 0.90
 
+# Module-level cache: parse the SDN XML once per worker process, not per request.
+_sdn_cache: dict = {}  # keyed by resolved sdn_path string
+
 
 def screen(
     entity: Entity,
@@ -50,13 +53,16 @@ def screen(
             f"OFAC SDN cache not found at {sdn_path}. Run: python scripts/pull_ofac_sdn.py."
         )
 
-    # --- Parse SDN list ---
-    try:
-        entries = ofac.parse_sdn_entries(sdn_path)
-    except ofac.OfacError as exc:
-        raise DataSourceError(
-            f"OFAC SDN parse error: {exc}. Re-download with: python scripts/pull_ofac_sdn.py."
-        ) from exc
+    # --- Parse SDN list (cached per worker process) ---
+    cache_key = str(sdn_path.resolve())
+    if cache_key not in _sdn_cache:
+        try:
+            _sdn_cache[cache_key] = ofac.parse_sdn_entries(sdn_path)
+        except ofac.OfacError as exc:
+            raise DataSourceError(
+                f"OFAC SDN parse error: {exc}. Re-download with: python scripts/pull_ofac_sdn.py."
+            ) from exc
+    entries = _sdn_cache[cache_key]
 
     # --- Search for entity ---
     matches = ofac.search_entries(entries, entity.name, aliases=list(entity.aliases))
