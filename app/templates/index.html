@@ -1,239 +1,402 @@
 {% extends "base.html" %}
 {% block title %}OSINT Investigation Swarm{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Page lock ── */
+  html, body { overflow: hidden; height: 100%; }
+  footer { display: none !important; }
+  main  { min-height: unset !important; padding: 0 !important; height: calc(100vh - 60px); overflow: hidden; }
+  main > .container { max-width: none; padding: 0; height: 100%; display: flex; }
+
+  /* ── Sidebar ── */
+  .lp-side {
+    width: 240px; flex-shrink: 0;
+    background: rgba(249,250,251,0.85);
+    backdrop-filter: blur(16px);
+    border-right: 1px solid rgba(193,198,214,0.35);
+    display: flex; flex-direction: column;
+    padding: 1.25rem 0.75rem;
+    height: 100%; overflow: hidden;
+  }
+  .lp-side-hdr { padding: 0 0.5rem 1.1rem; border-bottom: 1px solid rgba(193,198,214,0.3); margin-bottom: 0.85rem; }
+  .lp-side-hdr-top { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem; }
+  .lp-pulse { width: 8px; height: 8px; border-radius: 50%; background: #0052ae; flex-shrink: 0; position: relative; animation: sidePulse 1.8s ease-in-out infinite; }
+  @keyframes sidePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.45;transform:scale(.75)} }
+  .lp-side-hdr-title { font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.14em; color: #0052ae; font-family: 'Space Grotesk', sans-serif; }
+  .lp-side-hdr-sub { font-size: 0.58rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #727785; padding-left: 1rem; }
+
+  .lp-nav { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
+  .lp-nav-row {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.6rem 0.75rem; border-radius: 10px;
+    background: rgba(255,255,255,0.7);
+    font-size: 0.75rem; font-weight: 600; color: #414753;
+    cursor: default; white-space: nowrap;
+  }
+  .lp-nav-row .material-symbols-outlined { font-size: 1rem; color: #1a56db; flex-shrink: 0; }
+  .lp-nav-row .lp-nav-val { margin-left: auto; font-size: 0.7rem; font-weight: 700; color: #414753; padding-left: 0.4rem; }
+
+  .lp-side-footer { margin-top: auto; border-top: 1px solid rgba(193,198,214,0.3); padding-top: 0.85rem; display: flex; flex-direction: column; gap: 0.35rem; }
+  .lp-ready-btn {
+    width: 100%; padding: 0.65rem;
+    background: linear-gradient(135deg, #0052ae, #006adc);
+    color: #fff; border: none; border-radius: 8px;
+    font-size: 0.68rem; font-weight: 800; font-family: 'Space Grotesk', sans-serif;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    cursor: default; margin-bottom: 0.35rem;
+  }
+  .lp-ready-btn .material-symbols-outlined { font-size: 0.95rem; }
+  .lp-side-link {
+    display: flex; align-items: center; gap: 0.65rem;
+    padding: 0.45rem 0.7rem; border-radius: 8px;
+    font-size: 0.75rem; font-weight: 600; color: #414753;
+    cursor: default; transition: background 0.15s;
+  }
+  .lp-side-link:hover { background: rgba(193,198,214,0.2); }
+  .lp-side-link .material-symbols-outlined { font-size: 0.95rem; }
+
+  /* ── Main canvas ── */
+  .lp-main {
+    flex: 1; min-width: 0;
+    background: #f8f9fb;
+    overflow-y: auto; overflow-x: hidden;
+    padding: 1.5rem 2rem 1rem;
+    display: flex; flex-direction: column; gap: 1.15rem;
+  }
+  /* hide scrollbar visually */
+  .lp-main::-webkit-scrollbar { width: 4px; }
+  .lp-main::-webkit-scrollbar-track { background: transparent; }
+  .lp-main::-webkit-scrollbar-thumb { background: rgba(193,198,214,0.4); border-radius: 4px; }
+
+  /* ── Stat cards ── */
+  .lp-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 0.85rem; }
+  .lp-stat-card {
+    background: #fff; border-radius: 12px;
+    padding: 0.9rem 1.1rem;
+    box-shadow: 0 4px 16px rgba(25,28,29,0.04);
+    border-left: 4px solid transparent;
+  }
+  .lp-stat-card .sc-sub { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #727785; margin-bottom: 0.3rem; }
+  .lp-stat-card .sc-val { font-size: 1.6rem; font-weight: 300; line-height: 1; font-family: 'Space Grotesk', sans-serif; }
+  .lp-stat-card .sc-val strong { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(25,28,29,0.45); margin-left: 0.3rem; }
+
+  /* ── Bento grid ── */
+  .lp-bento { display: grid; grid-template-columns: 1fr 320px; grid-template-rows: 1fr auto; gap: 1.15rem; flex: 1; min-height: 0; }
+
+  /* Search card */
+  .lp-search-card {
+    background: #fff; border-radius: 14px;
+    padding: 1.75rem 2rem;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.04);
+    border: 1px solid rgba(255,255,255,0.8);
+    display: flex; flex-direction: column; gap: 1.25rem;
+  }
+  .lp-search-card h1 {
+    font-size: 2rem; font-weight: 800; letter-spacing: -0.03em;
+    color: #191c1d; line-height: 1.1;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .lp-search-card .sc-desc { font-size: 0.83rem; color: #414753; font-weight: 500; opacity: 0.85; }
+
+  .lp-field-label { font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: #0052ae; display: block; margin-bottom: 0.4rem; }
+  .lp-sel-wrap { position: relative; }
+  .lp-sel-wrap select {
+    width: 100%; background: #f3f4f5; border: none;
+    border-radius: 8px; padding: 0.7rem 2.2rem 0.7rem 1rem;
+    font-size: 0.85rem; font-weight: 500; color: #191c1d;
+    appearance: none; cursor: pointer; font-family: inherit;
+    transition: box-shadow 0.2s;
+  }
+  .lp-sel-wrap select:focus { outline: none; box-shadow: 0 0 0 3px rgba(0,82,174,0.12); }
+  .lp-sel-wrap .material-symbols-outlined {
+    position: absolute; right: 0.6rem; top: 50%; transform: translateY(-50%);
+    pointer-events: none; font-size: 1rem; color: #727785;
+  }
+
+  .lp-input-row { position: relative; display: flex; align-items: center; }
+  .lp-input-row input {
+    width: 100%; background: #f3f4f5; border: none;
+    border-radius: 10px; padding: 1rem 1.25rem;
+    font-size: 0.95rem; font-weight: 500; color: #191c1d;
+    font-family: inherit; transition: box-shadow 0.2s;
+  }
+  .lp-input-row input:focus { outline: none; box-shadow: 0 0 0 3px rgba(0,82,174,0.12); }
+  .lp-input-row input::placeholder { color: #9fa6b2; }
+  .lp-input-row button {
+    position: absolute; right: 0.5rem;
+    background: linear-gradient(135deg, #0052ae, #006adc);
+    color: #fff; border: none; border-radius: 8px;
+    padding: 0.55rem 1.25rem;
+    font-size: 0.85rem; font-weight: 700; font-family: 'Space Grotesk', sans-serif;
+    display: flex; align-items: center; gap: 0.35rem;
+    cursor: pointer; box-shadow: 0 4px 14px rgba(0,82,174,0.3);
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .lp-input-row button:hover { opacity: 0.9; }
+  .lp-input-row button:active { transform: scale(0.96); }
+  .lp-input-row button .material-symbols-outlined { font-size: 0.95rem; }
+
+  /* Side cards */
+  .lp-side-cards { display: flex; flex-direction: column; gap: 1rem; }
+
+  .lp-model-card {
+    background: #fff; border-radius: 14px; padding: 1.25rem;
+    box-shadow: 0 4px 16px rgba(25,28,29,0.05);
+    border: 1px solid rgba(255,255,255,0.8);
+  }
+  .lp-model-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+  .lp-model-label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #727785; }
+  .lp-live-badge { background: #dcfce7; color: #15803d; font-size: 0.6rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .lp-model-info { display: flex; align-items: center; gap: 0.85rem; margin-bottom: 1rem; }
+  .lp-model-icon { width: 44px; height: 44px; border-radius: 10px; background: rgba(0,82,174,0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .lp-model-icon .material-symbols-outlined { color: #0052ae; font-size: 1.4rem; }
+  .lp-model-name { font-size: 1rem; font-weight: 700; color: #191c1d; font-family: 'Space Grotesk', sans-serif; line-height: 1.2; }
+  .lp-model-sub { font-size: 0.72rem; color: #727785; font-weight: 500; }
+  .lp-bar-track { height: 6px; background: #f3f4f5; border-radius: 999px; overflow: hidden; margin-bottom: 0.35rem; }
+  .lp-bar-fill { height: 100%; background: linear-gradient(90deg, #0052ae, #006adc); border-radius: 999px; }
+  .lp-bar-meta { display: flex; justify-content: space-between; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(25,28,29,0.45); }
+
+  .lp-note-card {
+    background: rgba(0,82,174,0.04); border-radius: 14px; padding: 1.25rem;
+    border: 1px solid rgba(0,82,174,0.1);
+  }
+  .lp-note-hdr { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.65rem; }
+  .lp-note-hdr .material-symbols-outlined { color: #0052ae; font-size: 1rem; }
+  .lp-note-hdr span { font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: #0052ae; }
+  .lp-note-card p { font-size: 0.75rem; line-height: 1.65; color: #414753; font-weight: 500; }
+
+  /* ── Connectors card ── */
+  .lp-connectors-card { background: #fff; border: 1px solid #e4e7ec; border-radius: 14px; padding: 1.1rem 1.5rem 1.2rem; grid-column: 1 / -1; }
+  .lp-conn-card-title { font-size: 0.88rem; font-weight: 700; color: #191c1d; margin-bottom: 0.75rem; }
+  .lp-conn-divider { border: none; border-top: 1px solid #e4e7ec; margin: 0 0 1rem; }
+  .lp-conn-items { display: flex; align-items: center; gap: 0; }
+  .lp-conn-item { display: flex; align-items: center; gap: 0.65rem; flex: 1; }
+  .lp-conn-icon { width: 38px; height: 38px; border-radius: 50%; background: #eef2fb; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .lp-conn-icon .material-symbols-outlined { font-size: 1.1rem; color: #1a56db; font-variation-settings: 'FILL' 0; }
+  .lp-conn-text { display: flex; flex-direction: column; }
+  .lp-conn-name { font-size: 0.82rem; font-weight: 700; color: #191c1d; white-space: nowrap; }
+  .lp-conn-sub { font-size: 0.7rem; color: #6b7280; font-weight: 400; white-space: nowrap; }
+
+  /* Error */
+  .lp-error { background: rgba(186,26,26,0.06); border: 1px solid rgba(186,26,26,0.2); border-radius: 8px; padding: 0.65rem 1rem; font-size: 0.85rem; color: #ba1a1a; }
+</style>
+{% endblock %}
+
 {% block content %}
 
-<!-- Hero -->
-<div style="padding: 2rem 0 1.75rem;">
-    <div style="max-width: 700px;">
-        <div style="display:inline-flex;align-items:center;gap:0.5rem;background:rgba(0,82,174,0.07);border:1px solid rgba(0,82,174,0.18);border-radius:20px;padding:0.3rem 0.9rem;margin-bottom:1.1rem;">
-            <span style="width:7px;height:7px;background:#0052ae;border-radius:50%;display:inline-block;animation:pulse-dot 1.4s ease-in-out infinite;flex-shrink:0;"></span>
-            <span style="font-size:0.72rem;font-weight:700;color:#0052ae;text-transform:uppercase;letter-spacing:0.09em;">Swarm Ready · 5 Data Sources</span>
-        </div>
-        <h1 style="font-size:2.5rem;font-weight:800;letter-spacing:-0.03em;color:#191c1d;line-height:1.15;margin-bottom:0.85rem;">OSINT Investigation<br>Swarm</h1>
-        <p style="font-size:1rem;color:#414753;line-height:1.7;max-width:540px;">Autonomous multi-agent analysis. Deploy specialist agents to crawl, verify, and cross-reference intelligence across 5 authoritative data sources.</p>
+<!-- ── Sidebar ── -->
+<aside class="lp-side">
+  <div class="lp-side-hdr">
+    <div class="lp-side-hdr-top">
+      <span class="lp-pulse"></span>
+      <span class="lp-side-hdr-title">Agent Network Status</span>
     </div>
-</div>
+    <div class="lp-side-hdr-sub">5 Active Nodes</div>
+  </div>
 
-<!-- Main grid -->
-<div style="display:grid;grid-template-columns:1fr 360px;gap:1.5rem;margin-bottom:2.5rem;" class="ls-main-grid">
-
-    <!-- Left: Investigation Form -->
-    <div style="background:#fff;border:1px solid #c1c6d6;border-radius:14px;padding:2rem;box-shadow:0 2px 8px rgba(25,28,29,0.06);">
-        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.75rem;">
-            <div style="width:4px;height:1.85rem;background:linear-gradient(180deg,#0052ae,#006adc);border-radius:3px;flex-shrink:0;"></div>
-            <h2 style="font-size:1.15rem;font-weight:700;color:#191c1d;letter-spacing:-0.01em;margin:0;text-transform:none;">Initiate Swarm Query</h2>
-        </div>
-
-        {% if error %}
-        <div class="error">{{ error }}</div>
-        {% endif %}
-
-        <form method="post" action="/" id="queryForm">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.15rem;margin-bottom:1.15rem;" class="ls-form-row">
-                <div>
-                    <label for="entity-select" style="font-size:0.72rem;font-weight:700;color:#414753;text-transform:uppercase;letter-spacing:0.09em;margin-bottom:0.45rem;display:block;">Quick select entity</label>
-                    <div style="position:relative;">
-                        <select id="entity-select" onchange="fillQuery()" style="width:100%;background:#f3f4f5;border:1px solid #c1c6d6;border-radius:8px;padding:0.6rem 2.2rem 0.6rem 0.8rem;font-size:0.88rem;color:#191c1d;appearance:none;cursor:pointer;font-family:inherit;transition:border-color 0.2s;">
-                            <option value="">— Custom query —</option>
-                            {% for e in entities %}
-                            <option value="{{ e.name }}">{{ e.name }} ({{ e.entity_id }})</option>
-                            {% endfor %}
-                        </select>
-                        <span class="material-symbols-outlined" style="position:absolute;right:0.55rem;top:50%;transform:translateY(-50%);pointer-events:none;font-size:1rem;color:#727785;">expand_more</span>
-                    </div>
-                </div>
-                <div>
-                    <label for="template-select" style="font-size:0.72rem;font-weight:700;color:#414753;text-transform:uppercase;letter-spacing:0.09em;margin-bottom:0.45rem;display:block;">Query template</label>
-                    <div style="position:relative;">
-                        <select id="template-select" onchange="fillQuery()" style="width:100%;background:#f3f4f5;border:1px solid #c1c6d6;border-radius:8px;padding:0.6rem 2.2rem 0.6rem 0.8rem;font-size:0.88rem;color:#191c1d;appearance:none;cursor:pointer;font-family:inherit;transition:border-color 0.2s;">
-                            {% for t in templates %}
-                            <option value="{{ t }}">{{ t }}</option>
-                            {% endfor %}
-                        </select>
-                        <span class="material-symbols-outlined" style="position:absolute;right:0.55rem;top:50%;transform:translateY(-50%);pointer-events:none;font-size:1rem;color:#727785;">expand_more</span>
-                    </div>
-                </div>
-            </div>
-
-            <div style="margin-bottom:1.5rem;">
-                <label for="query" style="font-size:0.72rem;font-weight:700;color:#414753;text-transform:uppercase;letter-spacing:0.09em;margin-bottom:0.45rem;display:block;">Investigation query</label>
-                <input type="text" id="query" name="query"
-                       placeholder="e.g. Investigate Tesla for money laundering risk"
-                       value="{{ request.form.query or '' }}"
-                       autofocus
-                       style="width:100%;background:#f3f4f5;border:1px solid #c1c6d6;border-radius:8px;padding:0.8rem 1rem;font-size:0.95rem;color:#191c1d;font-family:inherit;transition:border-color 0.2s,box-shadow 0.2s;">
-            </div>
-
-            <div style="display:flex;justify-content:flex-end;">
-                <button type="submit" id="submitBtn" style="background:linear-gradient(135deg,#0052ae,#006adc);color:#fff;border:none;padding:0.75rem 1.75rem;font-size:0.9rem;font-weight:700;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:0.5rem;letter-spacing:0.01em;box-shadow:0 4px 14px rgba(0,82,174,0.22);transition:all 0.2s;font-family:inherit;">
-                    Run Investigation
-                    <span class="material-symbols-outlined" style="font-size:1rem;font-variation-settings:'FILL' 1;">bolt</span>
-                </button>
-            </div>
-        </form>
+  <nav class="lp-nav">
+    <div class="lp-nav-row">
+      <span class="material-symbols-outlined">hub</span>
+      Data Sources
+      <span class="lp-nav-val">5 Active</span>
     </div>
-
-    <!-- Right: Agent Network Status -->
-    <div style="display:flex;flex-direction:column;gap:1rem;">
-        <div style="background:#fff;border:1px solid #c1c6d6;border-radius:14px;padding:1.5rem;box-shadow:0 2px 8px rgba(25,28,29,0.06);flex:1;display:flex;flex-direction:column;">
-            <h3 style="font-size:0.7rem;font-weight:700;color:#0052ae;text-transform:uppercase;letter-spacing:0.13em;margin-bottom:1.15rem;">Agent Network Status</h3>
-
-            <div style="display:flex;flex-direction:column;gap:0.65rem;flex:1;">
-                <div style="display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0.85rem;background:#f3f4f5;border:1px solid #e1e3e4;border-radius:9px;">
-                    <div style="display:flex;align-items:center;gap:0.65rem;">
-                        <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.15rem;">hub</span>
-                        <span style="font-size:0.83rem;font-weight:600;color:#191c1d;">Data Sources</span>
-                    </div>
-                    <span style="font-size:0.72rem;font-weight:700;color:#414753;letter-spacing:0.04em;">5 Active</span>
-                </div>
-                <div style="display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0.85rem;background:#f3f4f5;border:1px solid #e1e3e4;border-radius:9px;">
-                    <div style="display:flex;align-items:center;gap:0.65rem;">
-                        <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.15rem;">smart_toy</span>
-                        <span style="font-size:0.83rem;font-weight:600;color:#191c1d;">LLM Narrative</span>
-                    </div>
-                    <span style="font-size:0.72rem;font-weight:700;color:#414753;letter-spacing:0.04em;">Llama 3.1</span>
-                </div>
-                <div style="display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0.85rem;background:#f3f4f5;border:1px solid #e1e3e4;border-radius:9px;">
-                    <div style="display:flex;align-items:center;gap:0.65rem;">
-                        <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.15rem;">account_tree</span>
-                        <span style="font-size:0.83rem;font-weight:600;color:#191c1d;">Graph Engine</span>
-                    </div>
-                    <span style="font-size:0.72rem;font-weight:700;color:#414753;letter-spacing:0.04em;">NetworkX</span>
-                </div>
-                <div style="display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0.85rem;background:#f3f4f5;border:1px solid #e1e3e4;border-radius:9px;">
-                    <div style="display:flex;align-items:center;gap:0.65rem;">
-                        <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.15rem;">deployed_code</span>
-                        <span style="font-size:0.83rem;font-weight:600;color:#191c1d;">Runtime</span>
-                    </div>
-                    <span style="font-size:0.72rem;font-weight:700;color:#414753;letter-spacing:0.04em;">Python / Flask</span>
-                </div>
-            </div>
-
-            <div style="margin-top:1rem;padding:0.75rem 0.85rem;background:linear-gradient(135deg,rgba(0,82,174,0.05),rgba(0,106,220,0.09));border:1px solid rgba(0,82,174,0.15);border-radius:9px;display:flex;align-items:center;gap:0.65rem;">
-                <span style="width:7px;height:7px;background:#0052ae;border-radius:50%;display:inline-block;animation:pulse-dot 1.4s ease-in-out infinite;flex-shrink:0;"></span>
-                <span style="font-size:0.7rem;font-weight:700;color:#0052ae;text-transform:uppercase;letter-spacing:0.09em;">All Agents Ready</span>
-            </div>
-        </div>
+    <div class="lp-nav-row">
+      <span class="material-symbols-outlined">smart_toy</span>
+      Narrative LLM
+      <span class="lp-nav-val">Stop Policy</span>
     </div>
-</div>
-
-<!-- Intelligence Swarm Logic -->
-<div style="border-top:1px solid #e1e3e4;padding-top:2rem;margin-bottom:2rem;">
-    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:1.35rem;">
-        <h2 style="font-size:1.35rem;font-weight:800;color:#191c1d;letter-spacing:-0.02em;margin:0;text-transform:none;border:none;padding:0;color:#191c1d;">Intelligence Swarm Logic</h2>
-        <span style="font-size:0.78rem;color:#727785;font-weight:500;">System Architecture v4.2</span>
+    <div class="lp-nav-row">
+      <span class="material-symbols-outlined">account_tree</span>
+      Graph Engine
+      <span class="lp-nav-val">NetworkX</span>
     </div>
+    <div class="lp-nav-row">
+      <span class="material-symbols-outlined">terminal</span>
+      Runtime
+      <span class="lp-nav-val">Python / Flask</span>
+    </div>
+  </nav>
 
-    <!-- Stat tiles -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.25rem;" class="ls-stat-tiles">
-        <div style="background:#fff;border:1px solid #c1c6d6;border-radius:12px;padding:1.35rem;box-shadow:0 1px 4px rgba(25,28,29,0.05);">
-            <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.6rem;margin-bottom:0.85rem;display:block;">cloud_sync</span>
-            <div style="font-size:2rem;font-weight:800;color:#191c1d;letter-spacing:-0.03em;line-height:1;">5</div>
-            <div style="font-size:0.68rem;font-weight:700;color:#414753;text-transform:uppercase;letter-spacing:0.09em;margin-top:0.35rem;">Data Sources</div>
+  <div class="lp-side-footer">
+    <div class="lp-ready-btn">
+      <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">bolt</span>
+      All Agents Ready
+    </div>
+    <div style="font-size:0.6rem;color:#9aa0ad;text-align:center;padding-top:0.5rem;line-height:1.5;">
+      © 2026 FSE570 Capstone<br>Team Arizona
+    </div>
+  </div>
+</aside>
+
+<!-- ── Main ── -->
+<div class="lp-main">
+
+  <!-- Stats row -->
+  <div class="lp-stats">
+    <div class="lp-stat-card" style="border-left-color:#0052ae;">
+      <div class="sc-sub">Total Signals</div>
+      <div class="sc-val" style="color:#0052ae;">5 <strong>Data Sources</strong></div>
+    </div>
+    <div class="lp-stat-card" style="border-left-color:#505f76;">
+      <div class="sc-sub">Swarm Capacity</div>
+      <div class="sc-val" style="color:#505f76;">3 <strong>Specialist Agents</strong></div>
+    </div>
+    <div class="lp-stat-card" style="border-left-color:#00805a;">
+      <div class="sc-sub">Consistency Check</div>
+      <div class="sc-val" style="color:#00805a;">3 <strong>Reflexion Checks</strong></div>
+    </div>
+    <div class="lp-stat-card" style="border-left-color:#191c1d;">
+      <div class="sc-sub">Active Core</div>
+      <div class="sc-val" style="color:#191c1d;">1 <strong>LLM Orchestrator</strong></div>
+    </div>
+  </div>
+
+  <!-- Bento grid -->
+  <div class="lp-bento">
+
+    <!-- Search card -->
+    <div class="lp-search-card">
+      <div>
+        <h1>Initiate Swarm Intelligence</h1>
+        <p class="sc-desc">Run an autonomous multi-agent pipeline to investigate corporate entities for AML risk and financial non-compliance.</p>
+      </div>
+
+      {% if error %}<div class="lp-error">{{ error }}</div>{% endif %}
+
+      <form method="post" action="/" id="queryForm">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+          <div>
+            <label class="lp-field-label" for="entity-select">Company Entity</label>
+            <div class="lp-sel-wrap">
+              <select id="entity-select" onchange="fillQuery()">
+                <option value="">— Custom query —</option>
+                {% for e in entities %}
+                <option value="{{ e.name }}">{{ e.name }}</option>
+                {% endfor %}
+              </select>
+              <span class="material-symbols-outlined">expand_more</span>
+            </div>
+          </div>
+          <div>
+            <label class="lp-field-label" for="template-select">Deep Audit Template</label>
+            <div class="lp-sel-wrap">
+              <select id="template-select" onchange="fillQuery()">
+                {% for t in templates %}
+                <option value="{{ t }}">{{ t }}</option>
+                {% endfor %}
+              </select>
+              <span class="material-symbols-outlined">expand_more</span>
+            </div>
+          </div>
         </div>
-        <div style="background:#fff;border:1px solid #c1c6d6;border-radius:12px;padding:1.35rem;box-shadow:0 1px 4px rgba(25,28,29,0.05);">
-            <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.6rem;margin-bottom:0.85rem;display:block;">smart_toy</span>
-            <div style="font-size:2rem;font-weight:800;color:#191c1d;letter-spacing:-0.03em;line-height:1;">3</div>
-            <div style="font-size:0.68rem;font-weight:700;color:#414753;text-transform:uppercase;letter-spacing:0.09em;margin-top:0.35rem;">Specialist Agents</div>
+        <div>
+          <label class="lp-field-label" for="query">Investigation Prompt</label>
+          <div class="lp-input-row">
+            <input type="text" id="query" name="query"
+                   placeholder="e.g. Investigate Tesla for money laundering risk"
+                   value="{{ request.form.query or '' }}"
+                   autofocus>
+            <button type="submit" id="submitBtn">
+              <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">bolt</span>
+              Run
+            </button>
+          </div>
         </div>
-        <div style="background:#fff;border:1px solid #c1c6d6;border-radius:12px;padding:1.35rem;box-shadow:0 1px 4px rgba(25,28,29,0.05);">
-            <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.6rem;margin-bottom:0.85rem;display:block;">rule</span>
-            <div style="font-size:2rem;font-weight:800;color:#191c1d;letter-spacing:-0.03em;line-height:1;">3</div>
-            <div style="font-size:0.68rem;font-weight:700;color:#414753;text-transform:uppercase;letter-spacing:0.09em;margin-top:0.35rem;">Reflexion Checks</div>
-        </div>
-        <div style="background:#fff;border:1px solid #0052ae;border-left:4px solid #0052ae;border-radius:12px;padding:1.35rem;box-shadow:0 2px 8px rgba(0,82,174,0.1);">
-            <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.6rem;margin-bottom:0.85rem;display:block;">account_tree</span>
-            <div style="font-size:2rem;font-weight:800;color:#191c1d;letter-spacing:-0.03em;line-height:1;">1</div>
-            <div style="font-size:0.68rem;font-weight:700;color:#414753;text-transform:uppercase;letter-spacing:0.09em;margin-top:0.35rem;">Lead Orchestrator</div>
-        </div>
+      </form>
     </div>
 
-    <!-- Connectors -->
-    <div style="background:#fff;border:1px solid #c1c6d6;border-radius:12px;padding:1.5rem;box-shadow:0 1px 4px rgba(25,28,29,0.05);">
-        <h3 style="font-size:0.88rem;font-weight:700;color:#191c1d;margin-bottom:1.1rem;padding-bottom:0.75rem;border-bottom:1px solid #e1e3e4;">Authoritative Connectors</h3>
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1.25rem;" class="ls-connectors">
-            <div style="display:flex;align-items:center;gap:0.75rem;">
-                <div style="width:40px;height:40px;border-radius:50%;background:#f3f4f5;border:1px solid #e1e3e4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.1rem;">account_balance</span>
-                </div>
-                <div>
-                    <div style="font-size:0.82rem;font-weight:700;color:#191c1d;line-height:1.2;">SEC EDGAR</div>
-                    <div style="font-size:0.68rem;color:#727785;font-weight:600;letter-spacing:0.03em;margin-top:2px;">Corporate Filings</div>
-                </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:0.75rem;">
-                <div style="width:40px;height:40px;border-radius:50%;background:#f3f4f5;border:1px solid #e1e3e4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.1rem;">public</span>
-                </div>
-                <div>
-                    <div style="font-size:0.82rem;font-weight:700;color:#191c1d;line-height:1.2;">GDELT News</div>
-                    <div style="font-size:0.68rem;color:#727785;font-weight:600;letter-spacing:0.03em;margin-top:2px;">Event Monitoring</div>
-                </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:0.75rem;">
-                <div style="width:40px;height:40px;border-radius:50%;background:#f3f4f5;border:1px solid #e1e3e4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.1rem;">policy</span>
-                </div>
-                <div>
-                    <div style="font-size:0.82rem;font-weight:700;color:#191c1d;line-height:1.2;">OFAC Sanctions</div>
-                    <div style="font-size:0.68rem;color:#727785;font-weight:600;letter-spacing:0.03em;margin-top:2px;">Compliance</div>
-                </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:0.75rem;">
-                <div style="width:40px;height:40px;border-radius:50%;background:#f3f4f5;border:1px solid #e1e3e4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.1rem;">gavel</span>
-                </div>
-                <div>
-                    <div style="font-size:0.82rem;font-weight:700;color:#191c1d;line-height:1.2;">CourtListener</div>
-                    <div style="font-size:0.68rem;color:#727785;font-weight:600;letter-spacing:0.03em;margin-top:2px;">Legal Records</div>
-                </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:0.75rem;">
-                <div style="width:40px;height:40px;border-radius:50%;background:#f3f4f5;border:1px solid #e1e3e4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <span class="material-symbols-outlined" style="color:#0052ae;font-size:1.1rem;">corporate_fare</span>
-                </div>
-                <div>
-                    <div style="font-size:0.82rem;font-weight:700;color:#191c1d;line-height:1.2;">OpenCorporates</div>
-                    <div style="font-size:0.68rem;color:#727785;font-weight:600;letter-spacing:0.03em;margin-top:2px;">Registry Access</div>
-                </div>
-            </div>
+    <!-- Side cards -->
+    <div class="lp-side-cards">
+      <!-- Model card -->
+      <div class="lp-model-card">
+        <div class="lp-model-card-top">
+          <span class="lp-model-label">Active Model</span>
+          <span class="lp-live-badge">Live</span>
         </div>
-    </div>
-</div>
+        <div class="lp-model-info">
+          <div class="lp-model-icon">
+            <span class="material-symbols-outlined">psychology</span>
+          </div>
+          <div>
+            <div class="lp-model-name">Llama 3.1 8B</div>
+            <div class="lp-model-sub">Narrative Engine</div>
+          </div>
+        </div>
+      </div>
 
-<style>
-@media (max-width: 960px) {
-    .ls-main-grid  { grid-template-columns: 1fr !important; }
-    .ls-stat-tiles { grid-template-columns: repeat(2, 1fr) !important; }
-    .ls-connectors { grid-template-columns: repeat(2, 1fr) !important; }
-    .ls-form-row   { grid-template-columns: 1fr !important; }
-}
-</style>
+      <!-- Note card -->
+      <div class="lp-note-card">
+        <div class="lp-note-hdr">
+          <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">info</span>
+          <span>Swarm Intelligence Note</span>
+        </div>
+        <p>Specialist agents run sequentially across <strong style="color:#191c1d;">5 data sources</strong>. Narrative synthesis begins after the reflexion layer evaluates evidence gaps and confidence scores.</p>
+      </div>
+
+      <!-- Speed note -->
+      <div class="lp-note-card" style="background:rgba(0,128,90,0.04);border-color:rgba(0,128,90,0.12);">
+        <div class="lp-note-hdr">
+          <span class="material-symbols-outlined" style="color:#00805a;font-variation-settings:'FILL' 1;">speed</span>
+          <span style="color:#00805a;">Pipeline Architecture</span>
+        </div>
+        <p><strong style="color:#191c1d;">3 specialist agents</strong> (Corporate, Legal, Social Graph) coordinated by a Lead Agent with LLM-based planning, reflexion gap-detection, and cross-check conflict resolution.</p>
+      </div>
+    </div>
+
+    <!-- Intelligence Sources card — full-width bento row -->
+    <div class="lp-connectors-card">
+    <div class="lp-conn-card-title">Intelligence Sources</div>
+    <hr class="lp-conn-divider">
+    <div class="lp-conn-items">
+      <div class="lp-conn-item">
+        <div class="lp-conn-icon"><span class="material-symbols-outlined">account_balance</span></div>
+        <div class="lp-conn-text">
+          <span class="lp-conn-name">SEC EDGAR</span>
+          <span class="lp-conn-sub">Corporate Filings</span>
+        </div>
+      </div>
+      <div class="lp-conn-item">
+        <div class="lp-conn-icon"><span class="material-symbols-outlined">public</span></div>
+        <div class="lp-conn-text">
+          <span class="lp-conn-name">GDELT News</span>
+          <span class="lp-conn-sub">Event Monitoring</span>
+        </div>
+      </div>
+      <div class="lp-conn-item">
+        <div class="lp-conn-icon"><span class="material-symbols-outlined">gpp_maybe</span></div>
+        <div class="lp-conn-text">
+          <span class="lp-conn-name">OFAC Sanctions</span>
+          <span class="lp-conn-sub">Compliance</span>
+        </div>
+      </div>
+      <div class="lp-conn-item">
+        <div class="lp-conn-icon"><span class="material-symbols-outlined">gavel</span></div>
+        <div class="lp-conn-text">
+          <span class="lp-conn-name">CourtListener</span>
+          <span class="lp-conn-sub">Legal Records</span>
+        </div>
+      </div>
+      <div class="lp-conn-item">
+        <div class="lp-conn-icon"><span class="material-symbols-outlined">corporate_fare</span></div>
+        <div class="lp-conn-text">
+          <span class="lp-conn-name">OpenCorporates</span>
+          <span class="lp-conn-sub">Registry Access</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- /bento -->
+
+</div><!-- /lp-main -->
 
 <script>
 function fillQuery() {
-    var entity = document.getElementById('entity-select').value;
-    var template = document.getElementById('template-select').value;
-    if (entity) {
-        document.getElementById('query').value = template.replace('{entity}', entity);
-    }
+  var entity   = document.getElementById('entity-select').value;
+  var template = document.getElementById('template-select').value;
+  if (entity) document.getElementById('query').value = template.replace('{entity}', entity);
 }
-
-var queryInput = document.getElementById('query');
-queryInput.addEventListener('focus', function() {
-    this.style.borderColor = '#0052ae';
-    this.style.boxShadow = '0 0 0 3px rgba(0,82,174,0.11)';
-});
-queryInput.addEventListener('blur', function() {
-    this.style.borderColor = '#c1c6d6';
-    this.style.boxShadow = 'none';
-});
-
-document.querySelectorAll('select').forEach(function(sel) {
-    sel.addEventListener('focus', function() { this.style.borderColor = '#0052ae'; });
-    sel.addEventListener('blur',  function() { this.style.borderColor = '#c1c6d6'; });
-});
-
-// Form submission handled in base.html (fetch-based with step completion)
 </script>
 {% endblock %}
