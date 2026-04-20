@@ -36,12 +36,7 @@ class OfacError(RuntimeError):
 # ---------------------------------------------------------------------------
 
 def download_sdn_xml(cache_path: Path, user_agent: str = "OSINT-Swarm research@asu.edu") -> Path:
-    """
-    Download the OFAC SDN XML to cache_path. Returns the path.
-
-    The file is ~2-3 MB and should be refreshed periodically
-    (OFAC updates it on business days).
-    """
+    """Download the OFAC SDN XML to cache_path. Returns the path."""
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     try:
         resp = requests.get(SDN_URL, headers={"User-Agent": user_agent}, timeout=60, stream=True)
@@ -66,14 +61,15 @@ def _strip_ns(tree: ET.Element) -> None:
             elem.tag = elem.tag.split("}", 1)[1]
 
 
-def _compile_sdn_pattern(s: str) -> Optional[re.Pattern]:
-    """Compile a word-boundary pattern for s, or None if s is too short / fails."""
-    if len(s) < 5:
-        return None
-    try:
-        return re.compile(r"\b" + re.escape(s) + r"\b")
-    except re.error:
-        return None
+def _normalize(s: str) -> str:
+    """Lowercase, strip punctuation, collapse spaces, remove common legal suffixes."""
+    s = s.lower()
+    s = re.sub(r"[,.\-&'/()]+", " ", s)
+    s = re.sub(r"\s+", " ", s).strip()
+    for suffix in (" inc", " llc", " ltd", " corp", " co", " company", " the"):
+        if s.endswith(suffix):
+            s = s[: -len(suffix)].strip()
+    return s
 
 
 def parse_sdn_entries(xml_path: Path) -> List[Dict[str, Any]]:
@@ -82,8 +78,7 @@ def parse_sdn_entries(xml_path: Path) -> List[Dict[str, Any]]:
 
     Each dict has keys:
       uid, name, sdn_type, programs (list), aka_names (list), remarks,
-      _norms (list[str]), _patterns (list[Optional[re.Pattern]])
-    Patterns are pre-compiled once here so search_entries never re-compiles them.
+      _norms (list[str])  — pre-normalized name variants for fast matching
     """
     try:
         tree = ET.parse(str(xml_path))
@@ -98,7 +93,6 @@ def parse_sdn_entries(xml_path: Path) -> List[Dict[str, Any]]:
         uid = entry.findtext("uid") or ""
         first = (entry.findtext("firstName") or "").strip()
         last = (entry.findtext("lastName") or "").strip()
-        # For entities the full name is in lastName; individuals have firstName + lastName
         name = f"{first} {last}".strip() if first else last
 
         sdn_type = (entry.findtext("sdnType") or "").strip()
@@ -124,7 +118,6 @@ def parse_sdn_entries(xml_path: Path) -> List[Dict[str, Any]]:
         if name:
             all_names = [name] + aka_names
             norms = [_normalize(n) for n in all_names if n]
-            patterns = [_compile_sdn_pattern(n) for n in norms]
             entries.append({
                 "uid": uid,
                 "name": name,
@@ -133,58 +126,39 @@ def parse_sdn_entries(xml_path: Path) -> List[Dict[str, Any]]:
                 "aka_names": aka_names,
                 "remarks": remarks,
                 "_norms": norms,
-                "_patterns": patterns,
             })
     return entries
 
 
 # ---------------------------------------------------------------------------
-# Matching
+# Matching — no regex, uses word-set containment only
 # ---------------------------------------------------------------------------
 
-def _normalize(s: str) -> str:
-    """Lowercase, strip punctuation, collapse spaces."""
-    s = s.lower()
-    s = re.sub(r"[,.\-&'/()]+", " ", s)
-    s = re.sub(r"\s+", " ", s).strip()
-    # Strip common legal suffixes that vary between sources
-    for suffix in (" inc", " llc", " ltd", " corp", " co", " company", " the"):
-        if s.endswith(suffix):
-            s = s[: -len(suffix)].strip()
-    return s
+def _word_set(s: str) -> frozenset:
+    return frozenset(s.split())
 
 
-def _terms_match(query_norm: str, target_norm: str) -> bool:
+def _names_match(qterm: str, sdn_norm: str) -> bool:
     """
-    Return True if query matches target.
+    True if qterm and sdn_norm refer to the same entity.
 
-    Rules (in order):
-    1. Exact match after normalization
-    2. query (≥5 chars) appears as whole word(s) inside target
-    3. target (≥5 chars) appears as whole word(s) inside query
+    Rules:
+    1. Exact match after normalization.
+    2. All words of qterm (≥5 chars) appear in sdn_norm's word set.
+    3. All words of sdn_norm (≥5 chars) appear in qterm's word set.
 
-    Rule 3 handles the case where the SDN entry is a shorter trading name
-    of the entity we're searching (e.g. searching "The Boeing Company"
-    matches SDN entry "BOEING").
+    Rule 3 handles shorter trading names inside longer legal names
+    (e.g. querying "The Boeing Company" matches SDN entry "BOEING").
+    No regex is used — safe on all Python versions.
     """
-    if query_norm == target_norm:
+    if qterm == sdn_norm:
         return True
-    if len(query_norm) >= 5:
-        try:
-            pattern = r"\b" + re.escape(query_norm) + r"\b"
-            if re.search(pattern, target_norm):
-                return True
-        except re.error:
-            if query_norm in target_norm:
-                return True
-    if len(target_norm) >= 5:
-        try:
-            pattern = r"\b" + re.escape(target_norm) + r"\b"
-            if re.search(pattern, query_norm):
-                return True
-        except re.error:
-            if target_norm in query_norm:
-                return True
+    qwords = _word_set(qterm)
+    swords = _word_set(sdn_norm)
+    if len(qterm) >= 5 and qwords and qwords.issubset(swords):
+        return True
+    if len(sdn_norm) >= 5 and swords and swords.issubset(qwords):
+        return True
     return False
 
 
@@ -200,29 +174,13 @@ def search_entries(
     False positives are possible due to name similarity; callers should treat
     matches as flags for human review, not automatic disqualification.
     """
-    # Build the set of query terms: entity name + all aliases
-    # Use the original alias length (not the post-normalized length) to decide
-    # whether to include it. This prevents 1-2 char tickers ("F", "BA") from
-    # generating false positives, while preserving 3-letter acronyms like "BRT"
-    # whose legal suffix ("CORP") was stripped during normalization.
-    raw_query_terms: set = {_normalize(entity_name)}
+    query_terms: List[str] = [_normalize(entity_name)]
     for alias in (aliases or []):
-        if len(alias.strip()) < 3:  # exclude 1-2 char tickers only
+        if len(alias.strip()) < 3:
             continue
         n = _normalize(alias)
-        if n:
-            raw_query_terms.add(n)
-
-    # Pre-compile query patterns once — avoids re-compiling inside the 18k-entry loop.
-    query_terms = []
-    for qterm in raw_query_terms:
-        compiled = None
-        if len(qterm) >= 5:
-            try:
-                compiled = re.compile(r"\b" + re.escape(qterm) + r"\b")
-            except re.error:
-                compiled = None
-        query_terms.append((qterm, compiled))
+        if n and n not in query_terms:
+            query_terms.append(n)
 
     hits: List[Dict[str, Any]] = []
     seen_uids: set = set()
@@ -231,30 +189,13 @@ def search_entries(
         if entry["uid"] in seen_uids:
             continue
 
-        # Use pre-compiled norms/patterns from parse time; fall back for old-format entries.
-        sdn_norms = entry.get("_norms") or [_normalize(n) for n in ([entry["name"]] + entry["aka_names"]) if n]
-        sdn_patterns = entry.get("_patterns") or [_compile_sdn_pattern(n) for n in sdn_norms]
+        sdn_norms: List[str] = entry.get("_norms") or [
+            _normalize(n) for n in ([entry["name"]] + entry["aka_names"]) if n
+        ]
 
-        for qterm, qpattern in query_terms:
-            for sdn_norm, sdn_pattern in zip(sdn_norms, sdn_patterns):
-                if not sdn_norm:
-                    continue
-                matched = False
-                if qterm == sdn_norm:
-                    matched = True
-                elif qpattern is not None:
-                    try:
-                        matched = bool(qpattern.search(sdn_norm))
-                    except re.error:
-                        matched = qterm in sdn_norm
-                elif sdn_pattern is not None:
-                    try:
-                        matched = bool(sdn_pattern.search(qterm))
-                    except re.error:
-                        matched = sdn_norm in qterm
-                else:
-                    matched = sdn_norm in qterm
-                if matched:
+        for qterm in query_terms:
+            for sdn_norm in sdn_norms:
+                if sdn_norm and _names_match(qterm, sdn_norm):
                     seen_uids.add(entry["uid"])
                     hits.append(entry)
                     break
