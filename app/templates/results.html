@@ -1,5 +1,68 @@
 {% extends "base.html" %}
 {% block title %}Results — OSINT Swarm{% endblock %}
+{% block extra_head %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;900&display=swap');
+  .ov-card { background:#f2f4f6; border-radius:8px; padding:2rem; margin-bottom:0; position:relative; overflow:hidden; }
+  .ov-label { font-family:'Space Grotesk',sans-serif; font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color:#505f76; }
+  .ov-section-hdr { display:flex; align-items:center; gap:0.5rem; margin-bottom:1.35rem; }
+  .ov-stat-tile { background:#f2f4f6; border-radius:8px; padding:1.35rem; transition:background 0.18s; }
+  .ov-stat-tile:hover { background:#006591; }
+  .ov-stat-tile:hover .ov-tile-icon,
+  .ov-stat-tile:hover .ov-tile-val  { color:#fff !important; }
+  .ov-stat-tile:hover .ov-tile-lbl  { color:rgba(255,255,255,0.65) !important; }
+  .ov-key-finding { background:#fff; border-left:4px solid #006591; padding:1rem 1.25rem; margin-bottom:1.25rem; box-shadow:0 1px 3px rgba(25,28,30,0.06); }
+  .ov-entity-row  { background:#fff; padding:0.75rem 1rem; display:flex; align-items:center; gap:0.75rem; border-radius:3px; margin-bottom:0.6rem; }
+  .ov-entity-icon { width:28px; height:28px; background:#d0e1fb; border-radius:3px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .ov-task-chip   { background:#fff; padding:0.7rem 1rem; display:flex; align-items:center; gap:0.75rem; border-radius:3px; }
+  .ov-task-icon   { width:28px; height:28px; background:#d0e1fb; border-radius:3px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  @media (max-width:900px) {
+    .ov-two-col { grid-template-columns:1fr !important; }
+    .ov-stat-row { grid-template-columns:repeat(2,1fr) !important; }
+    .an-stat-row { grid-template-columns:repeat(2,1fr) !important; }
+  }
+  @media (max-width:600px) {
+    .ov-stat-row { grid-template-columns:1fr 1fr !important; }
+    .an-stat-row { grid-template-columns:1fr 1fr !important; }
+  }
+
+  /* ── Explanation tab ── */
+  .ex-sec-hdr  { display:flex; align-items:center; gap:1rem; margin-bottom:1.75rem; }
+  .ex-sec-num  { font-family:'Space Grotesk',sans-serif; font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:0.2em; color:#006591; white-space:nowrap; }
+  .ex-sec-rule { flex:1; height:1px; background:#bec8d2; opacity:0.6; }
+  .ex-grid     { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+  .ex-card     { background:#ffffff; border:1px solid rgba(190,200,210,0.5); padding:2rem; box-shadow:0 4px 16px rgba(25,28,30,0.07); }
+  .ex-card-tint{ background:#f2f4f6; border:1px solid rgba(190,200,210,0.5); padding:2rem; border-left:4px solid #006591; }
+  .ex-icon     { display:block; font-size:2rem; line-height:1; margin-bottom:1.1rem; color:inherit; }
+  .ex-micro    { font-family:'Space Grotesk',sans-serif; font-size:0.58rem; font-weight:700; text-transform:uppercase; letter-spacing:0.18em; margin-bottom:0.3rem; }
+  .ex-h3       { font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:700; color:#191c1e; margin-bottom:0.9rem; }
+  .ex-body     { font-size:0.85rem; color:#3e4850; line-height:1.72; margin-bottom:1.35rem; }
+  .ex-badge    { background:#f2f4f6; padding:0.8rem 1rem; display:flex; align-items:center; gap:0.6rem; }
+  .ex-badge-lbl{ font-family:'Space Grotesk',sans-serif; font-size:0.58rem; font-weight:700; text-transform:uppercase; letter-spacing:0.14em; color:#505f76; }
+  .ex-check    { display:flex; align-items:center; gap:0.6rem; font-size:0.78rem; color:#505f76; margin-bottom:0.5rem; }
+  .ex-check:last-child { margin-bottom:0; }
+  .ex-check-icon { width:18px; height:18px; background:#006591; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#fff; font-size:0.65rem; font-weight:700; }
+  .ex-rows-wrap{ background:#ffffff; border:1px solid rgba(190,200,210,0.5); overflow:hidden; }
+  .ex-row      { border-bottom:1px solid rgba(190,200,210,0.2); transition:background 0.15s; }
+  .ex-row:last-child { border-bottom:none; }
+  .ex-row:hover{ background:#f7f9fb; }
+  .ex-row-hdr  { padding:1rem 1.35rem; display:flex; align-items:center; gap:0.9rem; }
+  .ex-row-icon { width:34px; height:34px; background:#eceef0; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:0.95rem; color:#006591; }
+  .ex-row-title{ font-family:'Space Grotesk',sans-serif; font-size:0.88rem; font-weight:700; color:#191c1e; }
+  .ex-row-body { padding:0 1.35rem 1rem 3.7rem; font-size:0.83rem; color:#3e4850; line-height:1.7; border-top:1px solid rgba(190,200,210,0.12); padding-top:0.85rem; }
+  .ex-tbl-wrap { background:#ffffff; border:1px solid rgba(190,200,210,0.5); overflow:hidden; }
+  .ex-tbl      { width:100%; border-collapse:collapse; text-align:left; }
+  .ex-tbl thead tr { background:#f2f4f6; border-bottom:1px solid rgba(190,200,210,0.35); }
+  .ex-tbl th   { padding:0.9rem 1.25rem; font-family:'Space Grotesk',sans-serif; font-size:0.58rem; font-weight:700; text-transform:uppercase; letter-spacing:0.18em; color:#505f76; }
+  .ex-tbl tbody tr { border-bottom:1px solid rgba(190,200,210,0.15); transition:background 0.15s; }
+  .ex-tbl tbody tr:last-child { border-bottom:none; }
+  .ex-tbl tbody tr:hover { background:#f7f9fb; }
+  .ex-tbl td   { padding:0.95rem 1.25rem; vertical-align:top; }
+  .ex-pill     { display:inline-block; padding:0.2rem 0.7rem; background:#d0e1fb; color:#006591; font-family:'Space Grotesk',sans-serif; font-size:0.58rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; white-space:nowrap; }
+  .ex-def      { font-size:0.83rem; color:#3e4850; line-height:1.65; }
+  @media (max-width:860px) { .ex-grid { grid-template-columns:1fr !important; } }
+</style>
+{% endblock %}
 {% block content %}
 
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;padding:1rem 1.5rem;background:#fff;border:1px solid #c1c6d6;border-radius:12px;box-shadow:0 1px 4px rgba(25,28,29,0.06);">
@@ -32,33 +95,6 @@
 
 {# ═══════════════ Overview ═══════════════ #}
 <div id="tab-overview" class="tab-panel is-active" role="tabpanel" aria-labelledby="tabbtn-overview">
-
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;900&display=swap');
-  .ov-card { background:#f2f4f6; border-radius:8px; padding:2rem; margin-bottom:0; position:relative; overflow:hidden; }
-  .ov-label { font-family:'Space Grotesk',sans-serif; font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color:#505f76; }
-  .ov-section-hdr { display:flex; align-items:center; gap:0.5rem; margin-bottom:1.35rem; }
-  .ov-stat-tile { background:#f2f4f6; border-radius:8px; padding:1.35rem; transition:background 0.18s; }
-  .ov-stat-tile:hover { background:#006591; }
-  .ov-stat-tile:hover .ov-tile-icon,
-  .ov-stat-tile:hover .ov-tile-val  { color:#fff !important; }
-  .ov-stat-tile:hover .ov-tile-lbl  { color:rgba(255,255,255,0.65) !important; }
-  .ov-key-finding { background:#fff; border-left:4px solid #006591; padding:1rem 1.25rem; margin-bottom:1.25rem; box-shadow:0 1px 3px rgba(25,28,30,0.06); }
-  .ov-entity-row  { background:#fff; padding:0.75rem 1rem; display:flex; align-items:center; gap:0.75rem; border-radius:3px; margin-bottom:0.6rem; }
-  .ov-entity-icon { width:28px; height:28px; background:#d0e1fb; border-radius:3px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .ov-task-chip   { background:#fff; padding:0.7rem 1rem; display:flex; align-items:center; gap:0.75rem; border-radius:3px; }
-  .ov-task-icon   { width:28px; height:28px; background:#d0e1fb; border-radius:3px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  @media (max-width:900px) {
-    .ov-two-col { grid-template-columns:1fr !important; }
-    .ov-stat-row { grid-template-columns:repeat(2,1fr) !important; }
-    .an-stat-row { grid-template-columns:repeat(2,1fr) !important; }
-  }
-  @media (max-width:600px) {
-    .ov-stat-row { grid-template-columns:1fr 1fr !important; }
-    .an-stat-row { grid-template-columns:1fr 1fr !important; }
-  }
-
-</style>
 
 {# ── Main 2-col grid: narrative (left 8) + sidebar (right 4) ── #}
 <div style="display:grid;grid-template-columns:1fr 340px;gap:1.5rem;margin-bottom:1.5rem;" class="ov-two-col">
@@ -859,94 +895,78 @@
 
 {% if result.narrative %}
 
-{# ── Section 01: Agent Summary Report ── #}
-<div style=”margin-bottom:2.5rem;”>
-  <div style=”display:flex;align-items:baseline;gap:1rem;margin-bottom:1.5rem;”>
-    <h2 style=”font-family:’Space Grotesk’,sans-serif;font-size:0.85rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:#191c1e;white-space:nowrap;”>01. Agent Summary Report</h2>
-    <div style=”flex:1;height:1px;background:#bec8d2;opacity:0.4;”></div>
+{# ── 01. Agent Summary Report ── #}
+<div style="margin-bottom:2.5rem;">
+  <div class="ex-sec-hdr">
+    <span class="ex-sec-num">01. Agent Summary Report</span>
+    <div class="ex-sec-rule"></div>
   </div>
-  <div style=”display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;” class=”ov-two-col”>
+  <div class="ex-grid">
 
-    {# LLM Analyst Narrative #}
-    <div style=”background:#eceef0;border-radius:8px;padding:1.75rem;”>
-      <div style=”display:flex;align-items:center;gap:0.65rem;margin-bottom:1.25rem;”>
-        <span class=”material-symbols-outlined” style=”color:#505f76;font-size:1.1rem;”>smart_toy</span>
-        <h3 style=”font-family:’Space Grotesk’,sans-serif;font-size:0.92rem;font-weight:700;color:#191c1e;”>LLM Analyst Narrative (Llama 3.1)</h3>
-      </div>
-      <p style=”font-size:0.85rem;color:#3e4850;line-height:1.72;margin-bottom:1.25rem;”>The <strong style=”color:#191c1e;”>AI Analyst Narrative</strong> card on the Overview tab is generated by <strong style=”color:#191c1e;”>Llama 3.1</strong>, an open-weight large language model. The model receives a structured summary of the investigation metrics — entity name, finding counts, risk scores, source breakdown, gap areas — and produces a final structured assessment for analysts. The LLM does <strong style=”color:#191c1e;”>not</strong> have access to the raw evidence or source documents; it synthesises only the aggregated metrics. All factual claims in the underlying evidence remain independently cited from primary sources (SEC EDGAR, OFAC, CourtListener, GDELT).</p>
-      <div style=”background:#fff;border:1px solid #bec8d2;border-radius:4px;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;”>
-        <span class=”material-symbols-outlined” style=”color:#505f76;font-size:1rem;”>psychology</span>
-        <span style=”font-family:’Space Grotesk’,sans-serif;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#505f76;”>All factual evidence independently cited from primary sources</span>
+    <div class="ex-card">
+      <span class="ex-icon material-symbols-outlined" style="color:#505f76;">smart_toy</span>
+      <div class="ex-micro" style="color:#505f76;">LLM Synthesis Layer</div>
+      <div class="ex-h3">LLM Analyst Narrative (Llama 3.1)</div>
+      <p class="ex-body">The <strong style="color:#191c1e;">AI Analyst Narrative</strong> card on the Overview tab is generated by <strong style="color:#191c1e;">Llama 3.1</strong>, an open-weight large language model. The model receives a structured summary of the investigation metrics — entity name, finding counts, risk scores, source breakdown, gap areas — and produces a final structured assessment for analysts. The LLM does <strong style="color:#191c1e;">not</strong> have access to the raw evidence or source documents; it synthesises only the aggregated metrics. All factual claims in the underlying evidence remain independently cited from primary sources (SEC EDGAR, OFAC, CourtListener, GDELT).</p>
+      <div class="ex-badge">
+        <span class="ex-check-icon">✓</span>
+        <span class="ex-badge-lbl">All factual evidence independently cited from primary sources</span>
       </div>
     </div>
 
-    {# Investigation pipeline card #}
-    <div style=”background:#f2f4f6;border-radius:8px;padding:1.75rem;border-left:4px solid #006591;”>
-      <div style=”display:flex;align-items:center;gap:0.65rem;margin-bottom:1.25rem;”>
-        <span class=”material-symbols-outlined” style=”color:#006591;font-size:1.1rem;”>account_tree</span>
-        <h3 style=”font-family:’Space Grotesk’,sans-serif;font-size:0.92rem;font-weight:700;color:#191c1e;”>Agentic Pipeline</h3>
-      </div>
-      <p style=”font-size:0.85rem;color:#3e4850;line-height:1.72;margin-bottom:1.25rem;”>The pipeline runs a <strong style=”color:#191c1e;”>multi-round orchestrator</strong> — a planner LLM issues tasks, specialist agents execute them, a reflexion layer cross-checks findings, and a stop policy decides when enough evidence has been gathered.</p>
-      <div style=”display:flex;flex-direction:column;gap:0.55rem;”>
-        <div style=”display:flex;align-items:flex-start;gap:0.6rem;font-size:0.78rem;color:#505f76;”>
-          <span class=”material-symbols-outlined” style=”color:#006591;font-size:0.9rem;flex-shrink:0;margin-top:1px;”>check_circle</span>
-          <span>LLM planner → specialist agents → reflexion → stop policy</span>
-        </div>
-        <div style=”display:flex;align-items:flex-start;gap:0.6rem;font-size:0.78rem;color:#505f76;”>
-          <span class=”material-symbols-outlined” style=”color:#006591;font-size:0.9rem;flex-shrink:0;margin-top:1px;”>check_circle</span>
-          <span>All factual claims independently cited from primary sources.</span>
-        </div>
+    <div class="ex-card-tint">
+      <span class="ex-icon material-symbols-outlined" style="color:#006591;">account_tree</span>
+      <div class="ex-micro" style="color:#006591;">Orchestration Layer</div>
+      <div class="ex-h3">Agentic Pipeline</div>
+      <p class="ex-body">The pipeline runs a <strong style="color:#191c1e;">multi-round orchestrator</strong> — a planner LLM issues tasks, specialist agents execute them, a reflexion layer cross-checks findings, and a stop policy decides when enough evidence has been gathered.</p>
+      <div>
+        <div class="ex-check"><span class="ex-check-icon">✓</span> LLM planner → specialist agents → reflexion → stop policy</div>
+        <div class="ex-check"><span class="ex-check-icon">✓</span> All factual claims independently cited from primary sources.</div>
       </div>
     </div>
 
   </div>
 </div>
 
-{# ── Section 02: Reading Guide ── #}
+{# ── 02. Reading Guide ── #}
 <div style="margin-bottom:2.5rem;">
-  <div style="display:flex;align-items:baseline;gap:1rem;margin-bottom:1.5rem;">
-    <h2 style="font-family:’Space Grotesk’,sans-serif;font-size:0.85rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:#191c1e;white-space:nowrap;">02. Reading Guide</h2>
-    <div style="flex:1;height:1px;background:#bec8d2;opacity:0.4;"></div>
+  <div class="ex-sec-hdr">
+    <span class="ex-sec-num">02. Reading Guide</span>
+    <div class="ex-sec-rule"></div>
   </div>
   <p style="font-size:0.82rem;color:#505f76;margin-bottom:1.25rem;">Short guide to scores, conflicts, and gaps — no substitute for analyst judgment.</p>
-  <div style="display:flex;flex-direction:column;gap:0.65rem;">
+  <div class="ex-rows-wrap">
     {% for d in result.narrative.definitions_html %}
-    <div style="background:#fff;border:1px solid #bec8d2;border-radius:8px;overflow:hidden;transition:border-color 0.2s;" onmouseover="this.style.borderColor=’rgba(0,101,145,0.35)’" onmouseout="this.style.borderColor=’#bec8d2’">
-      <div style="padding:1.1rem 1.35rem;display:flex;align-items:center;gap:1rem;">
-        <div style="width:36px;height:36px;border-radius:4px;background:#f2f4f6;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <span class="material-symbols-outlined" style="color:#006591;font-size:1rem;">analytics</span>
-        </div>
-        <h4 style="font-family:&apos;Space Grotesk&apos;,sans-serif;font-size:0.88rem;font-weight:700;color:#191c1e;">{{ d.title }}</h4>
+    <div class="ex-row">
+      <div class="ex-row-hdr">
+        <div class="ex-row-icon material-symbols-outlined">analytics</div>
+        <span class="ex-row-title">{{ d.title }}</span>
       </div>
-      <div style="padding:0 1.35rem 1.1rem;padding-left:calc(1.35rem + 36px + 1rem);font-size:0.83rem;color:#3e4850;line-height:1.7;border-top:1px solid #f2f4f6;">
-        {{ d.body | safe }}
-      </div>
+      <div class="ex-row-body">{{ d.body | safe }}</div>
     </div>
     {% endfor %}
   </div>
 </div>
 
-{# ── Section 03: Metric Hints table ── #}
+{# ── 03. Technical Definitions ── #}
 <div style="margin-bottom:2.5rem;">
-  <div style="display:flex;align-items:baseline;gap:1rem;margin-bottom:1.5rem;">
-    <h2 style="font-family:’Space Grotesk’,sans-serif;font-size:0.85rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:#191c1e;white-space:nowrap;">03. Technical Definitions</h2>
-    <div style="flex:1;height:1px;background:#bec8d2;opacity:0.4;"></div>
+  <div class="ex-sec-hdr">
+    <span class="ex-sec-num">03. Technical Definitions</span>
+    <div class="ex-sec-rule"></div>
   </div>
-  <div style="background:#fff;border:1px solid #bec8d2;border-radius:8px;overflow:hidden;">
-    <table style="width:100%;border-collapse:collapse;">
+  <div class="ex-tbl-wrap">
+    <table class="ex-tbl">
       <thead>
-        <tr style="background:#f2f4f6;border-bottom:1px solid #bec8d2;">
-          <th style="padding:0.85rem 1.25rem;text-align:left;font-family:’Space Grotesk’,sans-serif;font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.18em;color:#505f76;">Parameter</th>
-          <th style="padding:0.85rem 1rem;text-align:left;font-family:’Space Grotesk’,sans-serif;font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.18em;color:#505f76;">Definition</th>
+        <tr>
+          <th>Parameter</th>
+          <th>Definition</th>
         </tr>
       </thead>
       <tbody>
         {% for key, hint in result.narrative.metric_hints.items() %}
-        <tr style="border-bottom:1px solid #f2f4f6;transition:background 0.15s;" onmouseover="this.style.background=’#f7f9fb’" onmouseout="this.style.background=’transparent’">
-          <td style="padding:1rem 1.25rem;vertical-align:top;">
-            <span style="font-family:&apos;Space Grotesk&apos;,sans-serif;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;background:#d0e1fb;color:#006591;padding:0.25rem 0.65rem;border-radius:20px;white-space:nowrap;">{{ key|replace("_"," ") }}</span>
-          </td>
-          <td style="padding:1rem 1rem;font-size:0.83rem;color:#3e4850;line-height:1.6;">{{ hint }}</td>
+        <tr>
+          <td><span class="ex-pill">{{ key|replace('_',' ') }}</span></td>
+          <td class="ex-def">{{ hint }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -955,8 +975,8 @@
 </div>
 
 {% else %}
-<div style="background:#fff;border:1px solid #bec8d2;border-radius:8px;padding:2rem;text-align:center;">
-  <span class="material-symbols-outlined" style="color:#bec8d2;font-size:2rem;display:block;margin-bottom:0.5rem;">info</span>
+<div style="background:#ffffff;border:1px solid rgba(190,200,210,0.5);padding:2.5rem;text-align:center;">
+  <div style="font-family:'Material Symbols Outlined',sans-serif;font-feature-settings:'liga' 1;font-size:2rem;color:#bec8d2;margin-bottom:0.75rem;line-height:1;">info</div>
   <p style="font-size:0.85rem;color:#505f76;font-style:italic;">No narrative available for this run.</p>
 </div>
 {% endif %}
