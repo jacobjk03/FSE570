@@ -66,12 +66,24 @@ def _strip_ns(tree: ET.Element) -> None:
             elem.tag = elem.tag.split("}", 1)[1]
 
 
+def _compile_sdn_pattern(s: str) -> Optional[re.Pattern]:
+    """Compile a word-boundary pattern for s, or None if s is too short / fails."""
+    if len(s) < 5:
+        return None
+    try:
+        return re.compile(r"\b" + re.escape(s) + r"\b")
+    except re.error:
+        return None
+
+
 def parse_sdn_entries(xml_path: Path) -> List[Dict[str, Any]]:
     """
     Parse an OFAC SDN XML file and return a list of SDN entry dicts.
 
     Each dict has keys:
-      uid, name, sdn_type, programs (list), aka_names (list), remarks
+      uid, name, sdn_type, programs (list), aka_names (list), remarks,
+      _norms (list[str]), _patterns (list[Optional[re.Pattern]])
+    Patterns are pre-compiled once here so search_entries never re-compiles them.
     """
     try:
         tree = ET.parse(str(xml_path))
@@ -110,6 +122,9 @@ def parse_sdn_entries(xml_path: Path) -> List[Dict[str, Any]]:
                     aka_names.append(aka_name)
 
         if name:
+            all_names = [name] + aka_names
+            norms = [_normalize(n) for n in all_names if n]
+            patterns = [_compile_sdn_pattern(n) for n in norms]
             entries.append({
                 "uid": uid,
                 "name": name,
@@ -117,6 +132,8 @@ def parse_sdn_entries(xml_path: Path) -> List[Dict[str, Any]]:
                 "programs": programs,
                 "aka_names": aka_names,
                 "remarks": remarks,
+                "_norms": norms,
+                "_patterns": patterns,
             })
     return entries
 
@@ -214,11 +231,12 @@ def search_entries(
         if entry["uid"] in seen_uids:
             continue
 
-        sdn_names = [entry["name"]] + entry["aka_names"]
-        sdn_norms = [_normalize(n) for n in sdn_names if n]
+        # Use pre-compiled norms/patterns from parse time; fall back for old-format entries.
+        sdn_norms = entry.get("_norms") or [_normalize(n) for n in ([entry["name"]] + entry["aka_names"]) if n]
+        sdn_patterns = entry.get("_patterns") or [_compile_sdn_pattern(n) for n in sdn_norms]
 
         for qterm, qpattern in query_terms:
-            for sdn_norm in sdn_norms:
+            for sdn_norm, sdn_pattern in zip(sdn_norms, sdn_patterns):
                 if not sdn_norm:
                     continue
                 matched = False
@@ -229,12 +247,13 @@ def search_entries(
                         matched = bool(qpattern.search(sdn_norm))
                     except re.error:
                         matched = qterm in sdn_norm
-                elif len(sdn_norm) >= 5:
+                elif sdn_pattern is not None:
                     try:
-                        sdn_pattern = re.compile(r"\b" + re.escape(sdn_norm) + r"\b")
                         matched = bool(sdn_pattern.search(qterm))
                     except re.error:
                         matched = sdn_norm in qterm
+                else:
+                    matched = sdn_norm in qterm
                 if matched:
                     seen_uids.add(entry["uid"])
                     hits.append(entry)
